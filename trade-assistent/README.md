@@ -107,7 +107,7 @@ assistant/exchange.py     Signierter Kraken-Zugang, Nonce, Drossel, Paar-Regeln
 assistant/live.py         Echte Orders, Teilausführungen, Abgleich mit der Börse
 assistant/safety.py       Notbremse, absolute Grenzen, Auslöser
 assistant/notify.py       Weckruf per Webhook — unbeaufsichtigt heisst nicht unbemerkt
-tests/                    106 Tests
+tests/                    128 Tests
 ```
 
 ### Die drei Regeln der Backtest-Maschine
@@ -193,7 +193,7 @@ das Rauschen für Fortschritt.
 python3 -m unittest discover -s tests -t .
 ```
 
-106 Tests, alle ohne Netz. Die Indikatoren werden gegen Wilders
+128 Tests, alle ohne Netz. Die Indikatoren werden gegen Wilders
 Original-Datenreihe aus *New Concepts in Technical Trading Systems* geprüft,
 die Backtest-Maschine gegen konstruierte Fälle mit von Hand bekanntem
 Ergebnis, der Dauerbetrieb gegen eine erfundene Kursquelle, und der echte
@@ -226,16 +226,69 @@ wer die Scharfschaltung bestätigt.
 Ab hier wird Geld bewegt. Der Abschnitt beschreibt, was dafür eingebaut ist —
 und was davon ungetestet bleibt, weil hier nie ein echtes Konto lief.
 
+## Konto und Schlüssel — der Teil, den nur du machen kannst
+
+Ein Börsenkonto ist an eine Person gebunden. Kraken verlangt Ausweis, Adresse
+und Geburtsdatum, und die Identitätsprüfung muss die Person selbst durchlaufen —
+das ist keine Formalie, sondern der Zweck der Vorschrift. Diese vier Schritte
+gehen also über deine Hände:
+
+**1. Konto anlegen** — [kraken.com](https://www.kraken.com), E-Mail und
+Passwort. Danach unter *Security* die Zwei-Faktor-Anmeldung einschalten, für
+den Login **und** getrennt davon für den API-Zugang.
+
+**2. Identität nachweisen** — unter *Verify*. Für den Handel mit Euro oder
+Dollar reicht die mittlere Stufe („Intermediate"): Ausweis oder Reisepass,
+Adressnachweis, Selfie. Dauert je nach Andrang Stunden bis Tage.
+
+**3. Geld einzahlen** — SEPA-Überweisung ist die günstigste Variante. Fang mit
+einem Betrag an, dessen Totalverlust dich nicht trifft. Der Backtest weiter
+oben ist der Grund für diesen Satz.
+
+**4. API-Schlüssel erzeugen** — unter *Settings → API → Add key*. Genau diese
+Rechte setzen:
+
+| Recht | Warum |
+| --- | --- |
+| Query Funds | Guthaben lesen |
+| Query Open Orders & Trades | Orderzustand lesen |
+| Query Closed Orders & Trades | nach Abbruch nachforschen |
+| Create & Modify Orders | kaufen, verkaufen, absichern |
+| Cancel/Close Orders | Absicherung zurücknehmen |
+
+**„Withdraw Funds" NICHT ankreuzen.** Ein Schlüssel ohne Auszahlungsrecht kann
+im schlimmsten Fall schlecht handeln — aber nichts vom Konto transportieren.
+Der Unterschied zwischen einem schlechten Tag und einem leeren Konto.
+
+Bei *Key Expiration* ruhig ein Ablaufdatum setzen, und die IP-Beschränkung
+nutzen, falls der Rechner eine feste Adresse hat.
+
+Dann Schlüssel und Geheimnis ablegen:
+
+```
+mkdir -p betrieb
+printf '%s\n%s\n' "DEIN_KEY" "DEIN_SECRET" > betrieb/kraken.key
+chmod 600 betrieb/kraken.key
+```
+
 ## Der Weg dorthin
 
 ```
-python3 -m assistant konto                    # Zugang prüfen, bewegt nichts
+python3 -m assistant einrichten               # prüft alles der Reihe nach
+python3 -m assistant konto                    # Zugang und Guthaben, bewegt nichts
 python3 -m assistant live                     # Probelauf: Börse prüft jede Order, führt keine aus
 python3 -m assistant live --scharf            # echte Orders, mit Rückfrage
+python3 -m assistant dienst                   # systemd-Einheit für den Dauerbetrieb
 python3 -m assistant notbremse ziehen         # sofort anhalten
 python3 -m assistant notbremse schliessen     # anhalten und Position auflösen
 python3 -m assistant sicherung                # Schutzschaltungen ansehen
 ```
+
+`einrichten` geht zehn Punkte durch: Python, Schlüssel und Dateirechte,
+Erreichbarkeit der Börse, Gültigkeit des Schlüssels, **ob er fälschlich
+Auszahlungsrechte hat**, Paar-Regeln gegen deine Ordergrenze, Guthaben,
+eine Probeorder gegen die echten Börsenregeln, den Benachrichtigungskanal
+und die Schutzschaltungen. Bewegt dabei nichts.
 
 Der Probelauf ist keine Simulation: Jede Order geht mit `validate=true` an
 Kraken und wird dort gegen dieselben Regeln geprüft wie im Ernstfall —
@@ -314,9 +367,44 @@ später etwas, das er nicht hat. Der Rest wird storniert, die Position trägt
 die tatsächliche Menge.
 
 **Abgleich vor der ersten Order.** Beim Start wird der eigene Zustand gegen
-die Börse geprüft: hängengebliebene Orders werden storniert, der Bestand mit
-dem eigenen Depot verglichen. Weicht etwas ab, wird angehalten statt geraten —
+die Börse geprüft: verwaiste Orders werden storniert, der Bestand mit dem
+eigenen Depot verglichen. Weicht etwas ab, wird angehalten statt geraten —
 eine Abweichung heisst, dass jemand oder etwas anderes dieses Konto bewegt hat.
+
+## Der Stop liegt bei der Börse, nicht im Programm
+
+Das ist die wichtigste Eigenschaft für den unbeaufsichtigten Betrieb.
+
+Ein Stop, den nur der laufende Prozess kennt, schützt genau so lange, wie
+dieser Prozess lebt. Neustart, Stromausfall, ein Kernel dem der Speicher
+ausgeht, ein abgelaufenes Zertifikat — und die Position steht ungeschützt im
+Markt, während niemand es merkt. Deshalb geht der Stop hier als echte
+`stop-loss`-Order zur Börse, sobald ein Kauf gefüllt ist. Kraken löst sie aus,
+auch wenn hier nichts mehr läuft.
+
+Daraus folgen vier Dinge, die der Assistent beherrschen muss:
+
+* **Vor jedem eigenen Verkauf wird die Absicherung zurückgenommen.** Sie hält
+  dieselbe Menge fest; ohne Rücknahme lehnt die Börse den Verkauf wegen
+  fehlenden Guthabens ab. Misslingt die Rücknahme, bleibt die Position offen —
+  aber abgesichert. Das ist die bessere der beiden Möglichkeiten.
+* **Ein ausgelöster Stop wird nachgetragen.** Beim nächsten Start sieht der
+  Assistent, dass die Absicherung ausgeführt wurde, und schreibt den Trade ins
+  Buch, statt ihn zu verlieren.
+* **Der Abgleich räumt sie nicht weg.** Verwaiste Orders werden beim Start
+  storniert — die eigene Absicherung ausdrücklich nicht. Wäre das anders,
+  machte jeder Neustart die Position schutzlos. (Genau dieser Fehler steckte
+  im ersten Entwurf; dafür gibt es jetzt einen eigenen Regressionstest.)
+* **Verschwindet sie ohne ausgeführt zu haben, wird angehalten.** Dann hat
+  jemand von Hand eingegriffen, und die Position stünde ungeschützt da.
+
+Ein nachgezogener Stop (`--nachziehen`) wird an der Börse umgesetzt: alte
+Order zurücknehmen, neue setzen. In der Sekunde dazwischen ist die Position
+ungeschützt; misslingt das Neusetzen, hält der Betrieb an, statt still ohne
+Absicherung weiterzulaufen.
+
+Im Papierbetrieb gibt es keine Börse, die etwas halten könnte — dort überwacht
+der Assistent den Stop weiter selbst.
 
 ## Benachrichtigung
 
@@ -362,13 +450,15 @@ nicht.
 
 ## Was geprüft ist — und was nicht
 
-**Geprüft** (106 Tests, ohne Netz, gegen eine nachgebaute Börse):
+**Geprüft** (128 Tests, ohne Netz, gegen eine nachgebaute Börse):
 die Signatur gegen Krakens veröffentlichten Testvektor; Nonce streng steigend
 über Neustarts und vorgestellte Uhren; Mindestmenge und Mindestwert; volle,
 teilweise und ausbleibende Ausführung; Verbindungsabbruch mitten in der Order
 (es entsteht **keine** zweite Order); spurlos verlorene Order → Stopp; alle
 Schutzgrenzen; Notbremse mit und ohne Auflösung; Abgleich bei fremdem,
-fehlendem und passendem Bestand.
+fehlendem und passendem Bestand; die Absicherung an der Börse über ihren
+ganzen Lebenslauf — gesetzt, ausgelöst während der Prozess weg war,
+von Hand entfernt, beim Verkauf zurückgenommen, beim Abgleich verschont.
 
 **Nicht geprüft**, weil hier nie ein echtes Konto lief:
 

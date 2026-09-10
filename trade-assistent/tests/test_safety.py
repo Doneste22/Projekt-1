@@ -221,3 +221,69 @@ def lauf_broker(boerse, sicherung):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestAbsicherungImBetrieb(ScharferRunner):
+    """Die Absicherung muss den eigenen Prozess überleben."""
+
+    def test_nach_dem_kauf_liegt_der_stop_an_der_boerse(self):
+        r = self._runner()
+        r.tick()
+        pos = r.depot.positionen["XBTUSD"]
+        self.assertTrue(pos.geschuetzt, "Position ohne Börsen-Stop ist ungeschützt")
+        self.assertIn(pos.stop_txid, self.boerse.stops)
+        self.assertEqual(self.boerse.orders[pos.stop_txid]["status"], "open")
+
+    def test_stop_greift_auch_wenn_der_prozess_weg_war(self):
+        r = self._runner()
+        r.tick()
+        pos = r.depot.positionen["XBTUSD"]
+        txid, menge = pos.stop_txid, pos.menge
+
+        # Der Assistent ist aus. Die Börse stoppt die Position aus.
+        self.boerse.stop_ausloesen(txid, 95_000)
+
+        # Neuer Prozess, gleiches Verzeichnis — der Trade muss nachgetragen werden.
+        neu = self._runner()
+        d = neu.tick()
+        self.assertEqual(d.handlung, "verkauft")
+        self.assertIn("Börse", d.grund)
+        self.assertEqual(neu.depot.positionen, {})
+        self.assertTrue(neu.depot.trades)
+        self.assertAlmostEqual(neu.depot.trades[-1].menge, menge, places=8)
+
+    def test_entfernte_absicherung_haelt_an(self):
+        """Wer die Absicherung wegnimmt, ohne dass sie ausgelöst hat, ist ein Alarm."""
+        r = self._runner()
+        r.tick()
+        txid = r.depot.positionen["XBTUSD"].stop_txid
+        self.boerse.orders[txid]["status"] = "canceled"  # von Hand entfernt
+        d = r.tick()
+        self.assertTrue(d.angehalten)
+        self.assertIn("ungeschützt", str(r.sicherung.ausgeloest))
+
+    def test_eigener_verkauf_nimmt_die_absicherung_zuerst_zurueck(self):
+        r = self._runner()
+        r.tick()
+        txid = r.depot.positionen["XBTUSD"].stop_txid
+        r.sicherung.notbremse_ziehen(schliessen=True)
+        d = r.tick()
+        self.assertEqual(d.handlung, "verkauft")
+        self.assertIn(txid, self.boerse.storniert,
+                      "ohne Rücknahme hält der Stop die Menge fest")
+
+    def test_blockierte_ruecknahme_verhindert_den_verkauf(self):
+        """Lieber abgesichert offen bleiben als ungeschützt hängen."""
+        r = self._runner()
+        r.tick()
+
+        def verweigern(txid):
+            return False
+
+        r.broker.stop_aufheben = verweigern
+        r.sicherung.notbremse_ziehen(schliessen=True)
+        d = r.tick()
+        self.assertEqual(d.handlung, "halten")
+        self.assertIn("XBTUSD", r.depot.positionen)
+        self.assertEqual(self.boerse.aufgegeben[-1]["seite"], "buy",
+                         "es darf kein Verkauf abgeschickt worden sein")

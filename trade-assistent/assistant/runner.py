@@ -275,8 +275,61 @@ class Runner:
         self._zustand_sichern()
         self._journal(d)
 
+    def _absicherung_pruefen(self, d: Durchlauf) -> bool:
+        """Hat die Börse den Stop ausgelöst? True, wenn die Position weg ist.
+
+        Dieser Fall tritt genau dann ein, wenn der Assistent nicht lief —
+        deshalb wird der Trade hier nachgetragen statt ihn zu verlieren.
+        """
+        pos = self.depot.positionen[self.symbol]
+        if not pos.stop_txid:
+            return False
+        zustand, gefuellt, kosten, gebuehr = self.broker.stop_status(pos.stop_txid)
+        if not zustand or zustand in ("open", "pending"):
+            return False
+
+        if gefuellt > 0:
+            schnitt = kosten / gefuellt if gefuellt else pos.stop or pos.einstieg
+            txid = pos.stop_txid
+            pos.stop_txid = ""
+            if gefuellt < pos.menge * 0.9999:
+                t = self.depot.teilweise_schliessen(
+                    self.symbol, gefuellt, schnitt, int(time.time()), gebuehr,
+                    "Stop an der Börse ausgelöst",
+                )
+                d.handlung = "teilverkauf"
+            else:
+                t = self.depot.schliesse(
+                    self.symbol, schnitt, int(time.time()), gebuehr,
+                    "Stop an der Börse ausgelöst",
+                )
+                self.waechter.ausstieg_vermerken(self.symbol, 10**9)
+                d.handlung = "verkauft"
+            d.txid = txid
+            d.grund = (
+                f"Die Börse hat den Stop ausgelöst — {gefuellt:.8f} zu {schnitt:,.2f}, "
+                f"Ergebnis {t.netto:+,.2f}"
+            )
+            self.melder.melden(
+                "Ausgestoppt", f"{gefuellt:.8f} zu {schnitt:,.2f}, Ergebnis {t.netto:+,.2f}\n"
+                               "Die Absicherung an der Börse hat gegriffen.",
+                dringend=True,
+            )
+            return d.handlung == "verkauft"
+
+        # Weg, aber nichts gefüllt: Jemand hat die Absicherung entfernt.
+        raise self.sicherung.ausloesen(
+            f"Absicherung {pos.stop_txid} ist '{zustand}', ohne ausgeführt zu sein. "
+            "Die Position stünde ungeschützt im Markt.",
+            txid=pos.stop_txid, zustand=zustand,
+        )
+
     def _position_pruefen(self, kurs: float, d: Durchlauf, i: int) -> bool:
         """Stop, Ziel und nachgezogene Absicherung. True, wenn geschlossen wurde."""
+        if self._absicherung_pruefen(d):
+            return True
+        if self.symbol not in self.depot.positionen:
+            return True
         pos = self.depot.positionen[self.symbol]
         pos.hoechststand = max(pos.hoechststand, kurs)
         atr = getattr(self.strategie, "atr", None)
@@ -284,6 +337,7 @@ class Runner:
             gezogen = pos.hoechststand - self.nachziehen * atr[i]
             if pos.stop is None or gezogen > pos.stop:
                 pos.stop = gezogen
+                self._absicherung_nachziehen(pos, gezogen, d)
         if pos.stop is not None and kurs <= pos.stop:
             self._schliessen(kurs, "Stop erreicht", d)
             return True
@@ -291,6 +345,30 @@ class Runner:
             self._schliessen(kurs, "Ziel erreicht", d)
             return True
         return False
+
+    def _absicherung_nachziehen(self, pos, neuer_stop: float, d: Durchlauf) -> None:
+        """Stop-Order an der Börse auf das neue Niveau umsetzen.
+
+        Zwischen Aufheben und Neuplatzieren ist die Position kurz ungeschützt.
+        Misslingt das Neuplatzieren, wird angehalten — lieber laut scheitern
+        als still ohne Absicherung weiterlaufen.
+        """
+        if not pos.stop_txid:
+            return
+        alt = pos.stop_txid
+        if not self.broker.stop_aufheben(alt):
+            d.gruende.append(f"· Stop nicht nachgezogen — {alt} liess sich nicht aufheben")
+            return
+        pos.stop_txid = ""
+        try:
+            pos.stop_txid = self.broker.stop_platzieren(self.symbol, pos.menge, neuer_stop)
+        except Angehalten:
+            raise
+        except Exception as fehler:
+            raise self.sicherung.ausloesen(
+                f"Nachgezogener Stop liess sich nicht platzieren: {fehler}. "
+                "Position ist ungeschützt.", stop=neuer_stop,
+            ) from fehler
 
     def _ausstieg_pruefen(self, i: int, kurs: float, d: Durchlauf) -> None:
         pos = self.depot.positionen[self.symbol]
@@ -374,6 +452,21 @@ class Runner:
             einstieg_ts=int(time.time()), stop=stop, ziel=sig.ziel,
             gebuehr_bezahlt=aus.gebuehr, begruendung=begruendung,
         ))
+        # Absicherung sofort zur Börse — sie muss auch dann greifen, wenn
+        # dieser Prozess in der nächsten Sekunde stirbt.
+        pos = self.depot.positionen[self.symbol]
+        try:
+            pos.stop_txid = self.broker.stop_platzieren(self.symbol, aus.menge, stop)
+        except Angehalten:
+            raise
+        except Exception as fehler:
+            self.melder.melden(
+                "Absicherung fehlgeschlagen",
+                f"Position offen, aber ohne Stop an der Börse: {fehler}",
+                dringend=True,
+            )
+            d.gruende.append(f"· Absicherung nicht platziert: {fehler}")
+
         self.sicherung.erfolg_vermerken()
         d.handlung = "gekauft"
         d.grund = (
@@ -389,6 +482,19 @@ class Runner:
     def _schliessen(self, kurs: float, grund: str, d: Durchlauf) -> None:
         pos = self.depot.positionen[self.symbol]
         gewuenscht = pos.menge
+        # Die Absicherung hält dieselbe Menge fest. Ohne sie zurückzunehmen,
+        # lehnt die Börse den Verkauf wegen fehlenden Guthabens ab.
+        if pos.stop_txid and not self.broker.stop_aufheben(pos.stop_txid):
+            d.handlung = "halten"
+            d.grund = f"{grund} — Absicherung {pos.stop_txid} liess sich nicht aufheben"
+            self.melder.melden(
+                "Verkauf blockiert",
+                f"Die Absicherung {pos.stop_txid} liess sich nicht zurücknehmen. "
+                "Position bleibt offen — aber abgesichert.",
+                dringend=True,
+            )
+            return
+        pos.stop_txid = ""
         try:
             aus = self.broker.verkaufen(self.symbol, gewuenscht, kurs)
         except Exception as fehler:

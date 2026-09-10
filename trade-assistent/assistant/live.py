@@ -283,6 +283,77 @@ class LiveBroker:
                 )
         return None
 
+    # -- Absicherung an der Börse ------------------------------------------
+    #
+    # Ein Stop, der nur im Arbeitsspeicher des laufenden Prozesses steht,
+    # schützt genau so lange, wie der Prozess lebt. Stirbt er — Neustart,
+    # Stromausfall, ein Kernel dem der Speicher ausgeht —, steht die Position
+    # ungeschützt im Markt, und niemand merkt es. Deshalb liegt der Stop als
+    # echte Order bei der Börse. Sie löst ihn auch dann aus, wenn hier nichts
+    # mehr läuft.
+
+    def stop_platzieren(self, symbol: str, menge: float, stop_preis: float) -> str:
+        """Verkaufs-Stop bei der Börse hinterlegen. Gibt die Ordernummer zurück."""
+        if not self.scharf:
+            return ""
+        menge = self.info.menge_runden(menge)
+        einwand = self.info.pruefe_order(menge, stop_preis)
+        if einwand:
+            # Ohne Absicherung weiterlaufen wäre der schlechtere Fehler.
+            raise self.sicherung.ausloesen(
+                f"Absicherung nicht platzierbar: {einwand}. Position wäre ungeschützt.",
+                menge=menge, stop=stop_preis,
+            )
+        antwort = self.client.order_aufgeben(
+            self.paar, "sell", menge, art="stop-loss", preis=stop_preis,
+            userref=self.userref.naechste(), nur_pruefen=False,
+        )
+        txids = antwort.get("txid") or []
+        if not txids:
+            raise self.sicherung.ausloesen(
+                "Börse nahm die Absicherung nicht an — Position wäre ungeschützt.",
+                antwort=str(antwort),
+            )
+        self.melder.melden(
+            "Absicherung liegt an der Börse",
+            f"Stop {stop_preis:,.2f} über {menge:.8f} {self.info.basis} ({txids[0]}).\n"
+            "Sie greift auch, wenn dieser Prozess nicht mehr läuft.",
+        )
+        return txids[0]
+
+    def stop_aufheben(self, txid: str) -> bool:
+        """Absicherung zurücknehmen — nötig, bevor dieselbe Menge anders verkauft wird."""
+        if not txid or not self.scharf:
+            return True
+        try:
+            self.client.order_stornieren(txid)
+            return True
+        except BoersenFehler as f:
+            # Schon weg heisst meistens: ausgelöst. Das ist kein Fehler.
+            if "Unknown order" in str(f) or "already" in str(f).lower():
+                return True
+            return False
+        except UnklarerAusgang:
+            return False
+
+    def stop_status(self, txid: str) -> tuple[str, float, float, float]:
+        """(Zustand, gefüllte Menge, Kosten, Gebühr) der Absicherung."""
+        if not txid or not self.scharf:
+            return ("", 0.0, 0.0, 0.0)
+        w = self.client.order_abfragen(txid)
+        if not w:
+            return ("verschwunden", 0.0, 0.0, 0.0)
+        return (
+            w.get("status", "unbekannt"),
+            float(w.get("vol_exec", 0) or 0),
+            float(w.get("cost", 0) or 0),
+            float(w.get("fee", 0) or 0),
+        )
+
+
+
+
+
 
 def abgleichen(
     broker: LiveBroker,
@@ -296,35 +367,62 @@ def abgleichen(
     angehalten statt geraten — eine Abweichung heisst, dass jemand oder etwas
     anderes dieses Konto bewegt hat, und das ist kein Zustand, in dem man
     weiterhandelt.
+
+    Zwei Fälle brauchen dabei besondere Sorgfalt, beide betreffen die eigene
+    Absicherung:
+
+    1. Sie darf beim Aufräumen **nicht** mit storniert werden. Sie ist die
+       einzige offene Order, die dort hingehört; wer sie wegräumt, macht die
+       Position bei jedem Neustart schutzlos.
+    2. Hat sie ausgelöst, während hier nichts lief, ist das fehlende Guthaben
+       erklärt und kein Grund anzuhalten. Der Runner trägt den Trade nach.
     """
     melder = melder or StillerMelder()
     befunde: list[str] = []
     info = broker.info
     sicherung = broker.sicherung
 
-    # 1. Hängengebliebene Orders eines abgestürzten Laufs
+    pos = depot.positionen.get(symbol)
+    schutz_txid = pos.stop_txid if pos else ""
+
+    # 1. Hat die eigene Absicherung ausgelöst, während niemand zusah?
+    ausgefuehrt = 0.0
+    if schutz_txid:
+        zustand, gefuellt, _, _ = broker.stop_status(schutz_txid)
+        if zustand and zustand not in ("open", "pending"):
+            ausgefuehrt = gefuellt
+            befunde.append(
+                f"Absicherung {schutz_txid} ist '{zustand}' mit {gefuellt:.8f} ausgeführt"
+                + (" — wird gleich verbucht" if gefuellt else "")
+            )
+        else:
+            befunde.append(f"Absicherung {schutz_txid} liegt weiter bei der Börse")
+
+    # 2. Hängengebliebene Orders eines abgestürzten Laufs — die eigene
+    #    Absicherung ausgenommen, die gehört genau dorthin.
     offene = broker.client.offene_orders()
-    if offene:
-        befunde.append(f"{len(offene)} offene Order(s) an der Börse gefunden")
-        for txid in offene:
+    fremde = {t: w for t, w in offene.items() if t != schutz_txid}
+    if fremde:
+        befunde.append(f"{len(fremde)} verwaiste Order(s) an der Börse gefunden")
+        for txid in fremde:
             try:
                 broker.client.order_stornieren(txid)
                 befunde.append(f"  {txid} storniert")
             except (BoersenFehler, UnklarerAusgang) as f:
                 raise sicherung.ausloesen(
-                    f"Offene Order {txid} liess sich nicht stornieren: {f}", txid=txid
+                    f"Verwaiste Order {txid} liess sich nicht stornieren: {f}", txid=txid
                 ) from f
 
-    # 2. Guthaben gegen den eigenen Depotstand
+    # 3. Guthaben gegen den eigenen Depotstand, abzüglich dessen, was die
+    #    Absicherung bereits verkauft hat.
     guthaben = broker.client.guthaben()
     tatsaechlich = float(guthaben.get(info.basis, 0.0))
-    pos = depot.positionen.get(symbol)
-    erwartet = pos.menge if pos else 0.0
+    erwartet = max(0.0, (pos.menge if pos else 0.0) - ausgefuehrt)
     schwelle = max(info.mindestmenge, erwartet * sicherung.grenzen.guthaben_abweichung)
 
     if abs(tatsaechlich - erwartet) > schwelle:
         raise sicherung.ausloesen(
-            f"Bestand weicht ab: eigener Stand {erwartet:.8f} {info.basis}, "
+            f"Bestand weicht ab: erwartet {erwartet:.8f} {info.basis}, "
             f"Börse meldet {tatsaechlich:.8f}. Angehalten, bis das geklärt ist.",
             erwartet=erwartet, tatsaechlich=tatsaechlich,
         )
@@ -332,6 +430,13 @@ def abgleichen(
         f"Bestand stimmt überein ({tatsaechlich:.8f} {info.basis}), "
         f"{float(guthaben.get(info.quote, 0.0)):.2f} {info.quote} verfügbar"
     )
+    if pos and not pos.geschuetzt and not ausgefuehrt:
+        befunde.append("ACHTUNG: offene Position ohne Absicherung an der Börse")
+        melder.melden(
+            "Position ohne Absicherung",
+            f"{pos.menge:.8f} {info.basis} offen, aber kein Stop an der Börse.",
+            dringend=True,
+        )
     if len(befunde) > 1:
         melder.melden("Abgleich beim Start", "\n".join(befunde))
     return befunde

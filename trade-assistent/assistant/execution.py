@@ -74,6 +74,11 @@ class Broker(Protocol):
     def kaufen(self, symbol: str, menge: float, richtkurs: float) -> Execution: ...
     def verkaufen(self, symbol: str, menge: float, richtkurs: float) -> Execution: ...
 
+    # Absicherung an der Börse — überlebt den eigenen Prozess.
+    def stop_platzieren(self, symbol: str, menge: float, stop_preis: float) -> str: ...
+    def stop_aufheben(self, txid: str) -> bool: ...
+    def stop_status(self, txid: str) -> tuple[str, float, float, float]: ...
+
 
 class PaperBroker:
     """Simulierte Ausführung gegen echte Kurse. Es fliesst kein Geld."""
@@ -95,3 +100,14 @@ class PaperBroker:
 
     def verkaufen(self, symbol: str, menge: float, richtkurs: float) -> Execution:
         return self.kosten.verkaufen(richtkurs, menge)
+
+    # Im Papierbetrieb gibt es keine Börse, die eine Absicherung halten könnte.
+    # Der Stop wird hier vom Runner selbst überwacht.
+    def stop_platzieren(self, symbol: str, menge: float, stop_preis: float) -> str:
+        return ""
+
+    def stop_aufheben(self, txid: str) -> bool:
+        return True
+
+    def stop_status(self, txid: str) -> tuple[str, float, float, float]:
+        return ("", 0.0, 0.0, 0.0)

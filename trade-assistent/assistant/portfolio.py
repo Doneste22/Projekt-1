@@ -21,6 +21,12 @@ class Position:
     hoechststand: float = 0.0  # für die nachgezogene Absicherung
     gebuehr_bezahlt: float = 0.0
     begruendung: str = ""
+    stop_txid: str = ""  # Ordernummer der Absicherung an der Börse
+
+    @property
+    def geschuetzt(self) -> bool:
+        """Liegt die Absicherung bei der Börse — überlebt sie also den Prozess?"""
+        return bool(self.stop_txid)
 
     def __post_init__(self) -> None:
         if not self.hoechststand:

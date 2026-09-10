@@ -293,6 +293,231 @@ def befehl_konto(a) -> int:
     return 0
 
 
+def _pruefpunkt(nummer: int, titel: str) -> None:
+    print(f"\n  {nummer}. {titel}")
+
+
+def _ja(text: str) -> None:
+    print(f"     [ok]      {text}")
+
+
+def _nein(text: str) -> None:
+    print(f"     [FEHLT]   {text}")
+
+
+def _warnung(text: str) -> None:
+    print(f"     [ACHTUNG] {text}")
+
+
+def befehl_einrichten(a) -> int:
+    """Prüft der Reihe nach alles, was der Echtbetrieb braucht.
+
+    Bewegt nichts. Die einzige Order, die entsteht, geht mit `validate=true`
+    zur Börse und wird dort nur geprüft.
+    """
+    print("\n  EINRICHTUNG PRÜFEN")
+    print("  " + "=" * 62)
+    fehler, warnungen = 0, 0
+
+    _pruefpunkt(1, "Python")
+    if sys.version_info >= (3, 11):
+        _ja(f"Python {sys.version_info.major}.{sys.version_info.minor}")
+    else:
+        _nein(f"Python {sys.version_info.major}.{sys.version_info.minor} — 3.11 oder neuer nötig")
+        fehler += 1
+
+    _pruefpunkt(2, "Schlüssel")
+    datei = _schluesseldatei(a)
+    if os.environ.get("KRAKEN_API_KEY") and os.environ.get("KRAKEN_API_SECRET"):
+        _ja("aus der Umgebung (KRAKEN_API_KEY / KRAKEN_API_SECRET)")
+    elif datei.exists():
+        modus = datei.stat().st_mode & 0o777
+        if modus & 0o077:
+            _nein(f"{datei} ist mit Modus {modus:o} zu offen — chmod 600 {datei}")
+            fehler += 1
+        else:
+            _ja(f"{datei} (Modus {modus:o})")
+    else:
+        _nein(f"weder Umgebungsvariablen noch {datei}")
+        print(f"                Anlegen: printf '%s\\n%s\\n' \"$KEY\" \"$SECRET\" > {datei}")
+        print(f"                         chmod 600 {datei}")
+        fehler += 1
+    if fehler:
+        print("\n  Ohne Schlüssel geht es nicht weiter.\n")
+        return 2
+
+    client = _client(a)
+
+    _pruefpunkt(3, "Börse erreichbar")
+    status = client.systemstatus()
+    (_ja if status == "online" else _warnung)(f"Kraken meldet '{status}'")
+    if status != "online":
+        warnungen += 1
+
+    _pruefpunkt(4, "Schlüssel gültig und Rechte")
+    try:
+        guthaben = client.guthaben()
+        _ja("Guthaben abrufbar (Recht: Query Funds)")
+    except BoersenFehler as f:
+        _nein(f"Guthaben nicht abrufbar: {f}")
+        print("                Bei Kraken das Recht 'Query Funds' setzen.")
+        return 2
+    try:
+        client.offene_orders()
+        _ja("Orders abrufbar (Recht: Query Open Orders)")
+    except BoersenFehler as f:
+        _nein(f"Orders nicht abrufbar: {f} — Recht 'Query Open/Closed Orders' fehlt")
+        fehler += 1
+
+    _pruefpunkt(5, "Auszahlungsrecht — das darf der Schlüssel NICHT haben")
+    try:
+        client.privat("WithdrawMethods", asset=client.paar_info(a.paar).basis)
+        _warnung("Der Schlüssel darf auszahlen. Das ist zu viel Recht für einen Handelsbot.")
+        print("                Bei Kraken 'Withdraw Funds' abwählen und den Schlüssel neu erzeugen.")
+        print("                Ein Schlüssel ohne dieses Recht kann schlecht handeln,")
+        print("                aber nichts vom Konto transportieren.")
+        warnungen += 1
+    except BoersenFehler as f:
+        if "permission" in str(f).lower() or "denied" in str(f).lower():
+            _ja("kein Auszahlungsrecht — genau richtig")
+        else:
+            _ja(f"Auszahlung nicht möglich ({f})")
+
+    _pruefpunkt(6, "Handelspaar")
+    info = client.paar_info(a.paar)
+    kurs = client.letzter_kurs(a.paar)
+    _ja(f"{info.altname}: Kurs {kurs:,.2f} {info.quote}")
+    mindestwert = max(info.mindestwert, info.mindestmenge * kurs)
+    print(f"               kleinste Order: {info.mindestmenge:g} {info.basis} "
+          f"≈ {mindestwert:,.2f} {info.quote}")
+    if a.max_order < mindestwert:
+        _nein(f"--max-order {a.max_order:,.2f} liegt unter der kleinsten möglichen Order")
+        print(f"                Mindestens --max-order {mindestwert * 1.1:,.2f} setzen.")
+        fehler += 1
+    else:
+        _ja(f"--max-order {a.max_order:,.2f} reicht für etwa "
+            f"{a.max_order / mindestwert:.1f} kleinste Orders")
+
+    _pruefpunkt(7, "Guthaben")
+    frei = float(guthaben.get(info.quote, 0.0))
+    bestand = float(guthaben.get(info.basis, 0.0))
+    _ja(f"{frei:,.2f} {info.quote} verfügbar, {bestand:.8f} {info.basis} im Bestand")
+    if frei < mindestwert:
+        _nein(f"zu wenig {info.quote} für auch nur eine Order (mindestens {mindestwert:,.2f})")
+        fehler += 1
+    elif frei < a.max_order:
+        _warnung(f"weniger als --max-order ({a.max_order:,.2f}) — Orders werden kleiner ausfallen")
+        warnungen += 1
+    if bestand > info.mindestmenge:
+        _warnung(f"{bestand:.8f} {info.basis} liegen bereits im Konto. Der Abgleich hält "
+                 "beim Start an, weil der Assistent diesen Bestand nicht kennt.")
+        warnungen += 1
+
+    _pruefpunkt(8, "Probeorder (wird nur geprüft, nicht ausgeführt)")
+    menge = min(a.max_order, max(frei * 0.5, mindestwert)) / kurs
+    try:
+        antwort = client.order_aufgeben(
+            a.paar, "buy", menge, art="limit", preis=kurs * 1.005, nur_pruefen=True
+        )
+        _ja(f"Börse akzeptiert: {antwort.get('descr', {}).get('order', '?')}")
+        _ja("Recht 'Create & Modify Orders' vorhanden")
+    except BoersenFehler as f:
+        _nein(f"abgelehnt: {f}")
+        if "permission" in str(f).lower():
+            print("                Bei Kraken das Recht 'Create & Modify Orders' setzen.")
+        fehler += 1
+
+    _pruefpunkt(9, "Benachrichtigung")
+    if os.environ.get("HANDELSASSISTENT_WEBHOOK"):
+        melder = notify.WebhookMelder(os.environ["HANDELSASSISTENT_WEBHOOK"])
+        melder.melden("Handelsassistent", "Testnachricht aus der Einrichtungsprüfung.")
+        if melder.fehler:
+            _warnung(f"Webhook gesetzt, aber nicht erreichbar: {melder.fehler}")
+            warnungen += 1
+        else:
+            _ja(f"Testnachricht an {melder.format} verschickt — kam sie an?")
+    else:
+        _warnung("HANDELSASSISTENT_WEBHOOK nicht gesetzt — du erfährst nichts, "
+                 "solange du nicht ins Journal siehst")
+        warnungen += 1
+
+    _pruefpunkt(10, "Schutzschaltungen")
+    sicherung = Sicherung(a.betrieb, _grenzen(a))
+    if sicherung.ausgeloest:
+        _nein(f"ausgelöst: {sicherung.ausgeloest}")
+        print("                Zurücksetzen: python3 -m assistant sicherung --zuruecksetzen")
+        fehler += 1
+    elif sicherung.notbremse_gezogen:
+        _warnung("Notbremse ist gezogen — es würde nicht gehandelt")
+        warnungen += 1
+    else:
+        _ja("frei")
+    print(f"               Order ≤ {a.max_order:,.2f} · Einsatz ≤ {a.max_einsatz:,.2f} · "
+          f"Tagesverlust ≤ {a.max_tagesverlust:,.2f} · gesamt ≤ {a.max_gesamtverlust:,.2f}")
+
+    print("\n  " + "=" * 62)
+    if fehler:
+        print(f"  {fehler} Punkt(e) fehlen, {warnungen} Warnung(en). Noch nicht bereit.\n")
+        return 1
+    print(f"  Bereit. {warnungen} Warnung(en).")
+    print("\n  Nächster Schritt — Probelauf über mindestens einen Tag:")
+    print(f"    python3 -m assistant --paar {a.paar} --takt {a.takt} "
+          f"--strategie {a.strategie} live")
+    print("\n  Und erst danach, mit kleiner Grenze:")
+    print(f"    python3 -m assistant --paar {a.paar} --takt {a.takt} "
+          f"--strategie {a.strategie} \\")
+    print(f"            --max-order {max(a.max_order, 10):.0f} --max-einsatz "
+          f"{max(a.max_einsatz, 30):.0f} live --scharf\n")
+    return 0
+
+
+def befehl_dienst(a) -> int:
+    """systemd-Einheit ausgeben, passend zu den gesetzten Grenzen."""
+    arbeitsverzeichnis = Path.cwd()
+    einheit = f"""# /etc/systemd/system/handelsassistent.service
+# Erzeugt von: python3 -m assistant dienst
+[Unit]
+Description=Handelsassistent ({a.paar}, {a.strategie})
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={os.environ.get('USER', 'handel')}
+WorkingDirectory={arbeitsverzeichnis}
+# Schlüssel gehören in eine Datei mit Modus 600, nicht hierher:
+EnvironmentFile=/etc/handelsassistent.env
+Environment=HANDELSASSISTENT_SCHARF=ja-ich-will
+ExecStart=/usr/bin/python3 -m assistant \\
+    --paar {a.paar} --takt {a.takt} --strategie {a.strategie} \\
+    --max-order {a.max_order:g} --max-einsatz {a.max_einsatz:g} \\
+    --max-tagesverlust {a.max_tagesverlust:g} --max-gesamtverlust {a.max_gesamtverlust:g} \\
+    --betrieb {arbeitsverzeichnis / a.betrieb} \\
+    live --scharf --takt-sekunden 60
+Restart=on-failure
+RestartSec=60
+# Eine ausgelöste Sicherung liegt auf Platte. Der Neustart sieht sie und
+# handelt nicht — deshalb ist Restart hier ungefährlich.
+
+[Install]
+WantedBy=multi-user.target
+"""
+    if a.schreiben:
+        Path(a.schreiben).write_text(einheit)
+        print(f"\n  Geschrieben: {a.schreiben}")
+        print("  Einrichten:")
+        print(f"    sudo cp {a.schreiben} /etc/systemd/system/handelsassistent.service")
+        print("    sudo systemctl daemon-reload && sudo systemctl enable --now handelsassistent")
+        print("    journalctl -u handelsassistent -f\n")
+    else:
+        print(einheit)
+        print("# /etc/handelsassistent.env (Modus 600):")
+        print("#   KRAKEN_API_KEY=...")
+        print("#   KRAKEN_API_SECRET=...")
+        print("#   HANDELSASSISTENT_WEBHOOK=https://ntfy.sh/dein-geheimes-thema")
+    return 0
+
+
 def befehl_live(a) -> int:
     grenzen = _grenzen(a)
     grenzen.pruefe()
@@ -426,6 +651,10 @@ def parser() -> argparse.ArgumentParser:
     u.add_parser("stand", help="Zustand des Dauerbetriebs zeigen")
     u.add_parser("daten", help="Cache-Inhalt zeigen")
     u.add_parser("konto", help="Börsenzugang und Guthaben prüfen — bewegt nichts")
+    u.add_parser("einrichten", help="alles der Reihe nach prüfen, bevor scharf geschaltet wird")
+
+    ds = u.add_parser("dienst", help="systemd-Einheit für den Dauerbetrieb ausgeben")
+    ds.add_argument("--schreiben", help="in diese Datei schreiben statt auszugeben")
 
     e = u.add_parser("live", help="Betrieb an der echten Börse")
     e.add_argument("--scharf", action="store_true",
@@ -451,6 +680,7 @@ def main(argv: list[str] | None = None) -> int:
         "vergleich": befehl_vergleich, "vorwaerts": befehl_vorwaerts,
         "laufen": befehl_laufen, "stand": befehl_stand, "daten": befehl_daten,
         "konto": befehl_konto, "live": befehl_live,
+        "einrichten": befehl_einrichten, "dienst": befehl_dienst,
         "notbremse": befehl_notbremse, "sicherung": befehl_sicherung,
     }
     try:

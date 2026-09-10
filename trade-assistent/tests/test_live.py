@@ -49,6 +49,17 @@ class FalscheBoerse:
         self.aufgegeben: list[dict] = []
         self.storniert: list[str] = []
         self.geprueft: list[dict] = []
+        self.stops: list[str] = []
+
+    def stop_ausloesen(self, txid, kurs=None):
+        """So, als wäre der Stop gelaufen, während niemand zusah."""
+        w = self.orders[txid]
+        menge = w["vol"]
+        kurs = kurs if kurs is not None else w["price"]
+        w.update(status="closed", vol_exec=menge, cost=menge * kurs, fee=menge * kurs * 0.0026)
+        self._guthaben["XXBT"] -= menge
+        self._guthaben["ZUSD"] += menge * kurs
+        return w
 
     def paar_info(self, paar):
         return INFO
@@ -82,6 +93,17 @@ class FalscheBoerse:
 
     def order_aufgeben(self, paar, seite, menge, art="market", preis=None,
                        userref=None, nur_pruefen=True):
+        if art == "stop-loss" and not nur_pruefen:
+            # Eine Stop-Order bleibt liegen, bis der Kurs sie auslöst.
+            self.zaehler += 1
+            txid = f"STOP-{self.zaehler}"
+            self.orders[txid] = {
+                "status": "open", "userref": userref, "vol": menge, "vol_exec": 0.0,
+                "cost": 0.0, "fee": 0.0, "price": preis, "descr": {"type": "sell"},
+                "art": "stop-loss",
+            }
+            self.stops.append(txid)
+            return {"txid": [txid]}
         if nur_pruefen:
             self.geprueft.append({"seite": seite, "menge": menge, "preis": preis})
             return {"descr": {"order": f"{seite} {menge} {paar} @ limit {preis}"}}
@@ -303,6 +325,44 @@ class TestAbgleich(unittest.TestCase):
         with self.assertRaises(Angehalten):
             abgleichen(b, depot, "XBTUSD")
 
+    def test_eigene_absicherung_wird_nicht_wegstorniert(self):
+        """Regression: Der Abgleich räumte einst *alle* offenen Orders weg —
+        also auch die eigene Absicherung. Jeder Neustart hätte die Position
+        schutzlos gemacht."""
+        boerse = FalscheBoerse()
+        b = broker_bauen(boerse, self.tmp.name)
+        depot = Portfolio(startkapital=1000)
+        pos = Position("XBTUSD", 0.001, 100_000, 0)
+        depot.positionen["XBTUSD"] = pos
+        boerse._guthaben["XXBT"] = 0.001
+        pos.stop_txid = b.stop_platzieren("XBTUSD", 0.001, 95_000)
+
+        abgleichen(b, depot, "XBTUSD")
+        self.assertNotIn(pos.stop_txid, boerse.storniert)
+        self.assertEqual(boerse.orders[pos.stop_txid]["status"], "open")
+
+    def test_ausgeloester_stop_erklaert_den_fehlbestand(self):
+        """Ein Bestand, den die eigene Absicherung verkauft hat, ist kein Alarm."""
+        boerse = FalscheBoerse()
+        b = broker_bauen(boerse, self.tmp.name)
+        depot = Portfolio(startkapital=1000)
+        pos = Position("XBTUSD", 0.001, 100_000, 0)
+        depot.positionen["XBTUSD"] = pos
+        boerse._guthaben["XXBT"] = 0.001
+        pos.stop_txid = b.stop_platzieren("XBTUSD", 0.001, 95_000)
+        boerse.stop_ausloesen(pos.stop_txid, 95_000)  # Börse verkauft, niemand sieht zu
+
+        befunde = abgleichen(b, depot, "XBTUSD")
+        self.assertTrue(any("wird gleich verbucht" in z for z in befunde))
+
+    def test_position_ohne_absicherung_wird_gemeldet(self):
+        boerse = FalscheBoerse(guthaben={"XXBT": 0.001, "ZUSD": 1000.0})
+        b = broker_bauen(boerse, self.tmp.name)
+        depot = Portfolio(startkapital=1000)
+        depot.positionen["XBTUSD"] = Position("XBTUSD", 0.001, 100_000, 0)
+        befunde = abgleichen(b, depot, "XBTUSD")
+        self.assertTrue(any("ohne Absicherung" in z for z in befunde))
+
     def test_haengende_orders_werden_storniert(self):
         boerse = FalscheBoerse()
         boerse.orders["ALT-1"] = {"status": "open", "userref": 1, "vol": 1,
@@ -315,3 +375,48 @@ class TestAbgleich(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestAbsicherungAnDerBoerse(unittest.TestCase):
+    """Ein Stop im Arbeitsspeicher schützt nur, solange der Prozess lebt."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.boerse = FalscheBoerse()
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_stop_wird_bei_der_boerse_hinterlegt(self):
+        b = broker_bauen(self.boerse, self.tmp.name)
+        txid = b.stop_platzieren("XBTUSD", 0.001, 95_000)
+        self.assertTrue(txid)
+        self.assertEqual(self.boerse.orders[txid]["status"], "open")
+        self.assertEqual(self.boerse.orders[txid]["art"], "stop-loss")
+        self.assertEqual(self.boerse.orders[txid]["price"], 95_000)
+
+    def test_stop_bleibt_offen_bis_er_auslöst(self):
+        b = broker_bauen(self.boerse, self.tmp.name)
+        txid = b.stop_platzieren("XBTUSD", 0.001, 95_000)
+        self.assertEqual(b.stop_status(txid)[0], "open")
+        self.boerse.stop_ausloesen(txid, 94_900)
+        zustand, gefuellt, kosten, gebuehr = b.stop_status(txid)
+        self.assertEqual(zustand, "closed")
+        self.assertAlmostEqual(gefuellt, 0.001)
+        self.assertGreater(gebuehr, 0)
+
+    def test_stop_laesst_sich_zuruecknehmen(self):
+        b = broker_bauen(self.boerse, self.tmp.name)
+        txid = b.stop_platzieren("XBTUSD", 0.001, 95_000)
+        self.assertTrue(b.stop_aufheben(txid))
+        self.assertIn(txid, self.boerse.storniert)
+
+    def test_unplatzierbare_absicherung_haelt_an(self):
+        """Ohne Stop weiterlaufen wäre der schlechtere Fehler."""
+        b = broker_bauen(self.boerse, self.tmp.name)
+        with self.assertRaises(Angehalten):
+            b.stop_platzieren("XBTUSD", 0.0000001, 95_000)
+
+    def test_ohne_scharfschaltung_kein_stop(self):
+        b = broker_bauen(self.boerse, self.tmp.name, scharf=False)
+        self.assertEqual(b.stop_platzieren("XBTUSD", 0.001, 95_000), "")
