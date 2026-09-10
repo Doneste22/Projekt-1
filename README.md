@@ -14,6 +14,9 @@ index.html                    Startseite
 ratgeber/verspachteln.html    Anleitung: Trockenbauwand verspachteln
 ratgeber/akustikdecke.html    Anleitung: Akustikdecke montieren
 ratgeber/werkzeug.html        Ratgeber: Werkzeug-Grundausstattung
+impressum.html                Impressum — Entwurf mit Platzhaltern
+datenschutz.html              Datenschutzerklärung — Entwurf mit Platzhaltern
+partnerlinks.html             Interne Arbeitsliste für die Affiliate-Links
 assets/css/site.css           Design-System (Tokens, Komponenten, Raster)
 assets/js/site.js             Mobile Navigation, Diagramm-Tooltip, Schichten-Highlight
 ```
@@ -56,6 +59,44 @@ zum Untergrund geprüft. Wer sie austauscht, sollte das erneut prüfen: Die
 Kurven sind zusätzlich direkt beschriftet und als Tabelle hinterlegt, Farbe
 ist also nie das einzige Unterscheidungsmerkmal.
 
+## Rechtliche Seiten
+
+`impressum.html` und `datenschutz.html` sind **Entwürfe**. Jede auszufüllende Stelle
+ist im Text rot markiert (`<span class="platzhalter">`), beide Seiten tragen oben
+ein Entwurfs-Banner und stehen auf `noindex`. Am Ende jeder Seite steht eine
+Prüfliste mit dem, was vor dem Livegang zu klären ist.
+
+Der Entwurf folgt deutschem Recht (DDG, MStV, DSGVO, TDDDG). Wird die Seite aus der
+Schweiz betrieben, gelten andere Regeln — dann ist der Text umzuschreiben, nicht nur
+auszufüllen. Er ersetzt keine Rechtsberatung.
+
+**Ein Punkt ist heute schon konkret:** Die Seite lädt die Schriften Archivo und Inter
+direkt von Google. Dabei geht die IP-Adresse der Besucher an Google, ohne Einwilligung.
+Die saubere Lösung ist, die Schriftdateien lokal auszuliefern und per `@font-face`
+einzubinden — dann entfällt der heikelste Abschnitt der Datenschutzerklärung ersatzlos.
+
+## Partnerlinks
+
+`partnerlinks.html` ist die Arbeitsliste: alle 29 Produktempfehlungen in sechs
+Tabellen, je Zeile Platz für Partnerprogramm und Ziel-URL, dazu ein Sprung zur
+zugehörigen Karte auf der Startseite.
+
+Jede Produktkarte in `index.html` trägt dafür eine stabile Kennung:
+
+```html
+<article class="produkt tipp" id="produkt-festool-planex-lhs-2-225-eqi"
+         data-produkt="festool-planex-lhs-2-225-eqi">
+  …
+  <a class="link" href="#" data-affiliate="pending"
+     data-produkt="festool-planex-lhs-2-225-eqi">Zum Produkt →</a>
+  <span class="status">Partnerlink folgt</span>
+```
+
+Beim Eintragen eines echten Links wird `href` gesetzt, `data-affiliate` auf `aktiv`
+geändert, `rel="sponsored nofollow noopener"` ergänzt und der Status von
+„Partnerlink folgt“ auf „Anzeige“ gesetzt. Die Seite selbst ist nicht verlinkt und
+auf `noindex` gesetzt; sie kann vor dem Livegang gelöscht werden.
+
 ## Redaktionelle Hinweise
 
 Vor dem Livegang zu klären:
@@ -65,9 +106,8 @@ Vor dem Livegang zu klären:
   Fermacell, Protektor, Ecophon, Heradesign u. a.). Die Seite spricht in der
   Ich-Form — jede Karte gehört daher einmal daraufhin geprüft, ob sie die
   eigene Erfahrung korrekt wiedergibt.
-- **Partnerlinks.** Alle Produktlinks stehen auf `href="#"` und sind mit
-  `data-affiliate="pending"` sowie sichtbarem Hinweis „Partnerlink folgt“
-  markiert. Beim Eintragen der echten Links den Hinweis entfernen.
+- **Partnerlinks eintragen** — siehe `partnerlinks.html`. Solange keine Partnerschaft
+  besteht, bleiben die Links auf `href="#"` und als „Partnerlink folgt“ gekennzeichnet.
 - **Technische Angaben.** Achsmaße, Schraubenabstände und Profilraster sind
   branchenübliche Regelwerte; maßgeblich bleiben die Systemdatenblätter der
   Hersteller. Die Absorptionskurven sind typische Größenordnungen, keine
@@ -75,6 +115,6 @@ Vor dem Livegang zu klären:
 - **Newsletter.** Das Formular ist bewusst ohne Backend und meldet das dem
   Nutzer. Beim Anschluss an einen Anbieter den Hinweistext ersetzen und die
   Einwilligung nach DSGVO ergänzen.
-- **Impressum und Datenschutzerklärung fehlen** und sind für einen
-  gewerblichen Auftritt Pflicht — sie brauchen echte Anbieterdaten.
+- **Schriften lokal ausliefern** — siehe oben.
+- **Impressum und Datenschutz ausfüllen und prüfen lassen.**
 - **Porträtfoto.** Der Abschnitt „Über mich“ zeigt bislang ein Signet.

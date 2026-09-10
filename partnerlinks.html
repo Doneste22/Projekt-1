@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Partnerlinks — Arbeitsliste — Wand für Wand</title>
+<meta name="description" content="Interne Arbeitsliste: alle Produktempfehlungen mit Platz für Partnerprogramm und Affiliate-Link.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#EDEAE2">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/site.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23A6472A'/%3E%3Crect x='6' y='7' width='4' height='18' fill='%23EDEAE2'/%3E%3Crect x='14' y='7' width='4' height='18' fill='%23EDEAE2'/%3E%3Crect x='22' y='7' width='4' height='18' fill='%23EDEAE2'/%3E%3C/svg%3E">
+<style>
+  table.liste th[scope="row"]{width:34%;}
+  table.liste .marke{
+    display:block;font-size:.72rem;font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--beton-hell);font-family:var(--text);
+  }
+  table.liste code{font-size:.78rem;background:var(--kalk-dunkel);padding:2px 5px;word-break:break-all;}
+  table.liste .karte-link{
+    display:inline-block;margin-top:6px;font-family:var(--text);font-weight:500;
+    font-size:.78rem;color:var(--ziegel-dunkel);text-decoration:none;
+  }
+  table.liste .karte-link:hover{text-decoration:underline;}
+  .mini-siegel{
+    display:inline-block;margin-left:7px;vertical-align:2px;
+    background:var(--ziegel);color:var(--weiss);
+    font-family:var(--display);font-weight:700;font-size:.62rem;letter-spacing:.08em;
+    text-transform:uppercase;padding:2px 6px;
+  }
+  .status-offen{
+    display:inline-block;font-size:.75rem;font-weight:600;
+    color:var(--akustik);background:var(--akustik-hell);
+    border:1px solid #CFD9DB;padding:2px 8px;
+  }
+  .prosa h2 .anzahl{
+    font-family:var(--text);font-weight:500;font-size:.8rem;color:var(--beton-hell);
+    letter-spacing:0;margin-left:10px;text-transform:none;
+  }
+  .prosa .tabelle-scroll{margin-bottom:36px;}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="index.html">
+      <span class="mark" aria-hidden="true">WfW</span>
+      Wand für Wand<span>.</span>
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="hauptnav">
+      <span class="balken" aria-hidden="true"></span> Menü
+    </button>
+    <nav class="hauptnav" id="hauptnav" aria-label="Hauptnavigation">
+      <a href="index.html#empfehlungen">Empfehlungen</a>
+      <a href="index.html#ratgeber">Ratgeber</a>
+      <a href="index.html">Zur Startseite</a>
+    </nav>
+  </div>
+</header>
+
+<div class="entwurf-banner">
+  <div class="wrap">
+    <strong>Intern</strong>
+    <p>Diese Seite ist eine Arbeitsliste, keine Seite für Besucher. Sie ist auf <code>noindex</code> gesetzt
+    und aus der Navigation der Website nicht verlinkt. Vor dem Livegang kann sie gelöscht werden — oder
+    liegen bleiben, solange sie nirgends verlinkt ist.</p>
+  </div>
+</div>
+
+<main>
+<div class="wrap">
+  <nav class="brotkrumen" aria-label="Brotkrumenpfad">
+    <a href="index.html">Start</a><span>/</span>Partnerlinks
+  </nav>
+</div>
+
+<div class="artikel-kopf">
+  <div class="wrap">
+    <div class="kicker">Arbeitsliste</div>
+    <h1>Partnerlinks eintragen</h1>
+    <p class="lead">Alle 29 Produktempfehlungen der Startseite an einem Ort, mit Platz für Partnerprogramm und
+    Ziel-URL. Jede Zeile führt direkt zu ihrer Karte auf der Website.</p>
+    <div class="artikel-meta">
+      <div class="posten"><strong>Produkte</strong>29</div>
+      <div class="posten"><strong>Gruppen</strong>6</div>
+      <div class="posten"><strong>Verlinkt</strong>0</div>
+      <div class="posten"><strong>Offen</strong>29</div>
+    </div>
+  </div>
+</div>
+
+<article class="artikel">
+  <div class="wrap">
+    <div class="prosa" style="max-width:none;">
+
+      <h2 id="vorgehen" style="margin-top:0;">So wird ein Link eingetragen</h2>
+      <p>Jede Produktkarte in <code>index.html</code> trägt eine Kennung. Für das Beispiel
+      <code>festool-planex-lhs-2-225-eqi</code> sieht der Link heute so aus:</p>
+      <div class="rechtsblock">
+        <p><code>&lt;a class="link" href="#" data-affiliate="pending"
+        data-produkt="festool-planex-lhs-2-225-eqi"&gt;Zum Produkt →&lt;/a&gt;</code></p>
+        <p><code>&lt;span class="status"&gt;Partnerlink folgt&lt;/span&gt;</code></p>
+      </div>
+      <p>Nach dem Eintragen des echten Links wird daraus:</p>
+      <div class="rechtsblock">
+        <p><code>&lt;a class="link" href="https://…" data-affiliate="aktiv"
+        data-produkt="festool-planex-lhs-2-225-eqi" rel="sponsored nofollow noopener"
+        target="_blank"&gt;Zum Produkt →&lt;/a&gt;</code></p>
+        <p><code>&lt;span class="status"&gt;Anzeige&lt;/span&gt;</code></p>
+      </div>
+
+      <div class="hinweis">
+        <span class="titel">Drei Dinge, die dabei nicht vergessen werden dürfen</span>
+        <p><strong>1. Kennzeichnung am Link.</strong> Der Hinweis in der Werbekennzeichnung unten auf der
+        Startseite reicht nicht. Werbliche Links müssen auch dort erkennbar sein, wo sie stehen — deshalb
+        wandert <em>„Partnerlink folgt“</em> nicht weg, sondern wird zu <em>„Anzeige“</em>.</p>
+        <p><strong>2. <code>rel="sponsored"</code>.</strong> Bezahlte oder provisionierte Links werden so
+        ausgezeichnet. Ohne das Attribut wertet Google sie als redaktionelle Empfehlung.</p>
+        <p><strong>3. Datenschutz.</strong> Setzt das Partnerprogramm ein Tracking-Cookie, darf der Link erst
+        nach Einwilligung gesetzt werden. Das ist der Punkt, ab dem die Seite ein Einwilligungsbanner braucht —
+        siehe <a href="datenschutz.html#partner">Datenschutzerklärung</a>.</p>
+      </div>
+
+      <h2 id="programme">Wo die Links herkommen können</h2>
+      <p>Welche Programme in Frage kommen, hängt davon ab, wo die Produkte tatsächlich gekauft werden. Üblich
+      sind drei Wege — welcher davon offensteht, muss pro Anbieter geprüft werden:</p>
+      <ul>
+        <li><strong>Fachhandel-Programme.</strong> Werkzeug- und Baustoffhändler mit eigenem Partnerprogramm.
+        Meist die passendste Wahl für Profigeräte.</li>
+        <li><strong>Herstellerprogramme.</strong> Einige Hersteller betreiben eigene Programme oder arbeiten
+        über ein Netzwerk. Für Systemmaterial oft der einzige Weg.</li>
+        <li><strong>Allgemeine Netzwerke.</strong> Große Marktplätze und Affiliate-Netzwerke decken viel ab,
+        zahlen bei Baustoffen aber wenig und führen bei Platten und Profilen selten zu einem Kauf.</li>
+      </ul>
+      <p>Für Systemmaterial wie Platten, Profile und Dämmung lohnt sich die Frage, ob ein Link überhaupt
+      sinnvoll ist: Diese Ware wird beim Händler vor Ort palettenweise gekauft, nicht online. Bei solchen
+      Karten kann der Link auch entfallen und durch einen Verweis auf das Datenblatt des Herstellers ersetzt
+      werden — das ist ehrlicher und für die Leserin nützlicher.</p>
+
+      <h2 id="g-festool-planex-lhs-2-225-eqi">Schleifen & Absaugen <span class="anzahl">4 Produkte</span></h2>
+      <div class="tabelle-scroll">
+        <table class="vergleich liste">
+          <thead>
+            <tr>
+              <th scope="col">Produkt</th>
+              <th scope="col">Kennung</th>
+              <th scope="col">Partnerprogramm</th>
+              <th scope="col">Partnerlink</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row"><span class="marke">Festool</span>PLANEX LHS 2 225 EQI <span class="mini-siegel">Tipp</span><br><a class="karte-link" href="index.html#produkt-festool-planex-lhs-2-225-eqi">→ Karte auf der Seite</a></th>
+              <td><code>festool-planex-lhs-2-225-eqi</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Mirka</span>LEROS 950CV<br><a class="karte-link" href="index.html#produkt-mirka-leros-950cv">→ Karte auf der Seite</a></th>
+              <td><code>mirka-leros-950cv</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Flex</span>Giraffe GE 5 R mit VCE 33 L AC<br><a class="karte-link" href="index.html#produkt-flex-giraffe-ge-5-r-mit-vce-33-l-ac">→ Karte auf der Seite</a></th>
+              <td><code>flex-giraffe-ge-5-r-mit-vce-33-l-ac</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Mirka</span>Abranet Schleifgitter<br><a class="karte-link" href="index.html#produkt-mirka-abranet-schleifgitter">→ Karte auf der Seite</a></th>
+              <td><code>mirka-abranet-schleifgitter</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <h2 id="g-festool-duradrive-dwc-18-4500">Schrauben, Schneiden, Messen <span class="anzahl">6 Produkte</span></h2>
+      <div class="tabelle-scroll">
+        <table class="vergleich liste">
+          <thead>
+            <tr>
+              <th scope="col">Produkt</th>
+              <th scope="col">Kennung</th>
+              <th scope="col">Partnerprogramm</th>
+              <th scope="col">Partnerlink</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row"><span class="marke">Festool</span>DURADRIVE DWC 18-4500 <span class="mini-siegel">Tipp</span><br><a class="karte-link" href="index.html#produkt-festool-duradrive-dwc-18-4500">→ Karte auf der Seite</a></th>
+              <td><code>festool-duradrive-dwc-18-4500</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Makita</span>DFS452 Schnellbauschrauber<br><a class="karte-link" href="index.html#produkt-makita-dfs452-schnellbauschrauber">→ Karte auf der Seite</a></th>
+              <td><code>makita-dfs452-schnellbauschrauber</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Bosch Professional</span>GLL 3-80 Linienlaser<br><a class="karte-link" href="index.html#produkt-bosch-professional-gll-3-80-linienlaser">→ Karte auf der Seite</a></th>
+              <td><code>bosch-professional-gll-3-80-linienlaser</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Stabila</span>Type 196-2 Wasserwaage<br><a class="karte-link" href="index.html#produkt-stabila-type-196-2-wasserwaage">→ Karte auf der Seite</a></th>
+              <td><code>stabila-type-196-2-wasserwaage</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Collomix</span>Xo 4 Handrührwerk<br><a class="karte-link" href="index.html#produkt-collomix-xo-4-handruehrwerk">→ Karte auf der Seite</a></th>
+              <td><code>collomix-xo-4-handruehrwerk</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Tajima</span>Cuttermesser & Trockenbausäge<br><a class="karte-link" href="index.html#produkt-tajima-cuttermesser-trockenbausaege">→ Karte auf der Seite</a></th>
+              <td><code>tajima-cuttermesser-trockenbausaege</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <h2 id="g-knauf-diamant-hartgipsplatte">Platten, Profile, Dämmung <span class="anzahl">6 Produkte</span></h2>
+      <div class="tabelle-scroll">
+        <table class="vergleich liste">
+          <thead>
+            <tr>
+              <th scope="col">Produkt</th>
+              <th scope="col">Kennung</th>
+              <th scope="col">Partnerprogramm</th>
+              <th scope="col">Partnerlink</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row"><span class="marke">Knauf</span>Diamant Hartgipsplatte <span class="mini-siegel">Tipp</span><br><a class="karte-link" href="index.html#produkt-knauf-diamant-hartgipsplatte">→ Karte auf der Seite</a></th>
+              <td><code>knauf-diamant-hartgipsplatte</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Rigips</span>Habito Schwerlastplatte<br><a class="karte-link" href="index.html#produkt-rigips-habito-schwerlastplatte">→ Karte auf der Seite</a></th>
+              <td><code>rigips-habito-schwerlastplatte</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Fermacell</span>Gipsfaserplatte<br><a class="karte-link" href="index.html#produkt-fermacell-gipsfaserplatte">→ Karte auf der Seite</a></th>
+              <td><code>fermacell-gipsfaserplatte</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Knauf / Rigips</span>Imprägnierte Platte (GKBI / RBI)<br><a class="karte-link" href="index.html#produkt-knauf-rigips-impraegnierte-platte-gkbi-rbi">→ Karte auf der Seite</a></th>
+              <td><code>knauf-rigips-impraegnierte-platte-gkbi-rbi</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Protektor / Knauf</span>CW- und UW-Profile<br><a class="karte-link" href="index.html#produkt-protektor-knauf-cw-und-uw-profile">→ Karte auf der Seite</a></th>
+              <td><code>protektor-knauf-cw-und-uw-profile</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Flumroc · Isover · Rockwool</span>Ständerwerk-Dämmung aus Steinwolle<br><a class="karte-link" href="index.html#produkt-flumroc-staenderwerk-daemmung-aus-steinwolle">→ Karte auf der Seite</a></th>
+              <td><code>flumroc-staenderwerk-daemmung-aus-steinwolle</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <h2 id="g-knauf-uniflott-fugenspachtel">Spachteln & Fugen <span class="anzahl">4 Produkte</span></h2>
+      <div class="tabelle-scroll">
+        <table class="vergleich liste">
+          <thead>
+            <tr>
+              <th scope="col">Produkt</th>
+              <th scope="col">Kennung</th>
+              <th scope="col">Partnerprogramm</th>
+              <th scope="col">Partnerlink</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row"><span class="marke">Knauf</span>Uniflott Fugenspachtel <span class="mini-siegel">Tipp</span><br><a class="karte-link" href="index.html#produkt-knauf-uniflott-fugenspachtel">→ Karte auf der Seite</a></th>
+              <td><code>knauf-uniflott-fugenspachtel</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Knauf · Rigips</span>Fertig angerührte Flächenspachtel<br><a class="karte-link" href="index.html#produkt-knauf-fertig-angeruehrte-flaechenspachtel">→ Karte auf der Seite</a></th>
+              <td><code>knauf-fertig-angeruehrte-flaechenspachtel</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Knauf · Rigips</span>Papier-Bewehrungsstreifen<br><a class="karte-link" href="index.html#produkt-knauf-papier-bewehrungsstreifen">→ Karte auf der Seite</a></th>
+              <td><code>knauf-papier-bewehrungsstreifen</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Knauf · Protektor</span>Anschlussdichtband & Trennwandkitt<br><a class="karte-link" href="index.html#produkt-knauf-anschlussdichtband-trennwandkitt">→ Karte auf der Seite</a></th>
+              <td><code>knauf-anschlussdichtband-trennwandkitt</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <h2 id="g-knauf-cleaneo-akustikplatte">Akustiklösungen <span class="anzahl">6 Produkte</span></h2>
+      <div class="tabelle-scroll">
+        <table class="vergleich liste">
+          <thead>
+            <tr>
+              <th scope="col">Produkt</th>
+              <th scope="col">Kennung</th>
+              <th scope="col">Partnerprogramm</th>
+              <th scope="col">Partnerlink</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row"><span class="marke">Knauf</span>Cleaneo Akustikplatte <span class="mini-siegel">Tipp</span><br><a class="karte-link" href="index.html#produkt-knauf-cleaneo-akustikplatte">→ Karte auf der Seite</a></th>
+              <td><code>knauf-cleaneo-akustikplatte</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Rigips</span>Rigitone & Gyptone<br><a class="karte-link" href="index.html#produkt-rigips-rigitone-gyptone">→ Karte auf der Seite</a></th>
+              <td><code>rigips-rigitone-gyptone</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Ecophon</span>Focus Deckensystem<br><a class="karte-link" href="index.html#produkt-ecophon-focus-deckensystem">→ Karte auf der Seite</a></th>
+              <td><code>ecophon-focus-deckensystem</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Heradesign</span>Holzwolle-Akustikplatte<br><a class="karte-link" href="index.html#produkt-heradesign-holzwolle-akustikplatte">→ Karte auf der Seite</a></th>
+              <td><code>heradesign-holzwolle-akustikplatte</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Systemzubehör</span>Akustikvlies, schwarz<br><a class="karte-link" href="index.html#produkt-systemzubehoer-akustikvlies-schwarz">→ Karte auf der Seite</a></th>
+              <td><code>systemzubehoer-akustikvlies-schwarz</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Knauf · Protektor</span>Nonius-Abhänger & CD 60/27<br><a class="karte-link" href="index.html#produkt-knauf-nonius-abhaenger-cd-60-27">→ Karte auf der Seite</a></th>
+              <td><code>knauf-nonius-abhaenger-cd-60-27</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <h2 id="g-3m-halbmaske-ffp2-ffp3">Arbeitsschutz & Handling <span class="anzahl">3 Produkte</span></h2>
+      <div class="tabelle-scroll">
+        <table class="vergleich liste">
+          <thead>
+            <tr>
+              <th scope="col">Produkt</th>
+              <th scope="col">Kennung</th>
+              <th scope="col">Partnerprogramm</th>
+              <th scope="col">Partnerlink</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row"><span class="marke">3M · Dräger</span>Halbmaske FFP2 / FFP3<br><a class="karte-link" href="index.html#produkt-3m-halbmaske-ffp2-ffp3">→ Karte auf der Seite</a></th>
+              <td><code>3m-halbmaske-ffp2-ffp3</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Arbeitsschutz</span>Knieschoner mit Gelkern<br><a class="karte-link" href="index.html#produkt-arbeitsschutz-knieschoner-mit-gelkern">→ Karte auf der Seite</a></th>
+              <td><code>arbeitsschutz-knieschoner-mit-gelkern</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="marke">Edma · Wolfcraft</span>Plattenheber / Deckenlift<br><a class="karte-link" href="index.html#produkt-edma-plattenheber-deckenlift">→ Karte auf der Seite</a></th>
+              <td><code>edma-plattenheber-deckenlift</code></td>
+              <td><span class="platzhalter">[Programm]</span></td>
+              <td><span class="platzhalter">[URL]</span></td>
+              <td><span class="status-offen">offen</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="pflege">Wenn sich die Liste ändert</h2>
+      <p>Kommt eine Produktkarte dazu, bekommt sie in <code>index.html</code> eine eigene Kennung nach dem
+      gleichen Muster (<code>marke-produktname</code>, klein, mit Bindestrichen) und hier eine Zeile. Wird eine
+      Karte entfernt, verschwindet auch ihre Zeile. Die Kennungen sollten stabil bleiben — sie sind der Anker,
+      über den Karte und Liste zusammenfinden.</p>
+
+    </div>
+  </div>
+</article>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-meta" style="margin-top:0;">
+      <span>Wand für Wand — interne Arbeitsliste</span>
+      <span>Nicht verlinkt, nicht indexiert</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/site.js" defer></script>
+</body>
+</html>

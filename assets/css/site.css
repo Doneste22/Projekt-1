@@ -485,3 +485,62 @@ form.signup button:hover{background:var(--ziegel-dunkel);border-color:var(--zieg
 /* Diagramm bleibt auf schmalen Displays lesbar und scrollt stattdessen */
 .chart-scroll{overflow-x:auto;}
 .chart-scroll svg{min-width:600px;width:100%;height:auto;display:block;}
+
+/* ---------- Rechtliche Seiten: Entwurf und Platzhalter ---------- */
+.entwurf-banner{
+  background:var(--ziegel);color:var(--weiss);
+  padding:16px 0;font-size:.9rem;
+}
+.entwurf-banner .wrap{display:flex;gap:14px;align-items:flex-start;}
+.entwurf-banner strong{
+  font-family:var(--display);font-size:.76rem;letter-spacing:.12em;text-transform:uppercase;
+  background:var(--weiss);color:var(--ziegel-dunkel);padding:3px 9px;flex:none;margin-top:2px;
+}
+.entwurf-banner p{max-width:78ch;}
+
+.platzhalter{
+  background:var(--ziegel-hell);
+  color:var(--ziegel-dunkel);
+  font-weight:600;
+  padding:1px 5px;
+  border-bottom:1.5px dashed var(--ziegel);
+  -webkit-box-decoration-break:clone;
+  box-decoration-break:clone;
+}
+.prosa .platzhalter{font-size:.96em;}
+
+.rechtsblock{
+  border:1px solid var(--linie);background:var(--weiss);
+  padding:20px 22px;margin:0 0 24px;
+}
+.rechtsblock p + p{margin-top:10px;}
+.rechtsblock .zeile{display:grid;grid-template-columns:190px 1fr;gap:10px 20px;}
+@media (max-width:600px){.rechtsblock .zeile{grid-template-columns:1fr;gap:2px 0;}}
+.rechtsblock .zeile dt{font-weight:600;color:var(--beton-hell);}
+.rechtsblock .zeile dd{margin:0;}
+
+.pruefliste{list-style:none;margin:0;padding:0;}
+.pruefliste li{
+  padding:12px 0 12px 30px;border-bottom:1px solid var(--linie-hell);position:relative;font-size:.93rem;
+}
+.pruefliste li::before{
+  content:"";position:absolute;left:0;top:17px;
+  width:13px;height:13px;border:1.5px solid var(--ziegel);
+}
+.pruefliste li:last-child{border-bottom:none;}
+
+/* Lange deutsche Komposita dürfen umbrechen, sonst sprengen sie schmale Displays */
+.prosa,.prosa h2,.prosa h3,.rechtsblock,.pruefliste,.artikel-kopf h1,.section-head h2{
+  overflow-wrap:break-word;
+  -webkit-hyphens:auto;
+  hyphens:auto;
+}
+.platzhalter{overflow-wrap:anywhere;}
+
+/* Grid-Elemente dürfen schrumpfen — sonst drücken breite Tabellen und Diagramme
+   die Spalte auf ihre Mindestbreite und die Seite scrollt seitwärts. */
+.artikel-grid > *,
+.akustik-grid > *,
+.aufbau-interaktiv > *,
+.hero .wrap > *,
+#experte .wrap > *{min-width:0;}
