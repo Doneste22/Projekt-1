@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wand für Wand — Ratgeber & Werkzeug für Trockenbau und Akustik</title>
+<meta name="description" content="Praxiswissen aus über 20 Jahren als Gipser: Anleitungen zu Trockenbau, Spachteln und Akustik — plus kuratierte Werkzeug- und Materialempfehlungen.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --kalk:#EDEAE2;
+    --kalk-dunkel:#E1DCCF;
+    --beton:#33352F;
+    --beton-hell:#5B5D54;
+    --ziegel:#A6472A;
+    --ziegel-dunkel:#7E351F;
+    --akustik:#45646B;
+    --holz:#C89B6A;
+    --linie:#C9C2B3;
+    --weiss:#FBFAF7;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--kalk);
+    color:var(--beton);
+    font-family:'Inter', system-ui, sans-serif;
+    font-size:17px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{
+    font-family:'Archivo', system-ui, sans-serif;
+    font-weight:900;
+    line-height:1.05;
+    margin:0;
+    color:var(--beton);
+  }
+  a{color:inherit;}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 28px;}
+  @media (max-width:640px){.wrap{padding:0 20px;}}
+
+  /* ---------- header ---------- */
+  header{
+    padding:22px 0;
+    border-bottom:1px solid var(--linie);
+  }
+  header .wrap{display:flex;justify-content:space-between;align-items:center;}
+  .logo{
+    font-family:'Archivo';
+    font-weight:900;
+    font-size:1.15rem;
+    letter-spacing:-0.01em;
+  }
+  .logo span{color:var(--ziegel);}
+  nav a{
+    font-size:0.92rem;
+    text-decoration:none;
+    margin-left:26px;
+    color:var(--beton-hell);
+  }
+  nav a:hover{color:var(--ziegel);}
+  @media (max-width:640px){nav{display:none;}}
+
+  /* ---------- hero ---------- */
+  .hero{padding:64px 0 20px;}
+  .hero-grid{
+    display:grid;
+    grid-template-columns:1.1fr 1fr;
+    gap:56px;
+    align-items:center;
+  }
+  @media (max-width:900px){.hero-grid{grid-template-columns:1fr;gap:36px;}}
+
+  .kicker{
+    font-size:0.95rem;
+    color:var(--ziegel-dunkel);
+    font-weight:600;
+    margin-bottom:14px;
+  }
+  .hero h1{
+    font-size:clamp(2.1rem, 4.6vw, 3.3rem);
+    max-width:14ch;
+  }
+  .hero p.lead{
+    margin-top:22px;
+    font-size:1.1rem;
+    color:var(--beton-hell);
+    max-width:46ch;
+  }
+  .hero-cta{
+    margin-top:30px;
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .btn{
+    display:inline-block;
+    padding:13px 24px;
+    font-family:'Archivo';
+    font-weight:700;
+    font-size:0.95rem;
+    text-decoration:none;
+    border:1.5px solid var(--beton);
+    color:var(--beton);
+    transition:background .15s ease, color .15s ease;
+  }
+  .btn.primary{background:var(--ziegel);border-color:var(--ziegel);color:var(--weiss);}
+  .btn.primary:hover{background:var(--ziegel-dunkel);border-color:var(--ziegel-dunkel);}
+  .btn.ghost:hover{background:var(--beton);color:var(--weiss);}
+
+  .hero-figure svg{width:100%;height:auto;}
+  .hero-figure-caption{
+    font-size:0.82rem;
+    color:var(--beton-hell);
+    margin-top:10px;
+  }
+
+  /* ---------- aufbau strip ---------- */
+  .aufbau{
+    padding:70px 0;
+    border-top:1px solid var(--linie);
+    border-bottom:1px solid var(--linie);
+    background:var(--kalk-dunkel);
+  }
+  .aufbau .head{max-width:60ch;margin-bottom:38px;}
+  .aufbau .head h2{font-size:1.7rem;}
+  .aufbau .head p{color:var(--beton-hell);margin-top:12px;}
+  .schichten{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:0;
+    border-left:1px solid var(--beton);
+  }
+  @media (max-width:800px){.schichten{grid-template-columns:1fr;border-left:none;}}
+  .schicht{
+    padding:0 18px 18px;
+    border-right:1px solid var(--linie);
+  }
+  @media (max-width:800px){
+    .schicht{border-right:none;border-left:2px solid var(--ziegel);padding:4px 0 20px 16px;margin-bottom:6px;}
+  }
+  .schicht .nr{
+    font-family:'Archivo';
+    font-weight:700;
+    font-size:0.85rem;
+    color:var(--ziegel);
+    display:block;
+    margin:0 0 10px;
+  }
+  .schicht h3{font-size:1rem;font-weight:700;margin-bottom:6px;}
+  .schicht p{font-size:0.88rem;color:var(--beton-hell);margin:0;}
+
+  /* ---------- section head shared ---------- */
+  .section{padding:76px 0;}
+  .section-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:24px;
+    margin-bottom:40px;
+    border-bottom:1px solid var(--linie);
+    padding-bottom:22px;
+  }
+  .section-head h2{font-size:1.7rem;max-width:20ch;}
+  .section-head p{color:var(--beton-hell);font-size:0.95rem;max-width:34ch;margin:0;}
+  @media (max-width:700px){.section-head{flex-direction:column;align-items:flex-start;}}
+
+  /* ---------- guides ---------- */
+  .guides-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:2px;
+    background:var(--linie);
+  }
+  @media (max-width:800px){.guides-grid{grid-template-columns:1fr;}}
+  .guide-card{
+    background:var(--kalk);
+    padding:30px 26px 26px;
+    border-left:3px solid var(--akustik);
+  }
+  .guide-card .tag{
+    font-size:0.78rem;
+    color:var(--akustik);
+    font-weight:600;
+    margin-bottom:14px;
+  }
+  .guide-card h3{font-size:1.15rem;margin-bottom:10px;}
+  .guide-card p{font-size:0.92rem;color:var(--beton-hell);margin:0 0 16px;}
+  .guide-card .read{font-size:0.85rem;font-weight:600;color:var(--beton);text-decoration:none;border-bottom:1px solid var(--beton);padding-bottom:2px;}
+
+  /* ---------- empfehlungen ---------- */
+  .empf-gruppe{margin-bottom:46px;}
+  .empf-gruppe:last-child{margin-bottom:0;}
+  .empf-gruppe h3{
+    font-size:1.05rem;
+    margin-bottom:18px;
+    padding-bottom:10px;
+    border-bottom:1px solid var(--linie);
+  }
+  .produkte{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:20px;
+  }
+  @media (max-width:800px){.produkte{grid-template-columns:1fr 1fr;}}
+  @media (max-width:560px){.produkte{grid-template-columns:1fr;}}
+  .produkt{
+    position:relative;
+    border:1px solid var(--linie);
+    padding:20px;
+    background:var(--weiss);
+  }
+  .produkt::before{
+    content:"";
+    position:absolute;top:0;left:0;
+    width:14px;height:14px;
+    border-top:2px solid var(--ziegel);
+    border-left:2px solid var(--ziegel);
+  }
+  .produkt .platzhalter{
+    font-size:0.78rem;
+    color:var(--beton-hell);
+    font-style:italic;
+    margin-bottom:10px;
+  }
+  .produkt h4{
+    font-family:'Archivo';
+    font-size:0.98rem;
+    font-weight:700;
+    margin:0 0 8px;
+  }
+  .produkt p{font-size:0.85rem;color:var(--beton-hell);margin:0 0 14px;}
+  .produkt .link{
+    font-size:0.82rem;
+    font-weight:600;
+    color:var(--ziegel-dunkel);
+    text-decoration:none;
+  }
+  .disclosure{
+    margin-top:32px;
+    font-size:0.82rem;
+    color:var(--beton-hell);
+    max-width:70ch;
+    border-top:1px solid var(--linie);
+    padding-top:18px;
+  }
+
+  /* ---------- experte ---------- */
+  .experte{
+    background:var(--beton);
+    color:var(--kalk);
+    padding:70px 0;
+  }
+  .experte .wrap{
+    display:grid;
+    grid-template-columns:120px 1fr;
+    gap:32px;
+    align-items:start;
+  }
+  @media (max-width:600px){.experte .wrap{grid-template-columns:1fr;}}
+  .experte .marke{
+    width:88px;height:88px;
+    background:var(--ziegel);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Archivo';font-weight:900;color:var(--weiss);font-size:1.6rem;
+  }
+  .experte h2{color:var(--weiss);font-size:1.5rem;margin-bottom:14px;}
+  .experte p{color:#D7D3C6;max-width:60ch;font-size:1rem;}
+  .experte p + p{margin-top:12px;}
+
+  /* ---------- footer ---------- */
+  footer{padding:60px 0 40px;}
+  .footer-cta{
+    display:grid;
+    grid-template-columns:1.2fr 1fr;
+    gap:40px;
+    align-items:center;
+    padding-bottom:40px;
+    border-bottom:1px solid var(--linie);
+  }
+  @media (max-width:700px){.footer-cta{grid-template-columns:1fr;}}
+  .footer-cta h2{font-size:1.5rem;max-width:16ch;}
+  form.signup{display:flex;gap:0;max-width:420px;}
+  form.signup input{
+    flex:1;
+    padding:13px 14px;
+    border:1.5px solid var(--beton);
+    border-right:none;
+    font-family:'Inter';
+    font-size:0.95rem;
+    background:var(--weiss);
+  }
+  form.signup button{
+    padding:13px 20px;
+    border:1.5px solid var(--beton);
+    background:var(--beton);
+    color:var(--weiss);
+    font-family:'Archivo';
+    font-weight:700;
+    font-size:0.9rem;
+    cursor:pointer;
+  }
+  .sr-only{
+    position:absolute;
+    width:1px;height:1px;
+    padding:0;margin:-1px;
+    overflow:hidden;
+    clip:rect(0 0 0 0);
+    white-space:nowrap;
+    border:0;
+  }
+  .foot-meta{
+    margin-top:30px;
+    display:flex;
+    justify-content:space-between;
+    font-size:0.82rem;
+    color:var(--beton-hell);
+    flex-wrap:wrap;
+    gap:10px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="logo">Wand für Wand<span>.</span></div>
+    <nav>
+      <a href="#aufbau">Aufbau</a>
+      <a href="#ratgeber">Ratgeber</a>
+      <a href="#empfehlungen">Empfehlungen</a>
+      <a href="#experte">Über mich</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="kicker">Ratgeber & Werkzeug für Trockenbau und Akustik</div>
+      <h1>Vom Ständerwerk bis zur Akustikdecke.</h1>
+      <p class="lead">Praxiswissen aus über 20 Jahren als Gipser — plus die Werkzeuge und Materialien, die ich selbst auf der Baustelle einsetze. Kuratiert statt beliebig.</p>
+      <div class="hero-cta">
+        <a href="#ratgeber" class="btn primary">Ratgeber entdecken</a>
+        <a href="#empfehlungen" class="btn ghost">Empfehlungen ansehen</a>
+      </div>
+    </div>
+    <div class="hero-figure">
+      <svg viewBox="0 0 460 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="wandaufbau-titel">
+        <title id="wandaufbau-titel">Schnitt durch einen Trockenbau-Wandaufbau: Gipskartonplatte, Ständerwerk, Mineralwolle und Akustikplatte</title>
+        <!-- floor line -->
+        <line x1="20" y1="350" x2="440" y2="350" stroke="#33352F" stroke-width="2"/>
+        <!-- studs -->
+        <rect x="60" y="60" width="22" height="290" fill="#C89B6A"/>
+        <rect x="220" y="60" width="22" height="290" fill="#C89B6A"/>
+        <rect x="380" y="60" width="22" height="290" fill="#C89B6A"/>
+        <!-- wood grain lines -->
+        <g stroke="#A67A4B" stroke-width="1.2" opacity="0.6">
+          <line x1="66" y1="70" x2="66" y2="340"/>
+          <line x1="76" y1="70" x2="76" y2="340"/>
+          <line x1="226" y1="70" x2="226" y2="340"/>
+          <line x1="236" y1="70" x2="236" y2="340"/>
+          <line x1="386" y1="70" x2="386" y2="340"/>
+          <line x1="396" y1="70" x2="396" y2="340"/>
+        </g>
+        <!-- insulation hatching between stud 1-2 -->
+        <g stroke="#45646B" stroke-width="1.4" opacity="0.55">
+          <path d="M84 70 L130 90 M84 90 L130 110 M84 110 L130 130 M84 130 L130 150 M84 150 L130 170 M84 170 L130 190 M84 190 L130 210 M84 210 L130 230 M84 230 L130 250 M84 250 L130 270 M84 270 L130 290 M84 290 L130 310 M84 310 L130 330"/>
+          <path d="M130 70 L176 90 M130 90 L176 110 M130 110 L176 130 M130 130 L176 150 M130 150 L176 170 M130 170 L176 190 M130 190 L176 210 M130 210 L176 230 M130 230 L176 250 M130 250 L176 270 M130 270 L176 290 M130 290 L176 310 M130 310 L176 330"/>
+        </g>
+        <rect x="84" y="60" width="136" height="290" fill="none" stroke="#8FA3A8" stroke-width="1" stroke-dasharray="3 3"/>
+        <!-- gypsum board left of stud1 -->
+        <rect x="40" y="58" width="20" height="294" fill="#EDEAE2" stroke="#33352F" stroke-width="1.5"/>
+        <!-- skim coat line -->
+        <rect x="34" y="58" width="6" height="294" fill="#D7D0BE"/>
+        <!-- acoustic perforated panel right of stud3 -->
+        <rect x="402" y="58" width="20" height="294" fill="#5B5D54" stroke="#33352F" stroke-width="1.5"/>
+        <g fill="#33352F">
+          <circle cx="412" cy="80" r="1.6"/><circle cx="412" cy="100" r="1.6"/><circle cx="412" cy="120" r="1.6"/>
+          <circle cx="412" cy="140" r="1.6"/><circle cx="412" cy="160" r="1.6"/><circle cx="412" cy="180" r="1.6"/>
+          <circle cx="412" cy="200" r="1.6"/><circle cx="412" cy="220" r="1.6"/><circle cx="412" cy="240" r="1.6"/>
+          <circle cx="412" cy="260" r="1.6"/><circle cx="412" cy="280" r="1.6"/><circle cx="412" cy="300" r="1.6"/>
+          <circle cx="412" cy="320" r="1.6"/>
+        </g>
+        <!-- mid gypsum board between stud2 and stud3 -->
+        <rect x="242" y="58" width="20" height="294" fill="#EDEAE2" stroke="#33352F" stroke-width="1.5"/>
+        <g stroke="#45646B" stroke-width="1.4" opacity="0.55">
+          <path d="M262 70 L308 90 M262 90 L308 110 M262 110 L308 130 M262 130 L308 150 M262 150 L308 170 M262 170 L308 190 M262 190 L308 210 M262 210 L308 230 M262 230 L308 250 M262 250 L308 270 M262 270 L308 290 M262 290 L308 310 M262 310 L308 330"/>
+          <path d="M308 70 L354 90 M308 90 L354 110 M308 110 L354 130 M308 130 L354 150 M308 150 L354 170 M308 170 L354 190 M308 190 L354 210 M308 210 L354 230 M308 230 L354 250 M308 250 L354 270 M308 270 L354 290 M308 290 L354 310 M308 310 L354 330"/>
+        </g>
+        <rect x="356" y="58" width="24" height="294" fill="#EDEAE2" stroke="#33352F" stroke-width="1.5"/>
+        <!-- screws along studs -->
+        <g fill="#33352F">
+          <circle cx="71" cy="90" r="2"/><circle cx="71" cy="160" r="2"/><circle cx="71" cy="230" r="2"/><circle cx="71" cy="300" r="2"/>
+          <circle cx="231" cy="90" r="2"/><circle cx="231" cy="160" r="2"/><circle cx="231" cy="230" r="2"/><circle cx="231" cy="300" r="2"/>
+          <circle cx="391" cy="90" r="2"/><circle cx="391" cy="160" r="2"/><circle cx="391" cy="230" r="2"/><circle cx="391" cy="300" r="2"/>
+        </g>
+      </svg>
+      <div class="hero-figure-caption">Vereinfachter Wandaufbau: Gipskartonplatte · Ständerwerk · Mineralwolle · Akustikplatte</div>
+    </div>
+  </div>
+</section>
+
+<section class="aufbau" id="aufbau">
+  <div class="wrap">
+    <div class="head">
+      <h2>Wie eine Wand wirklich aufgebaut ist</h2>
+      <p>Fünf Schichten, die über Stabilität, Dämmwert und Raumakustik entscheiden — und für jede davon gibt es Werkzeug, das den Unterschied macht.</p>
+    </div>
+    <div class="schichten">
+      <div class="schicht">
+        <span class="nr">01</span>
+        <h3>Ständerwerk</h3>
+        <p>Trägt die Wand und definiert die Aufbauhöhe.</p>
+      </div>
+      <div class="schicht">
+        <span class="nr">02</span>
+        <h3>Dämmung</h3>
+        <p>Mineralwolle für Wärme- und Schallschutz zwischen den Ständern.</p>
+      </div>
+      <div class="schicht">
+        <span class="nr">03</span>
+        <h3>Beplankung</h3>
+        <p>Gipskartonplatten, je nach Anforderung ein- oder mehrlagig.</p>
+      </div>
+      <div class="schicht">
+        <span class="nr">04</span>
+        <h3>Spachtelung</h3>
+        <p>Fugen und Flächen für eine tapezier- oder streichfertige Oberfläche.</p>
+      </div>
+      <div class="schicht">
+        <span class="nr">05</span>
+        <h3>Akustik</h3>
+        <p>Optional: perforierte Platten, wenn Raumakustik eine Rolle spielt.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="ratgeber">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Ratgeber</h2>
+      <p>Anleitungen aus der Praxis, ohne Marketing-Umwege.</p>
+    </div>
+    <div class="guides-grid">
+      <article class="guide-card">
+        <div class="tag">Trockenbau</div>
+        <h3>Trockenbauwand richtig verspachteln</h3>
+        <p>Die drei Spachtelgänge, die über eine saubere Oberfläche entscheiden — und wo Anfänger meist zu wenig schleifen.</p>
+        <a class="read" href="#">Anleitung lesen</a>
+      </article>
+      <article class="guide-card">
+        <div class="tag">Akustik</div>
+        <h3>Akustikdecke montieren: Schritt für Schritt</h3>
+        <p>Von der Unterkonstruktion bis zur perforierten Platte — worauf es bei der Befestigung wirklich ankommt.</p>
+        <a class="read" href="#">Anleitung lesen</a>
+      </article>
+      <article class="guide-card">
+        <div class="tag">Werkzeug</div>
+        <h3>Welches Werkzeug braucht ein Gipser wirklich?</h3>
+        <p>Die Grundausstattung für den Einstieg — und was erst bei grösseren Flächen Sinn ergibt.</p>
+        <a class="read" href="#">Anleitung lesen</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="empfehlungen" style="background:var(--kalk-dunkel);">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Empfehlungen</h2>
+      <p>Was ich selbst benutze — nicht das, was am meisten Provision bringt.</p>
+    </div>
+
+    <div class="empf-gruppe">
+      <h3>Werkzeug</h3>
+      <div class="produkte">
+        <div class="produkt">
+          <div class="platzhalter">Platzhalter — Partnerprodukt folgt</div>
+          <h4>Schraubautomat</h4>
+          <p>Für schnelle, gleichmässige Verschraubung der Beplankung.</p>
+          <a class="link" href="#">Zum Produkt →</a>
+        </div>
+        <div class="produkt">
+          <div class="platzhalter">Platzhalter — Partnerprodukt folgt</div>
+          <h4>Spachtelset, 3-teilig</h4>
+          <p>Grund-, Zwischen- und Feinspachtel in einem Set.</p>
+          <a class="link" href="#">Zum Produkt →</a>
+        </div>
+        <div class="produkt">
+          <div class="platzhalter">Platzhalter — Partnerprodukt folgt</div>
+          <h4>Deckenlift</h4>
+          <p>Platten allein und ohne Rückenschmerzen an die Decke heben.</p>
+          <a class="link" href="#">Zum Produkt →</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="empf-gruppe">
+      <h3>Plattenmaterial</h3>
+      <div class="produkte">
+        <div class="produkt">
+          <div class="platzhalter">Platzhalter — Partnerprodukt folgt</div>
+          <h4>Gipskartonplatte, imprägniert</h4>
+          <p>Für Feuchträume geeignet, gleiche Verarbeitung wie Standardplatten.</p>
+          <a class="link" href="#">Zum Produkt →</a>
+        </div>
+        <div class="produkt">
+          <div class="platzhalter">Platzhalter — Partnerprodukt folgt</div>
+          <h4>Mineralwolle-Dämmung</h4>
+          <p>Wärme- und Schallschutz für den Zwischenraum im Ständerwerk.</p>
+          <a class="link" href="#">Zum Produkt →</a>
+        </div>
+        <div class="produkt">
+          <div class="platzhalter">Platzhalter — Partnerprodukt folgt</div>
+          <h4>CW/UW-Profile</h4>
+          <p>Das Ständerwerk-System, mit dem sich die meisten Wände bauen lassen.</p>
+          <a class="link" href="#">Zum Produkt →</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="empf-gruppe">
+      <h3>Akustiklösungen</h3>
+      <div class="produkte">
+        <div class="produkt">
+          <div class="platzhalter">Platzhalter — Partnerprodukt folgt</div>
+          <h4>Perforierte Akustikplatte</h4>
+          <p>Für Decken und Wände, wenn Nachhall ein Thema ist.</p>
+          <a class="link" href="#">Zum Produkt →</a>
+        </div>
+        <div class="produkt">
+          <div class="platzhalter">Platzhalter — Partnerprodukt folgt</div>
+          <h4>Akustikvlies</h4>
+          <p>Ergänzung hinter perforierten Platten für bessere Absorption.</p>
+          <a class="link" href="#">Zum Produkt →</a>
+        </div>
+        <div class="produkt">
+          <div class="platzhalter">Platzhalter — Partnerprodukt folgt</div>
+          <h4>Unterkonstruktion, abgehängt</h4>
+          <p>Die Basis für jede Akustikdecke mit Hohlraum.</p>
+          <a class="link" href="#">Zum Produkt →</a>
+        </div>
+      </div>
+    </div>
+
+    <p class="disclosure">Werbekennzeichnung: Mit „Partnerprodukt“ markierte Links sind Affiliate-Links. Kommt darüber ein Kauf zustande, erhalte ich eine Provision — der Preis ändert sich für dich nicht. Empfohlen wird nur, was ich selbst einsetzen würde.</p>
+  </div>
+</section>
+
+<section class="experte" id="experte">
+  <div class="wrap">
+    <div class="marke">DE</div>
+    <div>
+      <h2>Über Dámaso Estévez</h2>
+      <p>Über 20 Jahre Erfahrung als Gipser, spezialisiert auf Trockenbau, Pladur-Systeme und Akustiklösungen — gelernt und gearbeitet in der Schweiz.</p>
+      <p>Dieser Ratgeber sammelt, was auf echten Baustellen funktioniert hat: Werkzeug, das sich bewährt hat, und Handgriffe, die in keiner Packungsbeilage stehen.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-cta">
+      <div>
+        <h2>Neue Anleitungen direkt erhalten</h2>
+      </div>
+      <form class="signup" onsubmit="return false;">
+        <label class="sr-only" for="newsletter-email">E-Mail-Adresse</label>
+        <input id="newsletter-email" type="email" name="email" autocomplete="email" placeholder="E-Mail-Adresse" required>
+        <button type="submit">Anmelden</button>
+      </form>
+    </div>
+    <div class="foot-meta">
+      <span>Wand für Wand — Ratgeber & Werkzeug für Trockenbau und Akustik</span>
+      <span>Prototyp · Inhalte und Partnerlinks folgen</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
