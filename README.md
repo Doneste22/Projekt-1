@@ -1,18 +1,28 @@
 # Wand für Wand
 
-Statische Landingpage für „Wand für Wand“ — Ratgeber und Werkzeugempfehlungen
-für Trockenbau und Akustik.
+Statische Website für „Wand für Wand“ — Ratgeber und Werkzeugempfehlungen für
+Trockenbau, Spachteltechnik und Raumakustik.
 
-## Aufbau
+## Struktur
 
-Die Seite ist eine einzelne, eigenständige HTML-Datei ohne Build-Schritt:
+Kein Build-Schritt, keine Abhängigkeiten. Die Seiten sind reines HTML, CSS und
+etwas JavaScript und lassen sich von jedem Webserver oder direkt aus dem
+Dateisystem ausliefern.
 
-- `index.html` — komplette Seite inklusive CSS und Inline-SVG des Wandaufbaus.
-  Extern geladen werden nur die Schriften (Archivo, Inter) von Google Fonts.
+```
+index.html                    Startseite
+ratgeber/verspachteln.html    Anleitung: Trockenbauwand verspachteln
+ratgeber/akustikdecke.html    Anleitung: Akustikdecke montieren
+ratgeber/werkzeug.html        Ratgeber: Werkzeug-Grundausstattung
+assets/css/site.css           Design-System (Tokens, Komponenten, Raster)
+assets/js/site.js             Mobile Navigation, Diagramm-Tooltip, Schichten-Highlight
+```
+
+Extern geladen werden nur die Schriften (Archivo, Inter) von Google Fonts;
+ohne Netz greift der System-Fallback. Alle Abbildungen sind handgezeichnetes
+Inline-SVG — keine Bilddateien, keine Bibliotheken.
 
 ## Ansehen
-
-Datei direkt im Browser öffnen, oder lokal ausliefern:
 
 ```
 python3 -m http.server 8000
@@ -20,23 +30,51 @@ python3 -m http.server 8000
 
 Danach http://localhost:8000 aufrufen.
 
-## Abschnitte
+## Inhalt der Startseite
 
 | Anker | Inhalt |
 | --- | --- |
-| Hero | Positionierung, zwei CTAs, Schnittzeichnung des Wandaufbaus |
-| `#aufbau` | Die fünf Schichten einer Trockenbauwand |
-| `#ratgeber` | Anleitungs-Teaser (Trockenbau, Akustik, Werkzeug) |
-| `#empfehlungen` | Produktkarten in drei Gruppen, inkl. Werbekennzeichnung |
+| Hero | Positionierung, Horizontalschnitt durch die Wand mit Rufnummern |
+| Kennzahlen | Achsmaß, Schraubenabstand, Q-Stufen, Absorptionsgrad |
+| `#aufbau` | Explosionszeichnung der fünf Schichten, mit Liste verknüpft |
+| `#qualitaet` | Q1–Q4 im Streiflicht, je eine Abbildung pro Stufe |
+| `#ratgeber` | Teaser der drei Anleitungen |
+| `#akustik` | Absorptionsdiagramm, Deckenschnitt, Nachhall-Überschlag |
+| `#empfehlungen` | 29 Produktkarten in sechs Gruppen, Vergleichstabelle, Werbekennzeichnung |
 | `#experte` | Kurzprofil Dámaso Estévez |
-| Footer | Newsletter-Anmeldung (noch ohne Backend) |
+| `#faq` | Sechs häufige Fragen |
 
-## Status
+## Design-System
 
-Prototyp. Offen:
+Alle Farben, Schriften und Abstände liegen als Custom Properties in
+`assets/css/site.css` (`:root`). Wer die Marke verschiebt, ändert dort die
+Tokens — nicht die Komponenten.
 
-- Ratgeber-Links (`href="#"`) auf echte Artikelseiten zeigen lassen
-- Produktkarten: Platzhalter durch echte Partnerprodukte und Affiliate-Links ersetzen
-- Newsletter-Formular an einen Anbieter anbinden (aktuell `onsubmit="return false;"`)
-- Mobile Navigation (Menü ist unter 640px ausgeblendet)
-- Impressum und Datenschutzerklärung
+Die drei Diagrammfarben (`--serie-1/2/3`) sind gegen Helligkeitsband,
+Chroma-Untergrenze, Farbfehlsichtigkeit (Protan/Deutan/Tritan) und Kontrast
+zum Untergrund geprüft. Wer sie austauscht, sollte das erneut prüfen: Die
+Kurven sind zusätzlich direkt beschriftet und als Tabelle hinterlegt, Farbe
+ist also nie das einzige Unterscheidungsmerkmal.
+
+## Redaktionelle Hinweise
+
+Vor dem Livegang zu klären:
+
+- **Produktauswahl gegenlesen.** Die Empfehlungen nennen die im Gewerbe
+  etablierten Geräte und Systeme (Festool, Mirka, Flex, Makita, Knauf, Rigips,
+  Fermacell, Protektor, Ecophon, Heradesign u. a.). Die Seite spricht in der
+  Ich-Form — jede Karte gehört daher einmal daraufhin geprüft, ob sie die
+  eigene Erfahrung korrekt wiedergibt.
+- **Partnerlinks.** Alle Produktlinks stehen auf `href="#"` und sind mit
+  `data-affiliate="pending"` sowie sichtbarem Hinweis „Partnerlink folgt“
+  markiert. Beim Eintragen der echten Links den Hinweis entfernen.
+- **Technische Angaben.** Achsmaße, Schraubenabstände und Profilraster sind
+  branchenübliche Regelwerte; maßgeblich bleiben die Systemdatenblätter der
+  Hersteller. Die Absorptionskurven sind typische Größenordnungen, keine
+  Messwerte eines konkreten Produkts.
+- **Newsletter.** Das Formular ist bewusst ohne Backend und meldet das dem
+  Nutzer. Beim Anschluss an einen Anbieter den Hinweistext ersetzen und die
+  Einwilligung nach DSGVO ergänzen.
+- **Impressum und Datenschutzerklärung fehlen** und sind für einen
+  gewerblichen Auftritt Pflicht — sie brauchen echte Anbieterdaten.
+- **Porträtfoto.** Der Abschnitt „Über mich“ zeigt bislang ein Signet.
