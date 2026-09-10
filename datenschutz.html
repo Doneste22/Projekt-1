@@ -7,9 +7,9 @@
 <meta name="description" content="Datenschutzerklärung von Wand für Wand — derzeit ein Entwurf mit Platzhaltern.">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#EDEAE2">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/fonts.css">
 <link rel="stylesheet" href="assets/css/site.css">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23A6472A'/%3E%3Crect x='6' y='7' width='4' height='18' fill='%23EDEAE2'/%3E%3Crect x='14' y='7' width='4' height='18' fill='%23EDEAE2'/%3E%3Crect x='22' y='7' width='4' height='18' fill='%23EDEAE2'/%3E%3C/svg%3E">
 </head>
@@ -131,25 +131,17 @@
 
       </section>
       <section id="schriften">
-        <h2>Google Fonts — hier besteht Handlungsbedarf</h2>
+        <h2>Schriftarten</h2>
 
-        <div class="hinweis">
-          <span class="titel">Konkret auf dieser Seite</span>
-          Die Website bindet die Schriften <em>Archivo</em> und <em>Inter</em> derzeit direkt von den Servern
-          von Google ein. Dabei wird beim Seitenaufruf die IP-Adresse der Besucherin oder des Besuchers an
-          Google übertragen — ohne dass vorher eingewilligt wurde. Genau das war Gegenstand einschlägiger
-          Gerichtsentscheidungen und ist der häufigste Abmahngrund bei kleinen Websites.
-        </div>
-        <p><strong>Empfohlene Lösung:</strong> Die Schriftdateien lokal ausliefern und im Stylesheet über
-        <code>@font-face</code> einbinden. Dann verlässt kein Datum die eigene Domain, der Absatz hier entfällt
-        ersatzlos, und ein Einwilligungsbanner wird dafür nicht gebraucht. Solange die Einbindung über Google
-        läuft, gilt:</p>
+        <p>Die Schriften <em>Archivo</em> und <em>Inter</em> werden von dieser Website selbst ausgeliefert.
+        Die Schriftdateien liegen auf demselben Server wie die Seite und werden im Stylesheet über
+        <code>@font-face</code> eingebunden. Es wird keine Verbindung zu Google Fonts oder einem anderen
+        externen Anbieter aufgebaut, es werden keine IP-Adressen an Dritte übermittelt, und eine Einwilligung
+        ist dafür nicht erforderlich.</p>
         <div class="rechtsblock">
-          <p>Diese Website nutzt Schriftarten des Anbieters Google Ireland Limited, Gordon House, Barrow Street,
-          Dublin 4, Irland. Beim Aufruf einer Seite lädt Ihr Browser die benötigten Schriften von einem Server
-          von Google. Dabei wird Ihre IP-Adresse an Google übermittelt und kann in die USA übertragen werden.
-          Rechtsgrundlage ist Ihre Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1 TDDDG, die Sie
-          jederzeit widerrufen können.</p>
+          <p>Diese Website verwendet die Schriftarten Archivo und Inter. Beide werden lokal von unserem eigenen
+          Server ausgeliefert; eine Verbindung zu Servern Dritter findet dabei nicht statt. Es werden keine
+          personenbezogenen Daten an Anbieter von Schriftarten übermittelt.</p>
         </div>
 
       </section>
@@ -210,10 +202,10 @@
       <section id="cookies">
         <h2>Cookies und Einwilligung</h2>
 
-        <p><strong>Stand heute:</strong> Die Seite setzt keine Cookies, bindet keine Analysedienste ein und
-        speichert nichts im lokalen Speicher des Browsers. Ein Einwilligungsbanner ist deshalb im jetzigen
-        Zustand nicht erforderlich — abgesehen von der oben beschriebenen Einbindung der Schriften, die besser
-        durch lokales Ausliefern gelöst wird als durch ein Banner.</p>
+        <p><strong>Stand heute:</strong> Die Seite setzt keine Cookies, bindet keine Analysedienste ein,
+        speichert nichts im lokalen Speicher des Browsers und lädt keine Ressourcen von fremden Servern —
+        auch die Schriften nicht. Ein Einwilligungsbanner ist im jetzigen Zustand deshalb nicht
+        erforderlich.</p>
         <p>Sobald Partnerlinks, Reichweitenmessung, eingebettete Videos oder Kartendienste hinzukommen, ändert
         sich das: Diese Dienste dürfen erst nach ausdrücklicher, vorheriger und widerrufbarer Einwilligung
         geladen werden. Der Abschnitt ist dann um die eingesetzten Dienste, ihre Zwecke, Empfänger,
@@ -256,7 +248,6 @@
         <h2>Was vor dem Livegang zu klären ist</h2>
 
         <ul class="pruefliste">
-          <li>Schriften lokal ausliefern — damit entfällt der heikelste Punkt dieser Erklärung ersatzlos.</li>
           <li>Hosting-Anbieter, Serverstandort und Auftragsverarbeitungsvertrag eintragen.</li>
           <li>Newsletter-Anbieter festlegen, Double-Opt-In einrichten, Einwilligungstext an das Formular setzen.</li>
           <li>Partnerprogramme benennen und klären, ob sie Tracking-Cookies verlangen — davon hängt ab, ob ein

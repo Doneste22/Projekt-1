@@ -18,12 +18,16 @@ impressum.html                Impressum — Entwurf mit Platzhaltern
 datenschutz.html              Datenschutzerklärung — Entwurf mit Platzhaltern
 partnerlinks.html             Interne Arbeitsliste für die Affiliate-Links
 assets/css/site.css           Design-System (Tokens, Komponenten, Raster)
+assets/css/fonts.css          @font-face für Archivo und Inter — erzeugt, nicht von Hand ändern
+assets/fonts/*.woff2          Die Schriftdateien selbst (Variable Fonts, latin + latin-ext)
 assets/js/site.js             Mobile Navigation, Diagramm-Tooltip, Schichten-Highlight
+scripts/fonts-holen.sh        Frischt die Schriften auf und schreibt fonts.css neu
 ```
 
-Extern geladen werden nur die Schriften (Archivo, Inter) von Google Fonts;
-ohne Netz greift der System-Fallback. Alle Abbildungen sind handgezeichnetes
-Inline-SVG — keine Bilddateien, keine Bibliotheken.
+Die Seite lädt nichts von fremden Servern. Die Schriften Archivo und Inter
+liegen als woff2 im Repository und werden über `assets/css/fonts.css` lokal
+eingebunden; ohne Netz greift der System-Fallback. Alle Abbildungen sind
+handgezeichnetes Inline-SVG — keine Bilddateien, keine Bibliotheken.
 
 ## Ansehen
 
@@ -59,6 +63,27 @@ zum Untergrund geprüft. Wer sie austauscht, sollte das erneut prüfen: Die
 Kurven sind zusätzlich direkt beschriftet und als Tabelle hinterlegt, Farbe
 ist also nie das einzige Unterscheidungsmerkmal.
 
+## Schriften
+
+Archivo und Inter liegen als Variable Fonts im Repository — je Familie eine
+Datei für `latin` und eine für `latin-ext`, zusammen rund 200 KB. Die
+`@font-face`-Regeln stehen in `assets/css/fonts.css` und decken über einen
+`font-weight`-Bereich alle benutzten Schnitte ab (Archivo 500–900, Inter
+400–600). Jede Seite lädt zusätzlich die beiden `latin`-Dateien per
+`rel="preload"` vor.
+
+Zum Auffrischen — neue Schriftversion oder ein weiterer Schnitt:
+
+```
+scripts/fonts-holen.sh
+```
+
+Das Skript lädt von Google Fonts, legt die Dateien in `assets/fonts/` ab und
+schreibt `assets/css/fonts.css` neu. Wer einen Schnitt ergänzt, ändert vorher
+die Variable `ANFRAGE` im Skript. `fonts.css` selbst nicht von Hand bearbeiten —
+der nächste Lauf überschreibt sie. Das Skript gehört zur Wartung; für das
+Ausliefern der Seite wird es nicht gebraucht.
+
 ## Rechtliche Seiten
 
 `impressum.html` und `datenschutz.html` sind **Entwürfe**. Jede auszufüllende Stelle
@@ -70,10 +95,11 @@ Der Entwurf folgt deutschem Recht (DDG, MStV, DSGVO, TDDDG). Wird die Seite aus 
 Schweiz betrieben, gelten andere Regeln — dann ist der Text umzuschreiben, nicht nur
 auszufüllen. Er ersetzt keine Rechtsberatung.
 
-**Ein Punkt ist heute schon konkret:** Die Seite lädt die Schriften Archivo und Inter
-direkt von Google. Dabei geht die IP-Adresse der Besucher an Google, ohne Einwilligung.
-Die saubere Lösung ist, die Schriftdateien lokal auszuliefern und per `@font-face`
-einzubinden — dann entfällt der heikelste Abschnitt der Datenschutzerklärung ersatzlos.
+**Erledigt:** Die Schriften wurden von Google Fonts gelöst und werden lokal
+ausgeliefert. Damit geht keine IP-Adresse mehr an Google, der Abschnitt
+„Schriftarten“ der Datenschutzerklärung ist entsprechend umgeschrieben, und ein
+Einwilligungsbanner wird dafür nicht gebraucht. Die Seite ruft jetzt überhaupt
+keine fremden Server mehr auf.
 
 ## Partnerlinks
 
@@ -115,6 +141,5 @@ Vor dem Livegang zu klären:
 - **Newsletter.** Das Formular ist bewusst ohne Backend und meldet das dem
   Nutzer. Beim Anschluss an einen Anbieter den Hinweistext ersetzen und die
   Einwilligung nach DSGVO ergänzen.
-- **Schriften lokal ausliefern** — siehe oben.
 - **Impressum und Datenschutz ausfüllen und prüfen lassen.**
 - **Porträtfoto.** Der Abschnitt „Über mich“ zeigt bislang ein Signet.
