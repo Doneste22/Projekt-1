@@ -1,0 +1,9 @@
+# Wand für Wand
+# Die Domain unten ist ein Platzhalter — vor dem Livegang durch die echte ersetzen
+# (dieselbe Adresse steht in den canonical-Tags und in sitemap.xml).
+
+User-agent: *
+Allow: /
+Disallow: /partnerlinks.html
+
+Sitemap: https://wandfuerwand.ch/sitemap.xml

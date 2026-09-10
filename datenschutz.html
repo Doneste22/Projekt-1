@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Datenschutzerklärung — Wand für Wand</title>
-<meta name="description" content="Datenschutzerklärung von Wand für Wand — derzeit ein Entwurf mit Platzhaltern.">
+<meta name="description" content="Datenschutzerklärung von Wand für Wand nach Schweizer DSG — derzeit ein Entwurf mit Platzhaltern.">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#EDEAE2">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/schriften.css">
 <link rel="stylesheet" href="assets/css/site.css">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23A6472A'/%3E%3Crect x='6' y='7' width='4' height='18' fill='%23EDEAE2'/%3E%3Crect x='14' y='7' width='4' height='18' fill='%23EDEAE2'/%3E%3Crect x='22' y='7' width='4' height='18' fill='%23EDEAE2'/%3E%3C/svg%3E">
 </head>
@@ -31,6 +31,7 @@
       <a href="index.html#akustik">Akustik</a>
       <a href="index.html#empfehlungen">Empfehlungen</a>
       <a href="index.html#experte">Über mich</a>
+      <a href="angebot.html">Beratung</a>
     </nav>
   </div>
 </header>
@@ -55,7 +56,9 @@
   <div class="wrap">
     <div class="kicker">Rechtliches</div>
     <h1>Datenschutzerklärung</h1>
-    <p class="lead">Welche Daten diese Website verarbeitet, auf welcher Grundlage und wie lange. Diese Fassung ist ein Entwurf: Die markierten Stellen müssen vor der Veröffentlichung ausgefüllt werden.</p>
+    <p class="lead">Information über die Bearbeitung von Personendaten nach Art. 19 ff. des Schweizer
+    Datenschutzgesetzes (DSG). Diese Fassung ist ein Entwurf: Die rot markierten Stellen müssen vor der
+    Veröffentlichung ausgefüllt werden.</p>
   </div>
 </div>
 
@@ -66,209 +69,223 @@
       <ol>
         <li><a href="#verantwortlicher">Verantwortlicher</a></li>
         <li><a href="#grundsaetze">Grundsätze</a></li>
-        <li><a href="#hosting">Hosting & Logfiles</a></li>
-        <li><a href="#schriften">Schriftarten</a></li>
+        <li><a href="#hosting">Hosting &amp; Logfiles</a></li>
+        <li><a href="#schriften">Schriften und Fremdinhalte</a></li>
         <li><a href="#kontakt">Kontaktaufnahme</a></li>
+        <li><a href="#beratung">Beratungsaufträge</a></li>
         <li><a href="#newsletter">Newsletter</a></li>
         <li><a href="#partner">Partnerlinks</a></li>
         <li><a href="#cookies">Cookies</a></li>
+        <li><a href="#ausland">Bekanntgabe ins Ausland</a></li>
         <li><a href="#rechte">Ihre Rechte</a></li>
-        <li><a href="#sicherheit">Sicherheit & Änderungen</a></li>
+        <li><a href="#dsgvo">Kundschaft in der EU</a></li>
+        <li><a href="#sicherheit">Sicherheit &amp; Änderungen</a></li>
         <li><a href="#pruefen">Vor dem Livegang</a></li>
       </ol>
     </nav>
     <div class="prosa">
+
       <section id="verantwortlicher">
         <h2>Verantwortlicher</h2>
 
-        <p>Verantwortlich für die Datenverarbeitung auf dieser Website im Sinne der Datenschutz-Grundverordnung
-        (DSGVO) ist:</p>
+        <p>Verantwortlich für die Bearbeitung von Personendaten auf dieser Website im Sinne des DSG ist:</p>
         <div class="rechtsblock">
           <dl class="zeile">
             <dt>Name</dt><dd><span class="platzhalter">[Vorname Nachname]</span></dd>
-            <dt>Anschrift</dt><dd><span class="platzhalter">[Straße, PLZ, Ort, Land]</span></dd>
-            <dt>E-Mail</dt><dd><span class="platzhalter">[name@domain.tld]</span></dd>
-            <dt>Telefon</dt><dd><span class="platzhalter">[+49 … / +41 …]</span></dd>
-            <dt>Datenschutzbeauftragte/r</dt><dd><span class="platzhalter">[Name und Kontakt / entfällt]</span></dd>
+            <dt>Adresse</dt><dd><span class="platzhalter">[Strasse, PLZ, Ort, Schweiz]</span></dd>
+            <dt>E-Mail</dt><dd><span class="platzhalter">[name@domain.ch]</span></dd>
           </dl>
         </div>
-        <p>Ein Datenschutzbeauftragter ist für kleine Websites in der Regel nicht zu benennen. Trifft das zu,
-        wird die Zeile gestrichen statt leer gelassen.</p>
-
+        <p>Art. 19 Abs. 2 lit. a DSG verlangt, dass die Identität und die Kontaktdaten des Verantwortlichen
+        in der Datenschutzerklärung stehen — dieselben Angaben wie im <a href="impressum.html">Impressum</a>.</p>
       </section>
+
       <section id="grundsaetze">
-        <h2>Grundsätze der Verarbeitung</h2>
+        <h2>Grundsätze</h2>
 
-        <p>Personenbezogene Daten werden nur verarbeitet, soweit es für die Bereitstellung der Website und der
-        angebotenen Inhalte erforderlich ist oder eine Einwilligung vorliegt. Als Rechtsgrundlagen kommen in
-        Betracht:</p>
-        <ul>
-          <li><strong>Art. 6 Abs. 1 lit. a DSGVO</strong> — Einwilligung, etwa beim Newsletter.</li>
-          <li><strong>Art. 6 Abs. 1 lit. b DSGVO</strong> — Erfüllung eines Vertrags oder vorvertragliche Anfragen.</li>
-          <li><strong>Art. 6 Abs. 1 lit. f DSGVO</strong> — berechtigtes Interesse, etwa am sicheren und
-          störungsfreien Betrieb der Website.</li>
-        </ul>
-        <p>Für das Speichern von Informationen auf dem Endgerät und den Zugriff darauf gilt zusätzlich
-        § 25 TDDDG: Alles, was nicht technisch unbedingt erforderlich ist, braucht eine vorherige Einwilligung.</p>
-
+        <p>Personendaten werden nach Treu und Glauben, verhältnismässig und erkennbar bearbeitet (Art. 6 DSG).
+        Es werden nur Daten bearbeitet, die für den jeweiligen Zweck nötig sind, und nur so lange, wie sie
+        dafür gebraucht werden.</p>
+        <p>Diese Website ist bewusst so gebaut, dass dabei wenig anfällt: Es gibt keine Analysewerkzeuge, keine
+        Werbenetzwerke, keine Social-Media-Einbindungen und keine Inhalte, die von fremden Servern nachgeladen
+        werden. Der gesamte Auftritt besteht aus statischen Dateien.</p>
       </section>
+
       <section id="hosting">
         <h2>Hosting und Server-Logfiles</h2>
 
         <div class="rechtsblock">
           <dl class="zeile">
-            <dt>Hosting-Anbieter</dt><dd><span class="platzhalter">[Anbieter, Anschrift]</span></dd>
-            <dt>Serverstandort</dt><dd><span class="platzhalter">[z. B. Deutschland / EU]</span></dd>
-            <dt>Auftragsverarbeitungsvertrag</dt><dd><span class="platzhalter">[abgeschlossen am … / noch abzuschließen]</span></dd>
+            <dt>Hosting-Anbieter</dt><dd><span class="platzhalter">[Firma, Adresse]</span></dd>
+            <dt>Serverstandort</dt><dd><span class="platzhalter">[Land]</span></dd>
           </dl>
         </div>
-        <p>Beim Aufruf der Website werden durch den Hoster automatisch Daten in Server-Logfiles erfasst, die der
-        Browser übermittelt: aufgerufene Seite, Datum und Uhrzeit, übertragene Datenmenge, Referrer,
-        Browsertyp und -version, Betriebssystem sowie die IP-Adresse. Diese Verarbeitung ist für den Betrieb und
-        die Sicherheit der Seite erforderlich; Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Eine Zusammenführung
-        mit anderen Datenquellen findet nicht statt.</p>
-        <p>Speicherdauer: <span class="platzhalter">[z. B. 7 Tage]</span>.</p>
-
+        <p>Beim Aufruf der Seite übermittelt Ihr Browser technisch bedingt Daten, die der Hosting-Anbieter in
+        Logfiles festhält: IP-Adresse, Datum und Uhrzeit, aufgerufene Datei, übertragene Datenmenge,
+        Browsertyp und Betriebssystem. Diese Daten dienen dem Betrieb und der Sicherheit des Servers, werden
+        nicht mit anderen Quellen zusammengeführt und nach <span class="platzhalter">[Anzahl]</span> Tagen
+        gelöscht.</p>
+        <p>Der Hosting-Anbieter bearbeitet die Daten im Auftrag. Nach Art. 9 DSG braucht es dafür eine
+        vertragliche Grundlage — bei den gängigen Anbietern ist sie Teil der Nutzungsbedingungen oder wird
+        als separater Auftragsbearbeitungsvertrag abgeschlossen.</p>
       </section>
+
       <section id="schriften">
-        <h2>Google Fonts — hier besteht Handlungsbedarf</h2>
+        <h2>Schriften und Fremdinhalte</h2>
 
         <div class="hinweis">
-          <span class="titel">Konkret auf dieser Seite</span>
-          Die Website bindet die Schriften <em>Archivo</em> und <em>Inter</em> derzeit direkt von den Servern
-          von Google ein. Dabei wird beim Seitenaufruf die IP-Adresse der Besucherin oder des Besuchers an
-          Google übertragen — ohne dass vorher eingewilligt wurde. Genau das war Gegenstand einschlägiger
-          Gerichtsentscheidungen und ist der häufigste Abmahngrund bei kleinen Websites.
+          <span class="titel">Erledigt</span>
+          Die Schriften Archivo und Inter werden vom eigenen Server ausgeliefert
+          (<code>assets/fonts/</code>). Es besteht keine Verbindung zu Google Fonts, und es wird keine
+          IP-Adresse an einen Dritten übertragen.
         </div>
-        <p><strong>Empfohlene Lösung:</strong> Die Schriftdateien lokal ausliefern und im Stylesheet über
-        <code>@font-face</code> einbinden. Dann verlässt kein Datum die eigene Domain, der Absatz hier entfällt
-        ersatzlos, und ein Einwilligungsbanner wird dafür nicht gebraucht. Solange die Einbindung über Google
-        läuft, gilt:</p>
-        <div class="rechtsblock">
-          <p>Diese Website nutzt Schriftarten des Anbieters Google Ireland Limited, Gordon House, Barrow Street,
-          Dublin 4, Irland. Beim Aufruf einer Seite lädt Ihr Browser die benötigten Schriften von einem Server
-          von Google. Dabei wird Ihre IP-Adresse an Google übermittelt und kann in die USA übertragen werden.
-          Rechtsgrundlage ist Ihre Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1 TDDDG, die Sie
-          jederzeit widerrufen können.</p>
-        </div>
-
+        <p>Auch sonst lädt die Seite nichts von fremden Servern: keine Kartendienste, keine eingebetteten
+        Videos, keine Schaltflächen sozialer Netzwerke. Damit entsteht beim blossen Lesen der Seite ausser
+        den Server-Logfiles oben kein Datensatz.</p>
       </section>
+
       <section id="kontakt">
-        <h2>Kontaktaufnahme</h2>
+        <h2>Kontaktaufnahme und Anfrageformular</h2>
 
-        <p>Wenn Sie per E-Mail Kontakt aufnehmen, werden Ihre Angaben zur Bearbeitung der Anfrage und für den
-        Fall von Anschlussfragen gespeichert. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO bei
-        vertragsbezogenen Anfragen, sonst Art. 6 Abs. 1 lit. f DSGVO.</p>
-        <p>Die Daten werden gelöscht, sobald die Anfrage abschließend bearbeitet ist und keine gesetzlichen
-        Aufbewahrungsfristen entgegenstehen. Ein Kontaktformular besteht auf dieser Website derzeit nicht;
-        wird eines ergänzt, gehört es hier beschrieben.</p>
-
+        <p>Das Formular auf der Seite <a href="angebot.html">Beratung</a> sendet nichts an diese Website.
+        Es setzt aus Ihren Eingaben eine E-Mail zusammen und öffnet damit Ihr eigenes E-Mail-Programm —
+        abgeschickt wird sie erst, wenn Sie das tun. Bis dahin bleiben die Eingaben in Ihrem Browser; auf dem
+        Server dieser Website kommen sie nie an.</p>
+        <p>Schreiben Sie eine E-Mail, werden Ihre Angaben zur Bearbeitung der Anfrage verwendet und im
+        Postfach aufbewahrt, solange dies für die Korrespondenz nötig ist. Eine Weitergabe an Dritte findet
+        nicht statt.</p>
       </section>
+
+      <section id="beratung">
+        <h2>Beratungsaufträge</h2>
+
+        <p>Kommt ein Beratungsauftrag zustande, werden die dafür nötigen Daten bearbeitet: Name, Adresse,
+        Kontaktangaben, die Angaben zum Bauvorhaben sowie allfällige Pläne und Fotos, die Sie zusenden.
+        Grundlage ist der Vertrag; ohne diese Daten lässt sich der Auftrag nicht erfüllen.</p>
+        <p>Rechnungen und die zugehörigen Unterlagen unterliegen der Aufbewahrungspflicht nach Art. 958f OR
+        und werden zehn Jahre aufbewahrt. Pläne, Fotos und Korrespondenz werden
+        <span class="platzhalter">[Frist eintragen, z. B. zwei Jahre]</span> nach Abschluss gelöscht, sofern
+        Sie nichts anderes wünschen. Beispiele aus Aufträgen werden nur mit ausdrücklicher Zustimmung und
+        ohne Rückschluss auf die Kundschaft veröffentlicht.</p>
+      </section>
+
       <section id="newsletter">
         <h2>Newsletter</h2>
 
+        <p>Das Anmeldefeld im Fussbereich ist derzeit ohne Funktion und meldet das auch; es wird nichts
+        gespeichert und nichts versendet.</p>
         <div class="hinweis blau">
-          <span class="titel">Noch nicht aktiv</span>
-          Das Anmeldeformular im Seitenfuß ist derzeit ohne Funktion und sendet keine Daten. Erst mit dem
-          Anschluss an einen Versanddienst wird der folgende Abschnitt wirksam — und dann gehört die
-          Einwilligungserklärung auch an das Formular selbst, nicht nur hierher.
+          <span class="titel">Vor der Inbetriebnahme</span>
+          Wird ein Verteiler eingerichtet, gehören hierher: Name des Anbieters, Ablauf der Anmeldung mit
+          Bestätigungs-E-Mail, welche Daten gespeichert werden und der Hinweis auf die jederzeitige
+          Abmeldung. Nach Art. 3 Abs. 1 lit. o UWG ist Massenwerbung per E-Mail ohne Einwilligung
+          unlauter — die Einwilligung muss also vor dem ersten Versand vorliegen und nachweisbar sein.
         </div>
-        <div class="rechtsblock">
-          <dl class="zeile">
-            <dt>Versanddienstleister</dt><dd><span class="platzhalter">[Anbieter]</span></dd>
-            <dt>Sitz des Anbieters</dt><dd><span class="platzhalter">[Anschrift, Land]</span></dd>
-            <dt>Auftragsverarbeitungsvertrag</dt><dd><span class="platzhalter">[abgeschlossen am … / noch abzuschließen]</span></dd>
-          </dl>
-        </div>
-        <p>Für den Versand wird die E-Mail-Adresse benötigt. Die Anmeldung erfolgt im Double-Opt-In-Verfahren:
-        Nach der Eintragung erhalten Sie eine Bestätigungsmail; erst nach dem Bestätigen wird die Adresse in den
-        Verteiler aufgenommen. Anmeldezeitpunkt und IP-Adresse werden zum Nachweis der Einwilligung gespeichert.</p>
-        <p>Rechtsgrundlage ist Ihre Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO. Sie können sie jederzeit
-        widerrufen — über den Abmeldelink in jeder Mail oder per Nachricht an die oben genannte Adresse. Nach der
-        Abmeldung wird die Adresse gelöscht, sofern sie nicht zum Nachweis in einer Sperrliste verbleiben muss.</p>
-
       </section>
+
       <section id="partner">
-        <h2>Affiliate-Links und Partnerprogramme</h2>
+        <h2>Partnerlinks</h2>
 
-        <p>Auf der Seite <em>Empfehlungen</em> sind Produktlinks vorgesehen, die als Affiliate-Links ausgeführt
-        werden sollen. Derzeit sind sie als <em>„Partnerlink folgt“</em> gekennzeichnet und ohne Ziel — es findet
-        keine Verarbeitung statt.</p>
-        <p>Sobald echte Partnerlinks eingebunden werden, gilt:</p>
+        <p>Die Produktempfehlungen sollen künftig Partnerlinks werden. Wer einen solchen Link anklickt,
+        verlässt diese Website; der verlinkte Shop und sein Partnernetzwerk setzen dann in der Regel ein
+        Cookie oder einen Parameter, um den Kauf der Empfehlung zuzuordnen. Diese Bearbeitung findet auf
+        deren Systemen statt, nicht hier.</p>
         <div class="rechtsblock">
-          <p>Beim Klick auf einen Partnerlink werden Sie zum Angebot von <span class="platzhalter">[Name des Partnerprogramms]</span> weitergeleitet. Der
-          Partner kann dabei Cookies setzen oder vergleichbare Techniken einsetzen, um einen späteren Kauf der
-          Vermittlung zuzuordnen. Verarbeitet werden dabei insbesondere Ihre IP-Adresse, Zeitpunkt und Herkunft
-          des Klicks. Für die Verarbeitung auf den Seiten des Partners ist dieser verantwortlich; Einzelheiten
-          entnehmen Sie dessen Datenschutzerklärung. Rechtsgrundlage ist Ihre Einwilligung nach
-          Art. 6 Abs. 1 lit. a DSGVO in Verbindung mit § 25 Abs. 1 TDDDG.</p>
+          <p>Aktiv sind derzeit: <span class="platzhalter">[Namen der Partnerprogramme eintragen, sobald die
+          ersten Links gesetzt sind — mit Verweis auf deren Datenschutzerklärung.]</span></p>
         </div>
-        <p>Erfordert das Partnerprogramm ein Tracking-Cookie, darf der Link erst nach erteilter Einwilligung
-        gesetzt werden. Das ist der eigentliche Grund, warum diese Seite dann ein Einwilligungsbanner braucht.</p>
-
+        <p>Solange kein Link scharf ist, verlässt niemand die Seite über einen Partnerlink, und es wird nichts
+        gesetzt. Wer keine Zuordnung möchte, ruft den Shop direkt auf statt über den Link.</p>
       </section>
+
       <section id="cookies">
-        <h2>Cookies und Einwilligung</h2>
+        <h2>Cookies</h2>
 
-        <p><strong>Stand heute:</strong> Die Seite setzt keine Cookies, bindet keine Analysedienste ein und
-        speichert nichts im lokalen Speicher des Browsers. Ein Einwilligungsbanner ist deshalb im jetzigen
-        Zustand nicht erforderlich — abgesehen von der oben beschriebenen Einbindung der Schriften, die besser
-        durch lokales Ausliefern gelöst wird als durch ein Banner.</p>
-        <p>Sobald Partnerlinks, Reichweitenmessung, eingebettete Videos oder Kartendienste hinzukommen, ändert
-        sich das: Diese Dienste dürfen erst nach ausdrücklicher, vorheriger und widerrufbarer Einwilligung
-        geladen werden. Der Abschnitt ist dann um die eingesetzten Dienste, ihre Zwecke, Empfänger,
-        Speicherdauern und den Weg zum Widerruf zu ergänzen.</p>
-
+        <p>Diese Website setzt keine Cookies. Es gibt keine Anmeldung, keine Warenkorbfunktion und keine
+        Reichweitenmessung. Ein Einwilligungsbanner ist deshalb nicht nötig — und wäre es, würde es hier
+        stehen statt einer Behauptung.</p>
+        <p>Der Browser legt lediglich die üblichen technischen Kopien der Seite im Zwischenspeicher ab.
+        Das lässt sich in den Browsereinstellungen steuern.</p>
       </section>
+
+      <section id="ausland">
+        <h2>Bekanntgabe ins Ausland</h2>
+
+        <p>Personendaten werden ins Ausland nur bekanntgegeben, soweit dies für den Betrieb nötig ist —
+        etwa wenn der Hosting-Anbieter seinen Sitz oder seine Server ausserhalb der Schweiz hat. Massgeblich
+        sind Art. 16 f. DSG: Der Zielstaat muss über einen angemessenen Datenschutz verfügen, andernfalls
+        braucht es geeignete Garantien wie die Standardvertragsklauseln.</p>
+        <p><span class="platzhalter">[Nach der Wahl des Hosting-Anbieters eintragen, in welche Länder Daten
+        gelangen und auf welcher Grundlage.]</span></p>
+      </section>
+
       <section id="rechte">
         <h2>Ihre Rechte</h2>
 
-        <p>Sie haben gegenüber dem Verantwortlichen folgende Rechte hinsichtlich der Sie betreffenden
-        personenbezogenen Daten:</p>
+        <p>Ihnen stehen gegenüber dem Verantwortlichen die Rechte des DSG zu:</p>
         <ul>
-          <li><strong>Auskunft</strong> über die verarbeiteten Daten (Art. 15 DSGVO)</li>
-          <li><strong>Berichtigung</strong> unrichtiger Daten (Art. 16 DSGVO)</li>
-          <li><strong>Löschung</strong> (Art. 17 DSGVO)</li>
-          <li><strong>Einschränkung der Verarbeitung</strong> (Art. 18 DSGVO)</li>
-          <li><strong>Datenübertragbarkeit</strong> (Art. 20 DSGVO)</li>
-          <li><strong>Widerspruch</strong> gegen Verarbeitungen auf Grundlage berechtigter Interessen
-          (Art. 21 DSGVO)</li>
-          <li><strong>Widerruf einer Einwilligung</strong> mit Wirkung für die Zukunft (Art. 7 Abs. 3 DSGVO)</li>
+          <li><strong>Auskunft</strong> darüber, ob und welche Daten über Sie bearbeitet werden (Art. 25 DSG).
+          Die Auskunft ist in der Regel kostenlos und wird innert 30 Tagen erteilt.</li>
+          <li><strong>Berichtigung</strong> unrichtiger Daten (Art. 32 DSG).</li>
+          <li><strong>Löschung oder Vernichtung</strong> von Daten, deren Bearbeitung nicht mehr nötig oder
+          nicht zulässig ist.</li>
+          <li><strong>Widerspruch</strong> gegen eine Bearbeitung sowie Widerruf einer erteilten Einwilligung,
+          jederzeit und ohne Angabe von Gründen.</li>
+          <li><strong>Datenherausgabe</strong> in einem gängigen elektronischen Format, soweit die Daten
+          automatisiert und mit Ihrer Einwilligung oder im Zusammenhang mit einem Vertrag bearbeitet werden
+          (Art. 28 DSG).</li>
         </ul>
-        <p>Zur Ausübung genügt eine formlose Nachricht an die oben genannte Adresse.</p>
-        <h3>Beschwerderecht</h3>
-        <p>Unabhängig davon steht Ihnen ein Beschwerderecht bei einer Datenschutz-Aufsichtsbehörde zu,
-        insbesondere in dem Mitgliedstaat Ihres Aufenthaltsorts, Ihres Arbeitsplatzes oder des mutmaßlichen
-        Verstoßes. Zuständige Aufsichtsbehörde für den Verantwortlichen: <span class="platzhalter">[Behörde, Anschrift, Website]</span>.</p>
-
+        <p>Eine E-Mail an die Adresse oben genügt. Zur Sicherheit kann ein Identitätsnachweis verlangt werden —
+        Auskunft an die falsche Person wäre selbst eine Datenschutzverletzung.</p>
+        <p>Sie können sich ausserdem beim <strong>Eidgenössischen Datenschutz- und Öffentlichkeitsbeauftragten
+        (EDÖB)</strong>, Feldeggweg 1, 3003 Bern, melden.</p>
       </section>
+
+      <section id="dsgvo">
+        <h2>Kundschaft in der EU</h2>
+
+        <p>Die Beratung wird auch Kundinnen und Kunden in Deutschland und Österreich angeboten. Richtet sich
+        ein Angebot an Personen in der EU, kann die DSGVO zusätzlich zum DSG anwendbar sein (Art. 3 Abs. 2
+        DSGVO). Dann kommen weitere Pflichten hinzu — unter anderem die Nennung der Rechtsgrundlage je
+        Bearbeitung, das Beschwerderecht bei einer EU-Aufsichtsbehörde und unter Umständen ein Vertreter in
+        der Union nach Art. 27 DSGVO.</p>
+        <div class="hinweis blau">
+          <span class="titel">Bitte prüfen</span>
+          Die Antwort hängt daran, wie ausdrücklich sich das Angebot an EU-Kundschaft richtet. Wer den
+          Aufwand vermeiden will, beschränkt die Beratung ausdrücklich auf die Schweiz und streicht die
+          entsprechenden Zusagen auf der Beratungsseite. Beides ist zulässig — nur unentschieden bleiben
+          sollte man nicht.
+        </div>
+      </section>
+
       <section id="sicherheit">
         <h2>Sicherheit und Änderungen</h2>
 
-        <p>Die Website wird über eine verschlüsselte Verbindung (TLS) ausgeliefert. Eine verschlüsselte
-        Verbindung erkennen Sie am Schlosssymbol in der Adresszeile Ihres Browsers.</p>
-        <p>Diese Datenschutzerklärung wird angepasst, sobald sich die Verarbeitung auf der Website ändert —
-        etwa durch neue Dienste oder Funktionen.</p>
-        <p>Stand dieser Fassung: <span class="platzhalter">[Datum]</span>.</p>
-
+        <p>Die Website wird über eine verschlüsselte Verbindung (HTTPS) ausgeliefert. Angemessene technische
+        und organisatorische Massnahmen nach Art. 8 DSG schützen die Daten vor unbefugtem Zugriff; einen
+        vollständigen Schutz kann allerdings niemand zusichern.</p>
+        <p>Diese Erklärung wird angepasst, wenn sich das Angebot ändert — etwa wenn ein Newsletter startet
+        oder die ersten Partnerlinks scharf geschaltet werden. Es gilt die jeweils hier veröffentlichte
+        Fassung. Stand: <span class="platzhalter">[Datum eintragen]</span>.</p>
       </section>
+
       <section id="pruefen">
         <h2>Was vor dem Livegang zu klären ist</h2>
 
         <ul class="pruefliste">
-          <li>Schriften lokal ausliefern — damit entfällt der heikelste Punkt dieser Erklärung ersatzlos.</li>
-          <li>Hosting-Anbieter, Serverstandort und Auftragsverarbeitungsvertrag eintragen.</li>
-          <li>Newsletter-Anbieter festlegen, Double-Opt-In einrichten, Einwilligungstext an das Formular setzen.</li>
-          <li>Partnerprogramme benennen und klären, ob sie Tracking-Cookies verlangen — davon hängt ab, ob ein
-          Einwilligungsbanner nötig wird.</li>
-          <li>Zuständige Aufsichtsbehörde nach dem Sitz des Verantwortlichen eintragen. Bei einem Sitz in der
-          Schweiz gilt statt der DSGVO das revidierte DSG — dann ist dieser Entwurf umzuschreiben, nicht nur
-          auszufüllen.</li>
-          <li>Verzeichnis von Verarbeitungstätigkeiten anlegen, sofern erforderlich.</li>
-          <li>Den Entwurf fachkundig prüfen lassen.</li>
+          <li>Verantwortlichen, Adresse und E-Mail eintragen — Pflicht nach Art. 19 Abs. 2 DSG.</li>
+          <li>Hosting-Anbieter, Serverstandort, Aufbewahrungsdauer der Logfiles und die Grundlage der
+          Auftragsbearbeitung eintragen.</li>
+          <li>Bei Servern ausserhalb der Schweiz die Bekanntgabe ins Ausland konkret beschreiben.</li>
+          <li>Aufbewahrungsfrist für Unterlagen aus Beratungsaufträgen festlegen.</li>
+          <li>Entscheiden, ob EU-Kundschaft bedient wird — davon hängt ab, ob die DSGVO zusätzlich gilt.</li>
+          <li>Partnerprogramme benennen und klären, ob deren Tracking eine Einwilligung verlangt.</li>
+          <li>Beim Start des Newsletters den Abschnitt ersetzen und die Einwilligung ans Formular setzen.</li>
+          <li>Stand-Datum setzen und den Entwurf fachkundig prüfen lassen. Dieser Text ist keine
+          Rechtsberatung.</li>
         </ul>
-
       </section>
+
     </div>
   </div>
 </article>
@@ -283,6 +300,15 @@
           <li><a href="ratgeber/verspachteln.html">Richtig verspachteln</a></li>
           <li><a href="ratgeber/akustikdecke.html">Akustikdecke montieren</a></li>
           <li><a href="ratgeber/werkzeug.html">Werkzeug-Grundausstattung</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Beratung</h3>
+        <ul>
+          <li><a href="angebot.html#kurzberatung">Kurzberatung</a></li>
+          <li><a href="angebot.html#planpruefung">Planprüfung</a></li>
+          <li><a href="angebot.html#akustik-check">Akustik-Check</a></li>
+          <li><a href="angebot.html#abnahme">Q-Stufen-Abnahme</a></li>
         </ul>
       </div>
       <div>

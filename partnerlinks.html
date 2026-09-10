@@ -7,9 +7,9 @@
 <meta name="description" content="Interne Arbeitsliste: alle Produktempfehlungen mit Platz für Partnerprogramm und Affiliate-Link.">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#EDEAE2">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/schriften.css">
 <link rel="stylesheet" href="assets/css/site.css">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23A6472A'/%3E%3Crect x='6' y='7' width='4' height='18' fill='%23EDEAE2'/%3E%3Crect x='14' y='7' width='4' height='18' fill='%23EDEAE2'/%3E%3Crect x='22' y='7' width='4' height='18' fill='%23EDEAE2'/%3E%3C/svg%3E">
 <style>
@@ -97,31 +97,36 @@
     <div class="prosa" style="max-width:none;">
 
       <h2 id="vorgehen" style="margin-top:0;">So wird ein Link eingetragen</h2>
-      <p>Jede Produktkarte in <code>index.html</code> trägt eine Kennung. Für das Beispiel
-      <code>festool-planex-lhs-2-225-eqi</code> sieht der Link heute so aus:</p>
+      <p>Alle Ziel-URLs stehen an einer einzigen Stelle: <code>assets/js/partnerlinks.js</code>.
+      Dort ist jede der 29 Produktkennungen mit leerem Wert vorbereitet. Eintragen heisst: die
+      Anführungszeichen füllen.</p>
       <div class="rechtsblock">
-        <p><code>&lt;a class="link" href="#" data-affiliate="pending"
-        data-produkt="festool-planex-lhs-2-225-eqi"&gt;Zum Produkt →&lt;/a&gt;</code></p>
-        <p><code>&lt;span class="status"&gt;Partnerlink folgt&lt;/span&gt;</code></p>
+        <p><code>/* Festool PLANEX LHS 2 225 EQI */</code></p>
+        <p><code>'festool-planex-lhs-2-225-eqi': 'https://…',</code></p>
       </div>
-      <p>Nach dem Eintragen des echten Links wird daraus:</p>
-      <div class="rechtsblock">
-        <p><code>&lt;a class="link" href="https://…" data-affiliate="aktiv"
-        data-produkt="festool-planex-lhs-2-225-eqi" rel="sponsored nofollow noopener"
-        target="_blank"&gt;Zum Produkt →&lt;/a&gt;</code></p>
-        <p><code>&lt;span class="status"&gt;Anzeige&lt;/span&gt;</code></p>
-      </div>
+      <p>Beim nächsten Laden der Startseite setzt der Code für jede ausgefüllte Zeile selbstständig:</p>
+      <ul>
+        <li><code>href</code> auf die Ziel-URL, <code>target="_blank"</code></li>
+        <li><code>rel="sponsored nofollow noopener"</code></li>
+        <li>den Status der Karte von <em>„Partnerlink folgt“</em> auf <em>„Anzeige“</em></li>
+      </ul>
+      <p>An der Produktkarte in <code>index.html</code> ist dafür nichts zu ändern. Wie viele Karten
+      schon verdienen, meldet die Browserkonsole beim Laden der Startseite.</p>
 
       <div class="hinweis">
         <span class="titel">Drei Dinge, die dabei nicht vergessen werden dürfen</span>
         <p><strong>1. Kennzeichnung am Link.</strong> Der Hinweis in der Werbekennzeichnung unten auf der
         Startseite reicht nicht. Werbliche Links müssen auch dort erkennbar sein, wo sie stehen — deshalb
-        wandert <em>„Partnerlink folgt“</em> nicht weg, sondern wird zu <em>„Anzeige“</em>.</p>
+        wandert <em>„Partnerlink folgt“</em> nicht weg, sondern wird zu <em>„Anzeige“</em>. Das erledigt der
+        Code automatisch; er kann es nicht vergessen, ein Mensch schon.</p>
         <p><strong>2. <code>rel="sponsored"</code>.</strong> Bezahlte oder provisionierte Links werden so
         ausgezeichnet. Ohne das Attribut wertet Google sie als redaktionelle Empfehlung.</p>
         <p><strong>3. Datenschutz.</strong> Setzt das Partnerprogramm ein Tracking-Cookie, darf der Link erst
         nach Einwilligung gesetzt werden. Das ist der Punkt, ab dem die Seite ein Einwilligungsbanner braucht —
         siehe <a href="datenschutz.html#partner">Datenschutzerklärung</a>.</p>
+        <p><strong>Und einer, der Geld kostet, wenn er fehlt:</strong> je Platzierung einen eigenen
+        Kampagnenparameter (<code>subid</code>, <code>clickref</code>) an die URL hängen. Sonst lässt sich
+        später nicht sagen, welche Karte tatsächlich verkauft.</p>
       </div>
 
       <h2 id="programme">Wo die Links herkommen können</h2>
@@ -135,6 +140,18 @@
         <li><strong>Allgemeine Netzwerke.</strong> Große Marktplätze und Affiliate-Netzwerke decken viel ab,
         zahlen bei Baustoffen aber wenig und führen bei Platten und Profilen selten zu einem Kauf.</li>
       </ul>
+      <div class="hinweis blau">
+        <span class="titel">Zwei konkrete erste Adressen</span>
+        <p><strong>Digitec Galaxus</strong> — grösster Schweizer Onlineshop, hoher durchschnittlicher
+        Warenkorb, die Leserschaft kauft dort ohnehin. Anmeldung über
+        <code>anmelden@digitecgalaxus.ch</code>.</p>
+        <p><strong>Amazon PartnerNet</strong> — sofort zugänglich, bis 8 % in Baumarkt und Handwerkzeug,
+        aber nur 24 Stunden Cookie-Laufzeit. Taugt für Werkzeug, kaum für Systemmaterial.</p>
+        <p>Beide Anmeldungen dauern Tage bis Wochen und gehören deshalb früh angestossen — auch wenn die
+        Einnahmen erst mit der Reichweite kommen. Die Rechnung dazu steht in
+        <code>MONETARISIERUNG.md</code>.</p>
+      </div>
+
       <p>Für Systemmaterial wie Platten, Profile und Dämmung lohnt sich die Frage, ob ein Link überhaupt
       sinnvoll ist: Diese Ware wird beim Händler vor Ort palettenweise gekauft, nicht online. Bei solchen
       Karten kann der Link auch entfallen und durch einen Verweis auf das Datenblatt des Herstellers ersetzt

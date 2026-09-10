@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Domain ist ein Platzhalter; vor dem Livegang ersetzen. partnerlinks.html
+     ist die interne Arbeitsliste und steht bewusst nicht drin. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://wandfuerwand.ch/</loc>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://wandfuerwand.ch/angebot.html</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://wandfuerwand.ch/ratgeber/verspachteln.html</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://wandfuerwand.ch/ratgeber/akustikdecke.html</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://wandfuerwand.ch/ratgeber/werkzeug.html</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://wandfuerwand.ch/impressum.html</loc>
+    <priority>0.2</priority>
+  </url>
+  <url>
+    <loc>https://wandfuerwand.ch/datenschutz.html</loc>
+    <priority>0.2</priority>
+  </url>
+</urlset>
