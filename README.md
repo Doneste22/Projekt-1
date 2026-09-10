@@ -19,6 +19,8 @@ datenschutz.html              Datenschutzerklärung — Entwurf mit Platzhaltern
 partnerlinks.html             Interne Arbeitsliste für die Affiliate-Links
 assets/css/site.css           Design-System (Tokens, Komponenten, Raster)
 assets/js/site.js             Mobile Navigation, Diagramm-Tooltip, Schichten-Highlight
+scripts/setup-package-manager.js
+                              Paketmanager für Projektwerkzeuge festlegen
 ```
 
 Extern geladen werden nur die Schriften (Archivo, Inter) von Google Fonts;
@@ -96,6 +98,51 @@ Beim Eintragen eines echten Links wird `href` gesetzt, `data-affiliate` auf `akt
 geändert, `rel="sponsored nofollow noopener"` ergänzt und der Status von
 „Partnerlink folgt“ auf „Anzeige“ gesetzt. Die Seite selbst ist nicht verlinkt und
 auf `noindex` gesetzt; sie kann vor dem Livegang gelöscht werden.
+
+## Paketmanager
+
+Die Website selbst hat keine Abhängigkeiten und keinen Build-Schritt — an dieser
+Stelle ändert sich nichts. Wer aber Werkzeuge um das Projekt herum betreibt
+(Linter, Linkchecker, ein späterer Build), legt mit `scripts/setup-package-manager.js`
+fest, welcher Paketmanager dafür gilt, statt die Wahl in jeder Anleitung erneut zu
+treffen.
+
+```
+# Über die Umgebungsvariable (gilt nur für die laufende Shell)
+export CLAUDE_PACKAGE_MANAGER=pnpm
+
+# Global, für alle Projekte dieses Rechners
+node scripts/setup-package-manager.js --global pnpm
+
+# Nur für dieses Projekt (eingecheckt)
+node scripts/setup-package-manager.js --project bun
+
+# Nur für dieses Projekt, nicht eingecheckt
+node scripts/setup-package-manager.js --local yarn
+
+# Aktuelle Einstellung samt Quelle anzeigen
+node scripts/setup-package-manager.js --detect
+```
+
+Geschrieben wird jeweils `env.CLAUDE_PACKAGE_MANAGER` in einer `settings.json`
+— global in `~/.claude/`, projektweit in `.claude/`. Vorhandene Schlüssel bleiben
+dabei unangetastet, `--unset --global|--project|--local` entfernt den Eintrag wieder.
+
+Beim Auflösen gewinnt der erste Treffer in dieser Reihenfolge:
+
+| Rang | Quelle |
+| --- | --- |
+| 1 | Umgebungsvariable `CLAUDE_PACKAGE_MANAGER` |
+| 2 | `.claude/settings.local.json` im Projekt |
+| 3 | `.claude/settings.json` im Projekt |
+| 4 | `~/.claude/settings.json` |
+| 5 | Feld `packageManager` in `package.json`, sonst vorhandenes Lockfile |
+| 6 | Vorgabe `npm` |
+
+`--detect` nennt neben dem Ergebnis auch die Quelle und listet die überstimmten
+Kandidaten — das beantwortet die eigentliche Frage, warum gerade *dieser*
+Paketmanager gilt. Mit `--json` gibt es dieselbe Auskunft maschinenlesbar.
+Erlaubt sind `npm`, `pnpm`, `yarn` und `bun`.
 
 ## Redaktionelle Hinweise
 

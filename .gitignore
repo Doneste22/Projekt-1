@@ -1,0 +1,2 @@
+# Lokale, nicht eingecheckte Einstellungen (siehe scripts/setup-package-manager.js --local)
+.claude/settings.local.json
