@@ -45,11 +45,9 @@ von −45 % heisst klar „nein". Als Betrag angezeigt („Stärke 45 %") sähe
 dieselbe Ablehnung aus wie ein knapp verfehltes „ja" — genau die Sorte
 Unschärfe, mit der anderswo Zustimmung erzeugt wird.
 
-**Echter Handel ist nicht implementiert**, und das ist Absicht. `LiveBroker`
-wirft beim Erzeugen eine Ausnahme. Dafür fehlen Schlüsselverwaltung,
-Auftragsabgleich nach Verbindungsabbruch, Umgang mit Teilausführungen und eine
-Notabschaltung — alles Dinge, deren Fehlen erst dann auffällt, wenn echtes
-Geld unterwegs ist.
+**Papierbetrieb ist die Vorgabe.** Echter Handel an der Börse ist eingebaut,
+aber er verlangt eine ausdrückliche Scharfschaltung und arbeitet unter
+absoluten Betragsgrenzen — siehe [Echter Handel](#echter-handel) am Ende.
 
 ## Was die Prüfung ergeben hat
 
@@ -105,7 +103,11 @@ assistant/backtest.py     Backtest-Maschine und Kennzahlen
 assistant/validate.py     Vorwärtsprüfung gegen Überanpassung
 assistant/runner.py       Der selbstständige Betrieb
 assistant/report.py       Textbericht und HTML mit Inline-SVG-Kapitalkurve
-tests/                    62 Tests
+assistant/exchange.py     Signierter Kraken-Zugang, Nonce, Drossel, Paar-Regeln
+assistant/live.py         Echte Orders, Teilausführungen, Abgleich mit der Börse
+assistant/safety.py       Notbremse, absolute Grenzen, Auslöser
+assistant/notify.py       Weckruf per Webhook — unbeaufsichtigt heisst nicht unbemerkt
+tests/                    106 Tests
 ```
 
 ### Die drei Regeln der Backtest-Maschine
@@ -191,10 +193,12 @@ das Rauschen für Fortschritt.
 python3 -m unittest discover -s tests -t .
 ```
 
-62 Tests. Die Indikatoren werden gegen Wilders Original-Datenreihe aus *New
-Concepts in Technical Trading Systems* geprüft, die Backtest-Maschine gegen
-konstruierte Fälle mit von Hand bekanntem Ergebnis, der Dauerbetrieb gegen
-eine erfundene Kursquelle ohne Netz.
+106 Tests, alle ohne Netz. Die Indikatoren werden gegen Wilders
+Original-Datenreihe aus *New Concepts in Technical Trading Systems* geprüft,
+die Backtest-Maschine gegen konstruierte Fälle mit von Hand bekanntem
+Ergebnis, der Dauerbetrieb gegen eine erfundene Kursquelle, und der echte
+Handel gegen eine nachgebaute Börse, die sich auf Kommando danebenbenimmt —
+teilfüllt, gar nicht füllt, mitten in der Order die Verbindung verliert.
 
 ## Was fehlt
 
@@ -206,9 +210,178 @@ Ehrliche Liste, keine Ausreden:
 * **Keine Berücksichtigung von Steuern.**
 * **Der Papierbetrieb füllt zum letzten Kurs**, nicht gegen echte Orderbuchtiefe.
   Bei grossen Beträgen ist das zu optimistisch.
-* **Echter Handel** — bewusst gesperrt, siehe oben.
+* **Kein Konto lief je damit.** Was am echten Handel geprüft ist und was nicht,
+  steht in [Was geprüft ist — und was nicht](#was-geprüft-ist--und-was-nicht).
 
 ## Rechtliches
 
-Keine Anlageberatung. Keine Vorhersage. Simulation auf historischen Kursen.
-Es wird kein Geld bewegt.
+Keine Anlageberatung, keine Vorhersage. Im Papierbetrieb wird kein Geld
+bewegt. Im scharfen Betrieb wird echtes Geld bewegt, und das Risiko trägt,
+wer die Scharfschaltung bestätigt.
+
+---
+
+# Echter Handel
+
+Ab hier wird Geld bewegt. Der Abschnitt beschreibt, was dafür eingebaut ist —
+und was davon ungetestet bleibt, weil hier nie ein echtes Konto lief.
+
+## Der Weg dorthin
+
+```
+python3 -m assistant konto                    # Zugang prüfen, bewegt nichts
+python3 -m assistant live                     # Probelauf: Börse prüft jede Order, führt keine aus
+python3 -m assistant live --scharf            # echte Orders, mit Rückfrage
+python3 -m assistant notbremse ziehen         # sofort anhalten
+python3 -m assistant notbremse schliessen     # anhalten und Position auflösen
+python3 -m assistant sicherung                # Schutzschaltungen ansehen
+```
+
+Der Probelauf ist keine Simulation: Jede Order geht mit `validate=true` an
+Kraken und wird dort gegen dieselben Regeln geprüft wie im Ernstfall —
+Mindestmenge, Mindestwert, Nachkommastellen, Guthaben. Nur ausgeführt wird
+nichts. Wer dort sauber durchläuft, scheitert später nicht an Formalien.
+
+## Schlüssel
+
+Niemals im Quelltext, niemals im Repository. Zwei Wege:
+
+```
+export KRAKEN_API_KEY=...
+export KRAKEN_API_SECRET=...
+```
+
+oder eine Datei mit zwei Zeilen (Schlüssel, dann Geheimnis):
+
+```
+printf '%s\n%s\n' "$KEY" "$SECRET" > betrieb/kraken.key
+chmod 600 betrieb/kraken.key
+```
+
+Eine Schlüsseldatei, die auch anderen lesbar ist, wird **abgelehnt** statt
+benutzt. Das ist ein Vorfall, keine Unbequemlichkeit.
+
+Bei Kraken die Berechtigungen des Schlüssels eng setzen: *Query Funds*,
+*Query Open/Closed Orders*, *Create & Modify Orders*, *Cancel Orders*.
+**Kein Auszahlungsrecht.** Ein Schlüssel ohne Auszahlungsrecht kann im
+schlimmsten Fall schlecht handeln — aber nichts abtransportieren.
+
+## Die Scharfschaltung
+
+`--scharf` allein genügt nicht. Am Terminal ist ein Satz zu tippen. Für den
+unbeaufsichtigten Neustart über systemd oder `nohup` dient
+`HANDELSASSISTENT_SCHARF=ja-ich-will` — einmal bewusst gesetzt, nicht aus
+Versehen. Ohne Terminal und ohne diese Variable bricht der Start ab.
+
+## Was dich schützt
+
+| Schaltung | Was sie tut |
+| --- | --- |
+| `--max-order` | absolute Obergrenze je Order, Vorgabe 100 |
+| `--max-einsatz` | wie viel insgesamt im Markt stehen darf, Vorgabe 500 |
+| `--max-tagesverlust` | Pause bis zum nächsten Tag, Vorgabe 50 |
+| `--max-gesamtverlust` | dauerhafter Stopp, Vorgabe 150 |
+| `--max-orders` | Orders je Tag, Vorgabe 10 — Bremse gegen Endlosschleifen |
+| Kursalter | Kurse älter als 120 s → Stopp |
+| Fehlerkette | 5 Fehler in Folge → Stopp |
+| Guthabenabgleich | über 2 % unerklärte Abweichung → Stopp |
+| Notbremse | Datei `betrieb/NOTBREMSE` — wirkt sofort, von überall |
+
+Alle Grenzen sind **absolute Beträge**, nicht nur Prozente. Prozente skalieren
+mit einem falsch gelesenen Guthaben mit; eine Zahl in Euro tut das nicht.
+
+Ein ausgelöster Auslöser bleibt über Neustarts hinweg ausgelöst und muss von
+Hand zurückgesetzt werden (`sicherung --zuruecksetzen`). Wer das automatisch
+zurücksetzt, hat keine Sicherung, sondern eine Verzögerung.
+
+## Vier Entscheidungen, die Geld kosten können
+
+**Marktnahe Limit-Order statt Market-Order.** Eine Market-Order füllt zu jedem
+Preis; bricht das Orderbuch für Sekunden ein, kauft sie das Loch. Hier geht
+eine Limit-Order 0,5 % jenseits des Marktes raus (`--max-schlupf`). Sie füllt
+im Normalfall genauso sofort, aber nie schlechter als die Grenze. Der Preis
+dafür: In einem schnellen Markt füllt sie nicht. Für einen Assistenten, dem
+niemand zusieht, ist die nicht ausgeführte Order das kleinere Übel.
+
+**Keine Wiederholung nach Zeitüberschreitung.** Keine Antwort heisst nicht
+„nicht angekommen". Wiederholen kauft im schlechten Fall doppelt. Stattdessen
+trägt jede Order eine `userref`, und nach einem Abbruch wird bei der Börse
+gefragt, was tatsächlich geschah. Findet sich nichts, hält der Betrieb an.
+
+**Teilausführungen werden verbucht, wie sie sind.** Wer die gewünschte statt
+der gefüllten Menge einträgt, führt ab da ein falsches Depot und verkauft
+später etwas, das er nicht hat. Der Rest wird storniert, die Position trägt
+die tatsächliche Menge.
+
+**Abgleich vor der ersten Order.** Beim Start wird der eigene Zustand gegen
+die Börse geprüft: hängengebliebene Orders werden storniert, der Bestand mit
+dem eigenen Depot verglichen. Weicht etwas ab, wird angehalten statt geraten —
+eine Abweichung heisst, dass jemand oder etwas anderes dieses Konto bewegt hat.
+
+## Benachrichtigung
+
+Unbeaufsichtigt darf nicht unbemerkt heissen. Mit gesetzter Variable geht bei
+jedem Kauf, Verkauf und jeder Auslösung ein Weckruf raus:
+
+```
+export HANDELSASSISTENT_WEBHOOK=https://ntfy.sh/dein-geheimes-thema
+```
+
+Erkannt werden ntfy.sh, Discord, Slack und Telegram. Ein fehlgeschlagener
+Weckruf stört den Handel nie — er wird geschluckt und vermerkt.
+
+## Dauerbetrieb per systemd
+
+```ini
+# /etc/systemd/system/handelsassistent.service
+[Unit]
+Description=Handelsassistent
+After=network-online.target
+
+[Service]
+Type=simple
+User=handel
+WorkingDirectory=/opt/handelsassistent
+Environment=HANDELSASSISTENT_SCHARF=ja-ich-will
+Environment=HANDELSASSISTENT_WEBHOOK=https://ntfy.sh/dein-geheimes-thema
+EnvironmentFile=/etc/handelsassistent.env
+ExecStart=/usr/bin/python3 -m assistant --paar XBTUSD --takt 1h \
+          --strategie ausbruch --max-order 50 --max-einsatz 200 \
+          live --scharf --takt-sekunden 60
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
+```
+
+`/etc/handelsassistent.env` enthält die Schlüssel und gehört auf Modus 600.
+`Restart=on-failure` ist hier ungefährlich: Eine ausgelöste Sicherung liegt
+auf Platte, also startet der Dienst neu, sieht die Auslösung und handelt
+nicht.
+
+## Was geprüft ist — und was nicht
+
+**Geprüft** (106 Tests, ohne Netz, gegen eine nachgebaute Börse):
+die Signatur gegen Krakens veröffentlichten Testvektor; Nonce streng steigend
+über Neustarts und vorgestellte Uhren; Mindestmenge und Mindestwert; volle,
+teilweise und ausbleibende Ausführung; Verbindungsabbruch mitten in der Order
+(es entsteht **keine** zweite Order); spurlos verlorene Order → Stopp; alle
+Schutzgrenzen; Notbremse mit und ohne Auflösung; Abgleich bei fremdem,
+fehlendem und passendem Bestand.
+
+**Nicht geprüft**, weil hier nie ein echtes Konto lief:
+
+* Das Verhalten von Krakens Schnittstelle unter Last, bei Wartung oder
+  Teilausfall.
+* Reale Ausführungsqualität — wie oft die Limit-Order tatsächlich nicht füllt.
+* Krakens Aufruf-Zähler unter Dauerlast. Die Drossel hält 1,1 s Abstand; das
+  sollte reichen, bewiesen ist es nicht.
+* Rundungsverhalten bei anderen Paaren als XBTUSD.
+
+Deshalb, in dieser Reihenfolge: `konto`, dann `live` (Probelauf) über
+mindestens einen Tag, dann `live --scharf` mit `--max-order 10`. Erst wenn
+das über Wochen unauffällig läuft, die Grenzen anheben.
+
+Und der Backtest oben gilt weiter: Diese Strategien haben schlichtes Halten
+nicht geschlagen.

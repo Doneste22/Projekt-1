@@ -4,15 +4,18 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
-from . import sources
+from . import notify, sources
 from .backtest import run
+from .exchange import BoersenFehler, KrakenClient, schluessel_laden
 from .execution import CostModel
 from .report import html_bericht, text_bericht
 from .risk import RiskRules
 from .runner import Runner
+from .safety import Angehalten, Grenzen, Sicherung
 from .strategy import STRATEGIEN
 from .validate import vorwaerts
 
@@ -210,12 +213,170 @@ def befehl_daten(a) -> int:
     return 0
 
 
+SPRUCH = "JA ICH HANDLE MIT ECHTEM GELD"
+
+
+def _grenzen(a) -> Grenzen:
+    return Grenzen(
+        max_orderwert=a.max_order,
+        max_gesamteinsatz=a.max_einsatz,
+        max_tagesverlust=a.max_tagesverlust,
+        max_gesamtverlust=a.max_gesamtverlust,
+        max_orders_pro_tag=a.max_orders,
+    )
+
+
+def _schluesseldatei(a) -> Path:
+    return Path(a.schluesseldatei) if a.schluesseldatei else Path(a.betrieb) / "kraken.key"
+
+
+def _client(a) -> KrakenClient:
+    schluessel, geheimnis = schluessel_laden(_schluesseldatei(a))
+    return KrakenClient(schluessel, geheimnis, nonce_datei=Path(a.betrieb) / "nonce")
+
+
+def _scharfschalten(a, grenzen: Grenzen) -> bool:
+    """Zwei Wege zur Scharfschaltung, beide ausdrücklich.
+
+    Am Terminal muss der Satz getippt werden. Für den unbeaufsichtigten
+    Neustart (systemd, nohup) dient die Umgebungsvariable — die setzt man
+    einmal bewusst und nicht aus Versehen.
+    """
+    if not a.scharf:
+        return False
+    print("\n  " + "=" * 62)
+    print("  SCHARFSCHALTUNG — ab hier wird echtes Geld bewegt.")
+    print("  " + "=" * 62)
+    print(f"    Einzelne Order höchstens ... {grenzen.max_orderwert:>12,.2f}")
+    print(f"    Im Markt höchstens ......... {grenzen.max_gesamteinsatz:>12,.2f}")
+    print(f"    Tagesverlust bis ........... {grenzen.max_tagesverlust:>12,.2f}")
+    print(f"    Gesamtverlust bis .......... {grenzen.max_gesamtverlust:>12,.2f}")
+    print(f"    Orders je Tag höchstens .... {grenzen.max_orders_pro_tag:>12}")
+    print(f"    Notbremse .................. {Path(a.betrieb) / 'NOTBREMSE'}")
+    print()
+    if os.environ.get("HANDELSASSISTENT_SCHARF") == "ja-ich-will":
+        print("  Scharf über HANDELSASSISTENT_SCHARF.\n")
+        return True
+    if not sys.stdin.isatty():
+        print("  Kein Terminal für die Rückfrage. Für den unbeaufsichtigten Start:")
+        print("  HANDELSASSISTENT_SCHARF=ja-ich-will setzen.\n")
+        raise SystemExit(4)
+    antwort = input(f'  Zum Bestätigen tippen: "{SPRUCH}"\n  > ').strip()
+    if antwort != SPRUCH:
+        print("\n  Nicht bestätigt. Es bleibt beim Probelauf.\n")
+        return False
+    print()
+    return True
+
+
+def befehl_konto(a) -> int:
+    """Zugang prüfen, ohne irgendetwas zu bewegen."""
+    client = _client(a)
+    print(f"\n  Börsenstatus: {client.systemstatus()}")
+    info = client.paar_info(a.paar)
+    print(f"  Paar {info.altname}: mindestens {info.mindestmenge:g} {info.basis}, "
+          f"mindestens {info.mindestwert:g} {info.quote}")
+    print(f"  Kurs {client.letzter_kurs(a.paar):,.2f} {info.quote}")
+    if not client.schluessel:
+        print("\n  Kein Schlüssel gesetzt — nur öffentliche Auskünfte möglich.")
+        print(f"  Erwartet: KRAKEN_API_KEY/KRAKEN_API_SECRET oder {_schluesseldatei(a)} (Modus 600).\n")
+        return 0
+    guthaben = {k: v for k, v in client.guthaben().items() if v}
+    print("\n  Guthaben:")
+    for w, betrag in sorted(guthaben.items()):
+        print(f"    {w:<8}{betrag:>18,.8f}")
+    offen = client.offene_orders()
+    print(f"\n  Offene Orders: {len(offen)}")
+    for txid, w in offen.items():
+        print(f"    {txid}  {w.get('descr', {}).get('order', '?')}")
+    print()
+    return 0
+
+
+def befehl_live(a) -> int:
+    grenzen = _grenzen(a)
+    grenzen.pruefe()
+    sicherung = Sicherung(a.betrieb, grenzen)
+    if sicherung.ausgeloest:
+        print(f"\n  Sicherung ist ausgelöst: {sicherung.ausgeloest}")
+        print("  Erst prüfen, dann zurücksetzen:")
+        print("    python3 -m assistant sicherung --zuruecksetzen\n")
+        return 5
+
+    client = _client(a)
+    if not client.schluessel:
+        print("\n  Kein API-Schlüssel gefunden. Ohne den geht kein Handel.")
+        print(f"  KRAKEN_API_KEY/KRAKEN_API_SECRET setzen oder {_schluesseldatei(a)} anlegen"
+              " (zwei Zeilen, Modus 600).\n")
+        return 2
+    if client.systemstatus() != "online":
+        print(f"\n  Börse meldet '{client.systemstatus()}' — kein Handel.\n")
+        return 6
+
+    scharf = _scharfschalten(a, grenzen)
+    melder = notify.aus_umgebung()
+    from .live import LiveBroker
+
+    broker = LiveBroker(client, a.paar, sicherung, melder=melder, scharf=scharf,
+                        max_schlupf=a.max_schlupf)
+    r = Runner(
+        a.paar, SCHRITTE[a.takt], _bauen(a), regeln=_regeln(a), kosten=_kosten(a),
+        startkapital=a.kapital, quelle=a.quelle, arbeitsverzeichnis=a.betrieb,
+        historie_tage=a.tage, nachziehen=a.nachziehen,
+        broker=broker, sicherung=sicherung, melder=melder,
+    )
+    art = "SCHARF — echte Orders" if scharf else "Probelauf — Börse prüft, führt nicht aus"
+    print(f"  {art}")
+    print(f"  {a.paar} · {a.takt} · {a.strategie} · Takt {a.takt_sekunden}s")
+    print(f"  Journal:   {r.journal_datei}")
+    print(f"  Notbremse: python3 -m assistant --betrieb {a.betrieb} notbremse ziehen\n")
+    melder.melden("Assistent gestartet", f"{a.paar} · {a.strategie} · {art}")
+    r.schleife(takt=a.takt_sekunden, max_durchlaeufe=a.durchlaeufe)
+    stand = r.stand()
+    print(f"\n  Beendet nach {stand['ticks']} Durchläufen, "
+          f"{stand['abgeschlossene_trades']} Trades.")
+    print(sicherung.bericht() + "\n")
+    melder.melden("Assistent beendet", f"{stand['ticks']} Durchläufe, "
+                                       f"{stand['abgeschlossene_trades']} Trades")
+    return 0
+
+
+def befehl_notbremse(a) -> int:
+    sicherung = Sicherung(a.betrieb)
+    if a.was == "ziehen":
+        sicherung.notbremse_ziehen()
+        print(f"\n  Notbremse gezogen: {sicherung.notbremse}")
+        print("  Keine neuen Orders. Offene Positionen bleiben stehen.\n")
+    elif a.was == "schliessen":
+        sicherung.notbremse_ziehen(schliessen=True)
+        print(f"\n  Notbremse gezogen mit Auflösung: {sicherung.notbremse}")
+        print("  Der Assistent verkauft beim nächsten Durchlauf und hält an.\n")
+    else:
+        sicherung.notbremse_loesen()
+        print("\n  Notbremse gelöst.\n")
+    return 0
+
+
+def befehl_sicherung(a) -> int:
+    sicherung = Sicherung(a.betrieb)
+    if a.zuruecksetzen:
+        vorher = sicherung.zuruecksetzen()
+        print(f"\n  Zurückgesetzt: {vorher or 'es war nichts ausgelöst'}\n")
+        return 0
+    print()
+    print(sicherung.bericht())
+    print()
+    return 0
+
+
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="python3 -m assistant",
         description="Handelsassistent: rechnet Signale, backtestet sie und "
                     "handelt sie selbstständig auf Papier.",
-        epilog="Papierbetrieb. Echter Handel ist nicht implementiert.",
+        epilog="Papierbetrieb ist die Vorgabe. Echte Orders nur über 'live --scharf', "
+               "mit Rückfrage und absoluten Betragsgrenzen. Notbremse: "
+               "'notbremse ziehen'.",
     )
     p.add_argument("--symbol", default="btcusd", help="Handelspaar (Vorgabe: btcusd)")
     p.add_argument("--takt", default="1t", choices=list(SCHRITTE), help="Kerzenlänge")
@@ -233,6 +394,18 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--daten", default="daten", help="Cache-Verzeichnis")
     p.add_argument("--betrieb", default="betrieb", help="Arbeitsverzeichnis des Dauerbetriebs")
     p.add_argument("--offline", action="store_true", help="Nur Cache, kein Netz")
+    p.add_argument("--paar", default="XBTUSD", help="Börsenpaar für den Echtbetrieb")
+    p.add_argument("--schluesseldatei", default=None,
+                   help="Datei mit Schlüssel und Geheimnis (Modus 600); "
+                        "Vorgabe: kraken.key im Betriebsverzeichnis")
+    p.add_argument("--max-order", dest="max_order", type=float, default=100.0,
+                   help="was eine einzelne Order höchstens kosten darf")
+    p.add_argument("--max-einsatz", dest="max_einsatz", type=float, default=500.0,
+                   help="was insgesamt im Markt stehen darf")
+    p.add_argument("--max-tagesverlust", dest="max_tagesverlust", type=float, default=50.0)
+    p.add_argument("--max-gesamtverlust", dest="max_gesamtverlust", type=float, default=150.0)
+    p.add_argument("--max-orders", dest="max_orders", type=int, default=10,
+                   help="Orders je Tag")
 
     u = p.add_subparsers(dest="befehl", required=True)
     u.add_parser("signal", help="aktuelles Signal mit voller Begründung")
@@ -252,6 +425,22 @@ def parser() -> argparse.ArgumentParser:
 
     u.add_parser("stand", help="Zustand des Dauerbetriebs zeigen")
     u.add_parser("daten", help="Cache-Inhalt zeigen")
+    u.add_parser("konto", help="Börsenzugang und Guthaben prüfen — bewegt nichts")
+
+    e = u.add_parser("live", help="Betrieb an der echten Börse")
+    e.add_argument("--scharf", action="store_true",
+                   help="echte Orders statt Probelauf (fragt zurück)")
+    e.add_argument("--takt-sekunden", dest="takt_sekunden", type=int, default=60)
+    e.add_argument("--durchlaeufe", type=int, help="nach so vielen Durchläufen beenden")
+    e.add_argument("--max-schlupf", dest="max_schlupf", type=float, default=0.005,
+                   help="wie weit das Limit jenseits des Marktes liegen darf")
+
+    n = u.add_parser("notbremse", help="Handel sofort anhalten")
+    n.add_argument("was", choices=["ziehen", "schliessen", "loesen"],
+                   help="ziehen = keine neuen Orders; schliessen = zusätzlich auflösen")
+
+    si = u.add_parser("sicherung", help="Schutzschaltungen zeigen oder zurücksetzen")
+    si.add_argument("--zuruecksetzen", action="store_true")
     return p
 
 
@@ -261,6 +450,8 @@ def main(argv: list[str] | None = None) -> int:
         "signal": befehl_signal, "backtest": befehl_backtest,
         "vergleich": befehl_vergleich, "vorwaerts": befehl_vorwaerts,
         "laufen": befehl_laufen, "stand": befehl_stand, "daten": befehl_daten,
+        "konto": befehl_konto, "live": befehl_live,
+        "notbremse": befehl_notbremse, "sicherung": befehl_sicherung,
     }
     try:
         return befehle[a.befehl](a)
@@ -270,6 +461,12 @@ def main(argv: list[str] | None = None) -> int:
     except ValueError as f:
         print(f"\n  Geht nicht: {f}\n", file=sys.stderr)
         return 3
+    except Angehalten as f:
+        print(f"\n  ANGEHALTEN: {f}\n", file=sys.stderr)
+        return 5
+    except BoersenFehler as f:
+        print(f"\n  Börse: {f}\n", file=sys.stderr)
+        return 6
     except KeyboardInterrupt:
         print("\n  Abgebrochen.\n")
         return 130

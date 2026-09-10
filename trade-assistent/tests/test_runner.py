@@ -176,12 +176,24 @@ class TestJournal(RunnerProbe):
         self.assertTrue(d.gruende, "die Einzelstimmen gehören ins Journal")
 
 
-class TestEchterHandelGesperrt(unittest.TestCase):
-    def test_live_broker_verweigert_den_dienst(self):
-        from assistant.execution import LiveBroker
+class TestBrokerUnterscheidung(unittest.TestCase):
+    """Der Runner muss Papier von Ernst unterscheiden können."""
 
-        with self.assertRaises(NotImplementedError):
-            LiveBroker()
+    def test_papierbroker_ist_nicht_echt(self):
+        from assistant.execution import PaperBroker
+
+        self.assertFalse(PaperBroker().echt)
+
+    def test_livebroker_ist_echt(self):
+        from assistant.live import LiveBroker
+
+        self.assertTrue(LiveBroker.echt)
+
+    def test_papierbetrieb_gleicht_nicht_mit_der_boerse_ab(self):
+        """Ohne echten Broker darf kein Börsenzugriff versucht werden."""
+        from assistant.execution import PaperBroker
+
+        self.assertFalse(getattr(PaperBroker(), "echt", False))
 
 
 if __name__ == "__main__":

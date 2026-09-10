@@ -17,10 +17,23 @@ class Execution:
     kurs: float     # tatsächlicher Ausführungskurs inklusive Schlupf
     gebuehr: float
     richtkurs: float
+    menge: float = 0.0        # tatsächlich ausgeführte Menge
+    angefragt: float = 0.0    # ursprünglich gewünschte Menge
+    txid: str = ""            # Ordernummer der Börse, leer im Papierbetrieb
 
     @property
     def schlupf(self) -> float:
         return abs(self.kurs - self.richtkurs)
+
+    @property
+    def teilausfuehrung(self) -> bool:
+        """Börsen füllen nicht immer vollständig. Wer die gewünschte statt der
+        tatsächlichen Menge verbucht, hat ab da eine falsche Position."""
+        return bool(self.angefragt) and self.menge < self.angefragt * 0.9999
+
+    @property
+    def leer(self) -> bool:
+        return self.menge <= 0
 
 
 class CostModel:
@@ -38,15 +51,24 @@ class CostModel:
 
     def kaufen(self, richtkurs: float, menge: float) -> Execution:
         kurs = richtkurs * (1.0 + self.schlupf_satz)  # Kauf füllt schlechter, also höher
-        return Execution(kurs, kurs * menge * self.gebuehr_satz, richtkurs)
+        return Execution(kurs, kurs * menge * self.gebuehr_satz, richtkurs, menge, menge)
 
     def verkaufen(self, richtkurs: float, menge: float) -> Execution:
         kurs = richtkurs * (1.0 - self.schlupf_satz)  # Verkauf füllt tiefer
-        return Execution(kurs, kurs * menge * self.gebuehr_satz, richtkurs)
+        return Execution(kurs, kurs * menge * self.gebuehr_satz, richtkurs, menge, menge)
 
 
 class Broker(Protocol):
+    """Was der Runner von einem Broker braucht.
+
+    Zwei Umsetzungen: `PaperBroker` hier (simuliert, bewegt nichts) und
+    `live.LiveBroker` (echte Orders an der Börse). Das Attribut `echt`
+    unterscheidet sie — der Runner gleicht nur bei `echt` vor der ersten
+    Order mit der Börse ab.
+    """
+
     name: str
+    echt: bool
 
     def kurs(self, symbol: str) -> float: ...
     def kaufen(self, symbol: str, menge: float, richtkurs: float) -> Execution: ...
@@ -73,26 +95,3 @@ class PaperBroker:
 
     def verkaufen(self, symbol: str, menge: float, richtkurs: float) -> Execution:
         return self.kosten.verkaufen(richtkurs, menge)
-
-
-class LiveBroker:
-    """Absichtlich nicht implementiert.
-
-    Für echte Orders fehlt hier alles, was dafür nötig wäre: geprüfte
-    Schlüsselverwaltung, Auftragsabgleich nach Verbindungsabbruch, Umgang mit
-    Teilausführungen, Notabschaltung. Diese Klasse existiert als Platzhalter
-    und als Sperre — damit niemand versehentlich echtes Geld bewegt, weil ein
-    Schalter zu leicht umzulegen war.
-    """
-
-    name = "live"
-    echt = True
-
-    def __init__(self, *_, **__):
-        raise NotImplementedError(
-            "Echter Handel ist in diesem Werkzeug nicht implementiert.\n"
-            "Erst müssten Schlüsselverwaltung, Auftragsabgleich, Teilausführungen und\n"
-            "eine Notabschaltung gebaut und geprüft werden. Bis dahin: Papierbetrieb.\n"
-            "Und davor gehört ein Backtest über mehrere Marktphasen plus ein\n"
-            "Vorwärtstest über Monate — nicht ein guter Wochenverlauf."
-        )

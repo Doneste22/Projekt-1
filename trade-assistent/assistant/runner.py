@@ -31,8 +31,10 @@ from pathlib import Path
 from . import sources
 from .candles import Series
 from .execution import CostModel, PaperBroker
+from .notify import Melder, StillerMelder
 from .portfolio import Portfolio, Position
 from .risk import RiskManager, RiskRules, groesse_bestimmen, stop_absichern
+from .safety import Angehalten, Sicherung
 from .strategy import Direction, Strategy
 
 ZUSTAND_VERSION = 2
@@ -57,6 +59,9 @@ class Durchlauf:
     kapital: float | None = None
     offen: int = 0
     fehler: str | None = None
+    txid: str = ""
+    teilausfuehrung: bool = False
+    angehalten: bool = False
 
     def als_zeile(self) -> str:
         return json.dumps(asdict(self), ensure_ascii=False)
@@ -88,6 +93,9 @@ class Runner:
         arbeitsverzeichnis: str | Path = "betrieb",
         historie_tage: int = 400,
         nachziehen: float = 0.0,
+        broker=None,
+        sicherung: Sicherung | None = None,
+        melder: Melder | None = None,
     ):
         self.symbol = symbol
         self.step = step
@@ -97,13 +105,19 @@ class Runner:
         self.quelle = quelle
         self.historie_tage = historie_tage
         self.nachziehen = nachziehen
-        self.broker = PaperBroker(self.kosten)
+        self.melder = melder or StillerMelder()
+        self.broker = broker or PaperBroker(
+            self.kosten, kursquelle=lambda sym: sources.ticker(sym, self.quelle)
+        )
+        self.echt = getattr(self.broker, "echt", False)
 
         self.verzeichnis = Path(arbeitsverzeichnis)
         self.verzeichnis.mkdir(parents=True, exist_ok=True)
         self.zustand_datei = self.verzeichnis / f"zustand_{symbol}_{step}.json"
         self.journal_datei = self.verzeichnis / f"journal_{symbol}_{step}.jsonl"
         self.cache = sources.Cache(self.verzeichnis / "daten")
+        self.sicherung = sicherung or Sicherung(self.verzeichnis)
+        self._abgeglichen = False
 
         self.depot = Portfolio(startkapital=startkapital)
         self.waechter = RiskManager(self.regeln)
@@ -170,6 +184,14 @@ class Runner:
         d = Durchlauf(zeit=_jetzt_text())
         self.ticks += 1
         try:
+            if self.echt and not self._abgeglichen:
+                # Vor der ersten Order: eigener Zustand gegen die Börse.
+                from .live import abgleichen
+
+                for zeile in abgleichen(self.broker, self.depot, self.symbol, self.melder):
+                    d.gruende.append(zeile)
+                self._abgeglichen = True
+
             reihe = sources.load(
                 self.symbol, self.step, tage=self.historie_tage,
                 quelle=self.quelle, cache=self.cache,
@@ -181,8 +203,10 @@ class Runner:
                 self._abschluss(d)
                 return d
 
-            kurs = sources.ticker(self.symbol, self.quelle)
+            kurs = self.broker.kurs(self.symbol)
             d.kurs = kurs
+            kapital_jetzt = self.depot.kapital({self.symbol: kurs})
+            self.sicherung.tageswechsel(kapital_jetzt)
             letzte = reihe[-1]
             d.kerze_ts = letzte.ts
 
@@ -190,6 +214,17 @@ class Runner:
             i = len(reihe) - 1
             tag = datetime.fromtimestamp(letzte.ts, tz=timezone.utc).strftime("%Y-%m-%d")
             self.waechter.tageswechsel(tag, self.depot.kapital({self.symbol: kurs}))
+
+            # 0. Notbremse: Sie steht über allem, auch über der Strategie.
+            if self.sicherung.notbremse_gezogen:
+                if self.sicherung.notbremse_will_schliessen and self.symbol in self.depot.positionen:
+                    self._schliessen(kurs, "Notbremse — sofort auflösen", d)
+                else:
+                    d.handlung = "angehalten"
+                    d.grund = f"Notbremse gezogen ({self.sicherung.notbremse.name})"
+                self._laeuft = False
+                self._abschluss(d)
+                return d
 
             # 1. Offene Position überwachen — läuft bei jedem Durchlauf, nicht
             #    nur bei neuer Kerze. Ein Stop, der einen Tag wartet, ist keiner.
@@ -211,9 +246,24 @@ class Runner:
             else:
                 self._einstieg_pruefen(i, kurs, d)
 
+        except Angehalten as halt:
+            # Eine ausgelöste Sicherung ist kein vorübergehender Fehler.
+            d.handlung, d.angehalten = "angehalten", True
+            d.grund = str(halt)
+            d.fehler = str(halt)
+            self._laeuft = False
+            self.melder.melden("BETRIEB ANGEHALTEN", str(halt), dringend=True)
+
         except Exception as fehler:  # Netz, Quelle, Format — nie die Schleife reissen
             d.handlung, d.fehler = "fehler", f"{type(fehler).__name__}: {fehler}"
             d.grund = "Durchlauf übersprungen, nächster Versuch beim nächsten Takt"
+            if self.echt:
+                try:
+                    self.sicherung.fehler_vermerken(d.fehler)
+                except Angehalten as halt:
+                    d.handlung, d.angehalten, d.grund = "angehalten", True, str(halt)
+                    self._laeuft = False
+                    self.melder.melden("BETRIEB ANGEHALTEN", str(halt), dringend=True)
 
         self._abschluss(d)
         return d
@@ -269,6 +319,7 @@ class Runner:
                 )
             )
             return
+
         kapital = self.depot.kapital({self.symbol: kurs})
         erlaubt, warum = self.waechter.darf_eroeffnen(
             self.symbol, i, sig.staerke, kapital,
@@ -277,36 +328,108 @@ class Runner:
         if not erlaubt:
             d.handlung, d.grund = "abwarten", f"Risikoregel greift: {warum}"
             return
+
+        # Schutzschaltungen haben das letzte Wort — sie kennen absolute Beträge,
+        # die kein Prozentsatz und kein Rechenfehler überschreiben kann.
+        einsatz = sum(p.wert(kurs) for p in self.depot.positionen.values())
+        frei, schutzgrund = self.sicherung.darf_handeln(
+            kapital, self.depot.startkapital, self.broker_kurs_alter, einsatz
+        )
+        if not frei:
+            d.handlung, d.grund = "abwarten", f"Schutzschaltung: {schutzgrund}"
+            return
+
         stop = stop_absichern(kurs, sig.stop, self.regeln)
         menge = groesse_bestimmen(
             kapital, self.depot.bargeld, kurs, stop, self.regeln, self.kosten.gebuehr_satz
         )
+        gedeckelt = self.sicherung.orderwert_begrenzen(menge * kurs, einsatz)
+        if gedeckelt < menge * kurs:
+            menge = gedeckelt / kurs if kurs else 0.0
+            d.gruende.append(f"· Orderwert auf {gedeckelt:.2f} gedeckelt (Schutzgrenze)")
         if menge <= 0:
-            d.handlung, d.grund = "abwarten", "berechnete Menge ist null (Bargeld oder Stop zu eng)"
+            d.handlung, d.grund = "abwarten", "erlaubte Menge ist null (Bargeld oder Schutzgrenze)"
             return
-        aus = self.broker.kaufen(self.symbol, menge, kurs)
-        if aus.kurs * menge + aus.gebuehr > self.depot.bargeld:
+
+        try:
+            aus = self.broker.kaufen(self.symbol, menge, kurs)
+        except Exception as fehler:
+            d.handlung, d.grund = "abwarten", f"Order abgelehnt: {fehler}"
+            d.fehler = f"{type(fehler).__name__}: {fehler}"
+            return
+
+        if aus.leer:
+            d.handlung = "abwarten"
+            d.grund = "Order nicht ausgeführt — nichts gefüllt"
+            return
+        if aus.kurs * aus.menge + aus.gebuehr > self.depot.bargeld:
             d.handlung, d.grund = "abwarten", "Bargeld reicht nach Gebühren nicht"
             return
+
+        d.txid = aus.txid
+        d.teilausfuehrung = aus.teilausfuehrung
         begruendung = "; ".join(g.indikator for g in sig.dafuer[:3])
         self.depot.eroeffne(Position(
-            symbol=self.symbol, menge=menge, einstieg=aus.kurs,
+            symbol=self.symbol, menge=aus.menge, einstieg=aus.kurs,
             einstieg_ts=int(time.time()), stop=stop, ziel=sig.ziel,
             gebuehr_bezahlt=aus.gebuehr, begruendung=begruendung,
         ))
+        self.sicherung.erfolg_vermerken()
         d.handlung = "gekauft"
         d.grund = (
-            f"{menge:.6f} zu {aus.kurs:,.2f} (Neigung {sig.neigung}), "
+            f"{aus.menge:.8f} zu {aus.kurs:,.2f} (Neigung {sig.neigung}), "
             f"Stop {stop:,.2f}" + (f", Ziel {sig.ziel:,.2f}" if sig.ziel else "")
+            + (f" — nur {aus.menge / aus.angefragt:.0%} gefüllt" if aus.teilausfuehrung else "")
+        )
+        self.melder.melden(
+            "Gekauft", f"{aus.menge:.8f} {self.symbol} zu {aus.kurs:,.2f}, Stop {stop:,.2f}\n"
+                       f"Grund: {begruendung}",
         )
 
     def _schliessen(self, kurs: float, grund: str, d: Durchlauf) -> None:
         pos = self.depot.positionen[self.symbol]
-        aus = self.broker.verkaufen(self.symbol, pos.menge, kurs)
+        gewuenscht = pos.menge
+        try:
+            aus = self.broker.verkaufen(self.symbol, gewuenscht, kurs)
+        except Exception as fehler:
+            # Ein misslungener Verkauf ist ernst: Die Position steht weiter im
+            # Markt, obwohl sie raus soll. Beim nächsten Durchlauf erneut.
+            d.handlung, d.grund = "halten", f"Verkauf misslungen: {fehler}"
+            d.fehler = f"{type(fehler).__name__}: {fehler}"
+            self.melder.melden(
+                "Verkauf misslungen", f"{self.symbol}: {fehler}\nPosition steht weiter offen.",
+                dringend=True,
+            )
+            return
+
+        if aus.leer:
+            d.handlung, d.grund = "halten", f"{grund} — Verkaufsorder blieb ohne Ausführung"
+            return
+
+        d.txid = aus.txid
+        d.teilausfuehrung = aus.teilausfuehrung
+        if aus.teilausfuehrung:
+            t = self.depot.teilweise_schliessen(
+                self.symbol, aus.menge, aus.kurs, int(time.time()), aus.gebuehr, grund
+            )
+            rest = self.depot.positionen[self.symbol].menge
+            d.handlung = "teilverkauf"
+            d.grund = f"{grund} — {aus.menge:.8f} verkauft, {rest:.8f} bleibt offen ({t.netto:+,.2f})"
+            self.melder.melden(
+                "Teilverkauf", f"{aus.menge:.8f} zu {aus.kurs:,.2f}, {rest:.8f} bleibt offen.",
+                dringend=True,
+            )
+            return
+
         t = self.depot.schliesse(self.symbol, aus.kurs, int(time.time()), aus.gebuehr, grund)
         self.waechter.ausstieg_vermerken(self.symbol, 10**9)  # Abkühlung ab jetzt
+        self.sicherung.erfolg_vermerken()
         d.handlung = "verkauft"
         d.grund = f"{grund} — Ergebnis {t.netto:+,.2f} ({t.rendite:+.2%})"
+        self.melder.melden(
+            "Verkauft", f"{aus.menge:.8f} {self.symbol} zu {aus.kurs:,.2f}\n"
+                        f"{grund} — Ergebnis {t.netto:+,.2f} ({t.rendite:+.2%})",
+        )
 
     # -- Dauerbetrieb -------------------------------------------------------
     def schleife(self, takt: int = 300, max_durchlaeufe: int | None = None, still: bool = False):
@@ -338,6 +461,11 @@ class Runner:
                 time.sleep(1)
         self._zustand_sichern()
         return gezaehlt
+
+    @property
+    def broker_kurs_alter(self) -> float:
+        """Wie alt der zuletzt gelesene Kurs ist. Papierbetrieb meldet 0."""
+        return float(getattr(self.broker, "kurs_alter", 0.0))
 
     # -- Auskunft -----------------------------------------------------------
     def stand(self, kurs: float | None = None) -> dict:

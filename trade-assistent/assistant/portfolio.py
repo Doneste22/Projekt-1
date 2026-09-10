@@ -130,6 +130,35 @@ class Portfolio:
         self.gebuehren_gesamt += pos.gebuehr_bezahlt
         self.positionen[pos.symbol] = pos
 
+    def teilweise_schliessen(
+        self, symbol: str, menge: float, kurs: float, ts: int, gebuehr: float, grund: str
+    ) -> Trade:
+        """Nur einen Teil verkaufen — die Position bleibt mit dem Rest bestehen.
+
+        Nötig, weil Börsen Orders teilweise füllen. Wer den Rest vergisst,
+        hält eine Position, von der er nichts weiss.
+        """
+        pos = self.positionen[symbol]
+        menge = min(menge, pos.menge)
+        if menge >= pos.menge:
+            return self.schliesse(symbol, kurs, ts, gebuehr, grund)
+
+        anteil = menge / pos.menge
+        gebuehr_anteilig = pos.gebuehr_bezahlt * anteil
+        self.bargeld += menge * kurs - gebuehr
+        self.gebuehren_gesamt += gebuehr
+        trade = Trade(
+            symbol=symbol, menge=menge,
+            einstieg=pos.einstieg, einstieg_ts=pos.einstieg_ts,
+            ausstieg=kurs, ausstieg_ts=ts,
+            gebuehren=gebuehr_anteilig + gebuehr,
+            grund=f"{grund} (Teilverkauf)", einstiegsgrund=pos.begruendung,
+        )
+        self.trades.append(trade)
+        pos.menge -= menge
+        pos.gebuehr_bezahlt -= gebuehr_anteilig
+        return trade
+
     def schliesse(self, symbol: str, kurs: float, ts: int, gebuehr: float, grund: str) -> Trade:
         pos = self.positionen.pop(symbol)
         erloes = pos.menge * kurs - gebuehr
