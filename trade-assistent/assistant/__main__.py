@@ -309,6 +309,51 @@ def _warnung(text: str) -> None:
     print(f"     [ACHTUNG] {text}")
 
 
+def _zugangsdaten_pruefen(schluessel: str, geheimnis: str) -> str | None:
+    """Prüft Key und Secret auf Form, bevor irgendetwas geschrieben wird.
+
+    Häufigster Fehler beim Einrichten auf dem Telefon ist nicht der falsche
+    Schlüssel, sondern der halbe: Beim Kopieren aus einem umgebrochenen
+    Terminal oder einer Textmarkierung kommt nur ein Bruchstück mit. Das
+    fällt sonst erst als kryptisches "Incorrect padding" aus der
+    base64-Entschlüsselung auf.
+
+    Gibt den Klartext des Einwands zurück, oder None wenn beides plausibel ist.
+    """
+    import base64
+    import binascii
+
+    zeilen: list[str] = []
+    if any(z in schluessel for z in " \t\n") or any(z in geheimnis for z in " \t\n"):
+        return ("  Da ist ein Leerzeichen oder Zeilenumbruch mit hineingerutscht.\n"
+                "  Beim Kopieren nur den Schlüssel selbst erwischen.")
+
+    # Kraken: Key 56 Zeichen, Secret 88 Zeichen base64 (64 Byte).
+    if len(schluessel) < 40:
+        zeilen.append(f"  Der Key ist mit {len(schluessel)} Zeichen zu kurz — "
+                      "Kraken-Keys haben etwa 56.")
+    if len(geheimnis) < 60:
+        zeilen.append(f"  Das Secret ist mit {len(geheimnis)} Zeichen zu kurz — "
+                      "Kraken-Secrets haben 88 und enden auf '=='.")
+    else:
+        try:
+            base64.b64decode(geheimnis, validate=True)
+        except (binascii.Error, ValueError):
+            zeilen.append("  Das Secret lässt sich nicht entschlüsseln. Es ist base64,\n"
+                          "  endet auf '==' und darf keine fremden Zeichen enthalten.")
+
+    if not zeilen:
+        return None
+    return "\n".join([
+        "  Das kann so nicht stimmen:",
+        *zeilen,
+        "",
+        "  Fast immer liegt es daran, dass nur ein Teil kopiert wurde —",
+        "  etwa aus einem umgebrochenen Terminal. Nimm bei Kraken das",
+        "  Kopier-Symbol neben dem Feld, nicht die Textmarkierung.",
+    ])
+
+
 def befehl_schluessel(a) -> int:
     """Fragt Schlüssel und Geheimnis ab und legt die Datei richtig an.
 
@@ -370,12 +415,17 @@ def befehl_schluessel(a) -> int:
         print("  Eingabeaufforderung.\n")
         return 1
 
-    # Kraken-Secrets sind base64 und deutlich länger als der Key. Ein Hinweis,
-    # kein Ausschlusskriterium — die Börse hat das letzte Wort.
+    # Vor dem Schreiben prüfen. Ein unbrauchbares Secret später als
+    # "Incorrect padding" aus den Innereien zu melden, hilft niemandem —
+    # und eine Datei mit halben Zugangsdaten hilft erst recht nicht.
+    einwand = _zugangsdaten_pruefen(schluessel, geheimnis)
+    if einwand:
+        print("\n" + einwand)
+        print("\n  Nichts geschrieben. Neu versuchen mit:  python -m assistant schluessel\n")
+        return 1
+
     warnung = ""
-    if len(geheimnis) < 40:
-        warnung = f"  Achtung: Das Secret ist nur {len(geheimnis)} Zeichen lang. Vertauscht?"
-    elif len(schluessel) > len(geheimnis):
+    if len(schluessel) > len(geheimnis):
         warnung = "  Achtung: Der Key ist länger als das Secret. Vielleicht vertauscht?"
 
     datei.write_text(f"{schluessel}\n{geheimnis}\n")

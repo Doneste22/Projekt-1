@@ -322,27 +322,74 @@ class TestSchluesselAblegen(unittest.TestCase):
         return code, ausgabe.getvalue()
 
     def test_datei_ist_nur_fuer_den_besitzer_lesbar(self):
-        self._ausfuehren("KEY12345678", "c2VjcmV0" * 8)
+        self._ausfuehren("K" * 56, "c2VjcmV0" * 11)
         datei = Path(self.tmp.name) / "kraken.key"
         self.assertTrue(datei.exists())
         self.assertEqual(datei.stat().st_mode & 0o777, 0o600)
 
     def test_secret_taucht_nirgends_in_der_ausgabe_auf(self):
         """Wer Bildschirmfotos verschickt, darf sein Secret nicht darauf haben."""
-        secret = "GEHEIMES_SECRET_DAS_NICHT_ERSCHEINEN_DARF_1234567890=="
-        _, ausgabe = self._ausfuehren("KEY12345678", secret)
+        import base64
+
+        secret = base64.b64encode(b"GEHEIM" * 11).decode()
+        _, ausgabe = self._ausfuehren("K" * 56, secret)
         self.assertNotIn(secret, ausgabe)
         self.assertNotIn(secret[8:40], ausgabe, "auch kein längeres Bruchstück")
 
     def test_zwei_zeilen_key_dann_secret(self):
-        self._ausfuehren("MEINKEY12345", "MEINSECRET" * 6)
+        import base64
+
+        key, secret = "M" * 56, base64.b64encode(b"z" * 64).decode()
+        self._ausfuehren(key, secret)
         zeilen = (Path(self.tmp.name) / "kraken.key").read_text().splitlines()
-        self.assertEqual(zeilen[0], "MEINKEY12345")
-        self.assertEqual(zeilen[1], "MEINSECRET" * 6)
+        self.assertEqual(zeilen[0], key)
+        self.assertEqual(zeilen[1], secret)
+
+    def test_abgeschnittenes_secret_wird_erkannt(self):
+        """Der häufigste Einrichtungsfehler: nur ein Bruchstück kopiert."""
+        code, ausgabe = self._ausfuehren("O" * 56, "L75auP/RugcOkyeH5oxKmq8x6n")
+        self.assertEqual(code, 1)
+        self.assertIn("zu kurz", ausgabe)
+        self.assertIn("nur ein Teil kopiert", ausgabe)
+        self.assertFalse((Path(self.tmp.name) / "kraken.key").exists(),
+                         "halbe Zugangsdaten dürfen nicht geschrieben werden")
+
+    def test_kaputtes_base64_wird_erkannt(self):
+        code, ausgabe = self._ausfuehren("K" * 56, "!" * 88)
+        self.assertEqual(code, 1)
+        self.assertIn("entschlüsseln", ausgabe)
+
+    def test_leerzeichen_mittendrin_wird_erkannt(self):
+        """Ein Leerzeichen im Schlüssel heisst: die Kopie ist zerrissen."""
+        code, ausgabe = self._ausfuehren("K" * 56, "c2VjcmV0" * 5 + " " + "c2VjcmV0" * 6)
+        self.assertEqual(code, 1)
+        self.assertIn("Leerzeichen", ausgabe)
+
+    def test_leerzeichen_am_rand_stoert_nicht(self):
+        """Beim Einfügen hängt oft eines dran — das ist kein Fehler."""
+        import base64
+
+        geheimnis = base64.b64encode(b"q" * 64).decode()
+        code, _ = self._ausfuehren("K" * 56, "  " + geheimnis + "  ")
+        self.assertIn(code, (0, 2), "getrimmt und durchgelassen, nicht abgelehnt")
+        self.assertEqual(
+            (Path(self.tmp.name) / "kraken.key").read_text().splitlines()[1], geheimnis
+        )
+
+    def test_gueltige_form_wird_geschrieben(self):
+        import base64
+
+        geheimnis = base64.b64encode(b"x" * 64).decode()
+        code, _ = self._ausfuehren("K" * 56, geheimnis)
+        self.assertIn(code, (0, 2), "Form ist gültig; scheitern darf nur die Börse")
+        self.assertTrue((Path(self.tmp.name) / "kraken.key").exists())
 
     def test_vertauschte_eingabe_wird_bemerkt(self):
         """Key länger als Secret heisst fast immer: vertauscht."""
-        _, ausgabe = self._ausfuehren("X" * 80, "kurz")
+        import base64
+
+        kurzes_secret = base64.b64encode(b"y" * 60).decode()
+        _, ausgabe = self._ausfuehren("X" * 100, kurzes_secret)
         self.assertIn("Achtung", ausgabe)
 
     def test_leere_eingabe_legt_nichts_an(self):
@@ -353,7 +400,7 @@ class TestSchluesselAblegen(unittest.TestCase):
     def test_versehentliches_enter_wirft_nicht_gleich_raus(self):
         """Wer hier rausfliegt, fügt seine Zugangsdaten danach womöglich an
         der normalen Eingabeaufforderung ein — und damit in den Verlauf."""
-        code, ausgabe = self._ausfuehren("ECHTERKEY123", "c2VjcmV0" * 8, eingaben=("",))
+        code, ausgabe = self._ausfuehren("E" * 56, "c2VjcmV0" * 11, eingaben=("",))
         self.assertIn("Nichts angekommen", ausgabe)
         self.assertTrue((Path(self.tmp.name) / "kraken.key").exists())
 
