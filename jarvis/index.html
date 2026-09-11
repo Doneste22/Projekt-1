@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Jarvis</title>
+<meta name="description" content="Persönlicher Assistent von Damaso.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#16283D">
+<meta name="color-scheme" content="light">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jarvis">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app" id="app" data-state="idle">
+
+  <header class="app__header">
+    <svg class="face" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+      <rect class="face__halo" x="3" y="7" width="58" height="50" rx="17"/>
+      <g class="face__head">
+        <rect class="face__plate" x="6" y="10" width="52" height="44" rx="14"/>
+        <g class="face__eyes">
+          <circle class="face__eye" cx="22" cy="27" r="4"/>
+          <circle class="face__eye" cx="42" cy="27" r="4"/>
+        </g>
+        <g class="face__mouth">
+          <rect class="face__vial" x="16" y="37" width="32" height="12" rx="6"/>
+          <g class="face__marks">
+            <line x1="26" y1="39.5" x2="26" y2="46.5"/>
+            <line x1="38" y1="39.5" x2="38" y2="46.5"/>
+          </g>
+          <circle class="face__bubble" cx="32" cy="43" r="3.6"/>
+        </g>
+      </g>
+    </svg>
+
+    <div class="brand">
+      <span class="brand__name">Jarvis</span>
+      <span class="brand__state" id="stateLabel">bereit</span>
+    </div>
+
+    <div class="header__actions">
+      <button class="icon-btn" id="voiceOutBtn" type="button" aria-pressed="false" title="Antworten vorlesen" aria-label="Antworten vorlesen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+      </button>
+      <button class="icon-btn" id="resetBtn" type="button" title="Verlauf löschen" aria-label="Verlauf löschen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="chat" id="chat" aria-live="polite" aria-label="Gesprächsverlauf"></main>
+
+  <div class="notice" id="installBar" hidden>
+    <p id="installText">Jarvis auf den Startbildschirm legen?</p>
+    <button type="button" id="installBtn">Installieren</button>
+    <button type="button" class="notice__close" id="installClose" aria-label="Hinweis schließen">&times;</button>
+  </div>
+
+  <div class="notice warn" id="warnBar" hidden>
+    <p id="warnText"></p>
+    <button type="button" class="notice__close" id="warnClose" aria-label="Hinweis schließen">&times;</button>
+  </div>
+
+  <div class="composer">
+    <button class="icon-btn" id="micBtn" type="button" aria-pressed="false" title="Spracheingabe" aria-label="Spracheingabe" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </button>
+    <label class="visually-hidden" for="input">Nachricht an Jarvis</label>
+    <textarea id="input" class="composer__input" placeholder="Nachricht an Jarvis…" rows="1" enterkeyhint="send" autocapitalize="sentences"></textarea>
+    <button class="icon-btn send" id="sendBtn" type="button" title="Senden" aria-label="Senden">
+      <svg class="send__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      <svg class="stop__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>
+    </button>
+  </div>
+
+  <div class="gate" id="gate" hidden>
+    <form class="gate__card" id="gateForm">
+      <h2>Zugangscode</h2>
+      <p>Dieser Jarvis ist mit einem Code geschützt, damit niemand sonst ihn nutzt.</p>
+      <label class="visually-hidden" for="gateInput">Zugangscode</label>
+      <input type="password" id="gateInput" inputmode="text" autocomplete="current-password" required>
+      <button type="submit">Weiter</button>
+    </form>
+  </div>
+
+</div>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,401 @@
+/* Jarvis — eigenständige App, teilt bewusst nichts mit der Ratgeber-Seite.
+   Keine externen Schriften: die App soll offline vollständig funktionieren. */
+
+:root{
+  --ink:#16283D;
+  --ink-soft:#4A5C70;
+  --paper:#F3EEE1;
+  --card:#FFFDF8;
+  --line:#DCD4BE;
+  --accent:#D9631F;
+  --accent-soft:#F3DAC4;
+  --danger:#B3402A;
+  --danger-soft:#FBEAE5;
+  --sans:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
+}
+
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0;
+  background:var(--ink);
+  font-family:var(--sans);
+  color:var(--ink);
+  -webkit-tap-highlight-color:transparent;
+  overscroll-behavior-y:none;
+}
+
+.app{
+  max-width:480px;
+  margin:0 auto;
+  height:100dvh;
+  background:var(--paper);
+  display:flex;
+  flex-direction:column;
+  position:relative;
+  box-shadow:0 0 40px rgba(0,0,0,.35);
+}
+
+/* ---------- Kopfzeile ---------- */
+
+.app__header{
+  background:var(--ink);
+  color:var(--paper);
+  padding:12px 14px;
+  padding-top:max(12px, env(safe-area-inset-top));
+  display:flex;
+  align-items:center;
+  gap:11px;
+  flex-shrink:0;
+}
+.brand{display:flex;flex-direction:column;line-height:1.25;min-width:0;flex:1;}
+.brand__name{
+  font-size:18px;
+  font-weight:600;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+.brand__state{
+  font-size:11.5px;
+  color:#AEBCCB;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.brand__state::before{
+  content:"";
+  width:6px;height:6px;
+  border-radius:50%;
+  background:var(--accent);
+  flex-shrink:0;
+}
+.header__actions{display:flex;align-items:center;gap:2px;flex-shrink:0;}
+
+.icon-btn{
+  background:transparent;
+  border:none;
+  color:#AEBCCB;
+  width:36px;height:36px;
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  transition:background .15s, color .15s;
+  padding:0;
+}
+.icon-btn:hover{background:rgba(255,255,255,.09);color:var(--paper);}
+.icon-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.icon-btn[aria-pressed="true"]{background:var(--accent);color:#fff;}
+.icon-btn svg{width:19px;height:19px;}
+
+/* ---------- Gesicht ---------- */
+
+.face{
+  width:42px;height:42px;
+  flex-shrink:0;
+  overflow:visible;
+}
+.face__plate{fill:var(--paper);stroke:var(--ink);stroke-width:2;}
+.face__marks line{stroke:var(--ink-soft);stroke-width:1.3;stroke-linecap:round;}
+.face__eye{fill:var(--ink);}
+.face__vial{fill:none;stroke:var(--ink);stroke-width:1.8;}
+.face__bubble{fill:var(--accent);}
+.face__halo{
+  fill:none;
+  stroke:var(--accent);
+  stroke-width:2;
+  opacity:0;
+}
+
+.face__head,.face__eyes,.face__mouth,.face__bubble,.face__halo{
+  transform-box:view-box;
+  transform-origin:32px 32px;
+}
+.face__eyes{transform-origin:32px 27px;}
+.face__mouth{transform-origin:32px 43px;}
+
+/* Ruhezustand: blinzeln, Blase driftet minimal */
+.face__eyes{animation:blink 6.5s infinite;}
+.face__bubble{animation:drift 7s ease-in-out infinite alternate;}
+
+@keyframes blink{
+  0%,94%,100%{transform:scaleY(1);}
+  96.5%{transform:scaleY(.08);}
+}
+@keyframes drift{
+  from{transform:translateX(-1.5px);}
+  to{transform:translateX(1.5px);}
+}
+
+/* Hört zu */
+[data-state="listening"] .face__eyes{animation:blink 6.5s infinite;transform:scale(1.12);}
+[data-state="listening"] .face__halo{animation:halo 1.4s ease-out infinite;}
+@keyframes halo{
+  0%{opacity:.55;transform:scale(1);}
+  100%{opacity:0;transform:scale(1.16);}
+}
+
+/* Denkt nach: Kopf legt sich schief, Blase wandert durch die Libelle */
+[data-state="thinking"] .face__head{animation:tilt 2.6s ease-in-out infinite;}
+[data-state="thinking"] .face__bubble{animation:sweep 1.5s ease-in-out infinite alternate;}
+[data-state="thinking"] .face__eyes{animation:blink 6.5s infinite;transform:translateY(-1.5px);}
+@keyframes tilt{
+  0%,100%{transform:rotate(-2.5deg);}
+  50%{transform:rotate(2.5deg);}
+}
+@keyframes sweep{
+  from{transform:translateX(-10px);}
+  to{transform:translateX(10px);}
+}
+
+/* Spricht: der Mund bewegt sich */
+[data-state="speaking"] .face__mouth{animation:talk .26s ease-in-out infinite alternate;}
+[data-state="speaking"] .face__bubble{animation:jitter .3s ease-in-out infinite alternate;}
+@keyframes talk{
+  from{transform:scaleY(.86);}
+  to{transform:scaleY(1.5);}
+}
+@keyframes jitter{
+  from{transform:translateX(-2.5px);}
+  to{transform:translateX(2.5px);}
+}
+
+/* Offline: alles steht still, die Blase hängt am Anschlag */
+[data-state="offline"] .face__eyes,
+[data-state="offline"] .face__bubble,
+[data-state="offline"] .face__head{animation:none;}
+[data-state="offline"] .face__bubble{transform:translateX(9px);fill:var(--ink-soft);}
+[data-state="offline"] .brand__state::before{background:var(--ink-soft);}
+
+@media (prefers-reduced-motion: reduce){
+  .face *{animation:none !important;}
+}
+
+/* ---------- Verlauf ---------- */
+
+.chat{
+  flex:1;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:18px 14px 10px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(22,40,61,.05) 27px, rgba(22,40,61,.05) 28px),
+    repeating-linear-gradient(90deg, transparent, transparent 27px, rgba(22,40,61,.05) 27px, rgba(22,40,61,.05) 28px);
+}
+.msg{
+  max-width:84%;
+  padding:10px 13px;
+  border-radius:14px;
+  font-size:15px;
+  line-height:1.5;
+  word-wrap:break-word;
+  overflow-wrap:anywhere;
+  animation:rise .18s ease-out;
+}
+@keyframes rise{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+.msg.user{
+  align-self:flex-end;
+  background:var(--ink);
+  color:var(--paper);
+  border-bottom-right-radius:4px;
+  white-space:pre-wrap;
+}
+.msg.assistant{
+  align-self:flex-start;
+  background:var(--card);
+  color:var(--ink);
+  border:1px solid var(--line);
+  border-bottom-left-radius:4px;
+}
+.msg.error{
+  align-self:flex-start;
+  background:var(--danger-soft);
+  color:var(--danger);
+  border:1px solid #E6B7A8;
+  border-bottom-left-radius:4px;
+  font-size:14px;
+}
+.msg.error button{
+  display:block;
+  margin-top:8px;
+  background:var(--danger);
+  color:#fff;
+  border:none;
+  border-radius:9px;
+  padding:7px 13px;
+  font:inherit;
+  font-size:13.5px;
+  cursor:pointer;
+}
+
+/* Markdown im Antworttext */
+.msg.assistant p{margin:0 0 .65em;}
+.msg.assistant p:last-child{margin-bottom:0;}
+.msg.assistant ul,.msg.assistant ol{margin:0 0 .65em;padding-left:1.25em;}
+.msg.assistant li{margin-bottom:.25em;}
+.msg.assistant h3{font-size:15px;margin:.2em 0 .45em;}
+.msg.assistant strong{font-weight:600;}
+.msg.assistant code{
+  font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  font-size:13px;
+  background:var(--accent-soft);
+  padding:1px 5px;
+  border-radius:5px;
+}
+.msg.assistant pre{
+  margin:0 0 .65em;
+  background:var(--ink);
+  color:var(--paper);
+  padding:10px 12px;
+  border-radius:10px;
+  overflow-x:auto;
+}
+.msg.assistant pre code{background:none;color:inherit;padding:0;font-size:12.5px;}
+.msg.assistant a{color:var(--accent);}
+
+/* Cursor, solange die Antwort noch läuft */
+.msg.streaming::after{
+  content:"";
+  display:inline-block;
+  width:7px;height:15px;
+  margin-left:2px;
+  vertical-align:-2px;
+  background:var(--accent);
+  animation:caret 1s steps(2) infinite;
+}
+@keyframes caret{0%,50%{opacity:1;}51%,100%{opacity:0;}}
+
+/* ---------- Hinweisleisten ---------- */
+
+.notice{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 14px;
+  font-size:13px;
+  border-top:1px solid var(--line);
+  background:var(--accent-soft);
+  color:var(--ink);
+  flex-shrink:0;
+}
+.notice[hidden]{display:none;}
+.notice.warn{background:var(--danger-soft);color:var(--danger);}
+.notice p{margin:0;flex:1;line-height:1.35;}
+.notice button{
+  border:none;
+  border-radius:9px;
+  padding:7px 12px;
+  font:inherit;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  background:var(--ink);
+  color:var(--paper);
+  flex-shrink:0;
+}
+.notice .notice__close{
+  background:transparent;
+  color:inherit;
+  padding:4px 6px;
+  font-size:17px;
+  line-height:1;
+  opacity:.6;
+}
+
+/* ---------- Eingabe ---------- */
+
+.composer{
+  display:flex;
+  align-items:flex-end;
+  gap:6px;
+  padding:9px 10px;
+  padding-bottom:max(9px, env(safe-area-inset-bottom));
+  background:var(--paper);
+  border-top:1px solid var(--line);
+  flex-shrink:0;
+}
+.composer__input{
+  flex:1;
+  resize:none;
+  border:1px solid var(--line);
+  background:var(--card);
+  color:var(--ink);
+  border-radius:17px;
+  padding:10px 14px;
+  font-family:inherit;
+  font-size:16px; /* unter 16px zoomt iOS beim Fokus */
+  max-height:120px;
+  line-height:1.4;
+}
+.composer__input:focus{outline:none;border-color:var(--accent);}
+.composer .icon-btn{color:var(--ink-soft);}
+.composer .icon-btn:hover{background:var(--accent-soft);color:var(--ink);}
+.composer .icon-btn[aria-pressed="true"]{background:var(--accent);color:#fff;}
+.composer .send{background:var(--ink);color:var(--paper);}
+.composer .send:hover{background:var(--ink);color:var(--paper);opacity:.9;}
+.composer .send:disabled{opacity:.35;cursor:default;}
+.composer .send.stop,
+.composer .send.stop:hover{background:var(--danger);color:#fff;}
+/* SVG-Elemente kennen kein hidden-Attribut — deshalb über die Klasse schalten. */
+.composer .send .stop__icon{display:none;}
+.composer .send.stop .stop__icon{display:block;}
+.composer .send.stop .send__icon{display:none;}
+
+/* ---------- Passwortabfrage ---------- */
+
+.gate{
+  position:absolute;
+  inset:0;
+  background:rgba(22,40,61,.9);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  z-index:10;
+}
+.gate[hidden]{display:none;}
+.gate__card{
+  background:var(--card);
+  border-radius:16px;
+  padding:20px;
+  width:100%;
+  max-width:320px;
+}
+.gate__card h2{margin:0 0 6px;font-size:17px;}
+.gate__card p{margin:0 0 14px;font-size:13.5px;color:var(--ink-soft);line-height:1.4;}
+.gate__card input{
+  width:100%;
+  border:1px solid var(--line);
+  border-radius:11px;
+  padding:11px 13px;
+  font:inherit;
+  font-size:16px;
+  margin-bottom:10px;
+}
+.gate__card input:focus{outline:none;border-color:var(--accent);}
+.gate__card button{
+  width:100%;
+  border:none;
+  border-radius:11px;
+  padding:11px;
+  font:inherit;
+  font-size:15px;
+  font-weight:600;
+  background:var(--ink);
+  color:var(--paper);
+  cursor:pointer;
+}
+
+.visually-hidden{
+  position:absolute;
+  width:1px;height:1px;
+  margin:-1px;padding:0;
+  overflow:hidden;
+  clip:rect(0 0 0 0);
+  white-space:nowrap;
+  border:0;
+}
+
+::-webkit-scrollbar{width:0;}

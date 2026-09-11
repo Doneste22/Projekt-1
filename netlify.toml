@@ -1,0 +1,22 @@
+# Die Seite selbst hat keinen Build-Schritt: das Repo wird so ausgeliefert, wie
+# es ist. Gebaut wird nur die Function für Jarvis (npm install macht Netlify
+# automatisch, sobald eine package.json da ist).
+
+[build]
+  publish = "."
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Jarvis ist privat und gehört nicht in Suchmaschinen.
+[[headers]]
+  for = "/jarvis/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Referrer-Policy = "no-referrer"
+
+[[headers]]
+  for = "/jarvis/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
