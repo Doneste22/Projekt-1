@@ -17,6 +17,7 @@ ratgeber/werkzeug.html        Ratgeber: Werkzeug-Grundausstattung
 impressum.html                Impressum — Entwurf mit Platzhaltern
 datenschutz.html              Datenschutzerklärung — Entwurf mit Platzhaltern
 partnerlinks.html             Interne Arbeitsliste für die Affiliate-Links
+jarvis.html                   Eigenständige Chat-Oberfläche für den Assistenten „Jarvis“
 assets/css/site.css           Design-System (Tokens, Komponenten, Raster)
 assets/js/site.js             Mobile Navigation, Diagramm-Tooltip, Schichten-Highlight
 ```
@@ -96,6 +97,27 @@ Beim Eintragen eines echten Links wird `href` gesetzt, `data-affiliate` auf `akt
 geändert, `rel="sponsored nofollow noopener"` ergänzt und der Status von
 „Partnerlink folgt“ auf „Anzeige“ gesetzt. Die Seite selbst ist nicht verlinkt und
 auf `noindex` gesetzt; sie kann vor dem Livegang gelöscht werden.
+
+## Jarvis
+
+`jarvis.html` ist eine eigenständige Einzeldatei und gehört nicht zum
+Ratgeber-Auftritt — sie wird von keiner Seite verlinkt und teilt weder CSS noch
+JavaScript mit dem Rest. Die Oberfläche ist für das Handy ausgelegt: Verlauf,
+Spracheingabe (`SpeechRecognition`, sofern der Browser sie mitbringt) und
+Vorlesefunktion (`speechSynthesis`).
+
+Zwei Dinge liefert die Datei nicht selbst mit:
+
+- **Das Modell.** Die Antwort kommt aus einem `POST` auf
+  `https://api.anthropic.com/v1/messages` — ohne Schlüssel im Request. Direkt
+  aus dem Browser eines statischen Hosts schlägt das fehl (CORS, fehlende
+  Authentifizierung); die Seite zeigt dann die Fehlerblase. Sie braucht eine
+  Umgebung, die diesen Aufruf serverseitig weiterreicht und dabei den API-Key
+  einsetzt. Ein Schlüssel gehört nicht in diese Datei — er wäre für jeden
+  Besucher lesbar.
+- **Den Speicher.** Der Verlauf läuft über `window.storage`
+  (`get`/`set`/`delete`), das dieselbe Umgebung bereitstellen muss. Fehlt es,
+  bleibt die Oberfläche bedienbar, startet aber bei jedem Aufruf ohne Verlauf.
 
 ## Redaktionelle Hinweise
 
