@@ -534,6 +534,10 @@ termux-wake-lock
 
 cd {arbeitsverzeichnis} || exit 1
 
+# Ohne dieses Verzeichnis schlägt die Umleitung der Ausgabe fehl, und zwar
+# lautlos — das Skript startet dann nie, ohne dass irgendwo etwas steht.
+mkdir -p {arbeitsverzeichnis / a.betrieb}
+
 # Schlüssel liegen in einer Datei mit Modus 600, nicht hier drin.
 export HANDELSASSISTENT_SCHARF=ja-ich-will
 # Ohne Weckruf merkst du auf dem Handy nichts. Thema durch ein eigenes ersetzen:
