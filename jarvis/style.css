@@ -230,6 +230,15 @@ body{
   cursor:pointer;
 }
 
+.msg.note{
+  align-self:flex-start;
+  background:var(--accent-soft);
+  color:var(--ink);
+  border:1px solid var(--line);
+  border-bottom-left-radius:4px;
+  font-size:14px;
+}
+
 /* Markdown im Antworttext */
 .msg.assistant p{margin:0 0 .65em;}
 .msg.assistant p:last-child{margin-bottom:0;}

@@ -49,7 +49,7 @@ assets/css/site.css                       Tokens und Komponenten der Seite
 jarvis/                                   Jarvis: installierbare Assistenz-App
 server/core.mjs                           Kern von Jarvis (Prompt, Modellaufruf)
 server/jarvis.mjs                         Jarvis lokal starten (PC, Termux)
-netlify/functions/                        dasselbe im Netz
+netlify/edge-functions/                   dasselbe im Netz
 netlify.toml                              Veröffentlichung, Kopfzeilen, Sperren
 ```
 
@@ -89,11 +89,20 @@ bedienen und fotografieren. Zwei Dinge, die sonst Zeit kosten:
 - Auf `pageerror` und `console` hören und am Ende ausgeben. Ein stiller
   JS-Fehler sieht auf dem Bild aus wie eine funktionierende Seite.
 
-Was ans Modell geht, lässt sich ohne einen Rappen Kosten prüfen: `ANTHROPIC_BASE_URL`
-auf einen eigenen kleinen Server zeigen lassen, der das Antwortformat nachspielt.
-Fertig dafür: `scripts/mock-anthropic.mjs`. Das prüft die ganze Kette — SDK,
-Parameter, Weiterleitung, Oberfläche — und zeigt im Protokoll, welches Modell und
-welche Parameter tatsächlich gesendet wurden.
+Was ans Modell geht, lässt sich ohne einen Rappen Kosten prüfen: den Aufruf auf
+einen eigenen kleinen Server zeigen lassen, der das Antwortformat nachspielt
+(`JARVIS_API_URL`). Fertig dafür: `scripts/mock-anthropic.mjs`. Das prüft die
+ganze Kette — Parameter, Weiterleitung, Oberfläche — und zeigt im Protokoll,
+welches Modell und welche Parameter tatsächlich gesendet wurden.
+
+Und was veröffentlicht ist, muss *veröffentlicht* geprüft werden, nicht nur
+lokal: die Grenzen der Plattform (Zeit, Rechenzeit) zeigen sich erst dort, und
+zwar als stillschweigend abgeschnittene Antwort, nicht als Fehler. Also nach
+jedem Deploy einmal etwas Langes fragen und nachsehen, ob der Abschluss
+(`message_stop`) wirklich ankommt. Kommt der Browser dieser Sandbox nicht an die
+Live-Adresse (der Proxy lässt ihn nicht durch), hilft eine Brücke: ein lokaler
+Server, der die Dateien ausliefert und `/api/…` per `curl` an die Live-Adresse
+weiterreicht — dann testet der Browser echtes Verhalten über localhost.
 
 ## Ausliefern
 

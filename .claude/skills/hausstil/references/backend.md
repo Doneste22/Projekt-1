@@ -8,15 +8,50 @@ Fremde). Deshalb steht bei jedem solchen Vorhaben ein eigener Endpunkt davor.
 ## Aufbau
 
 ```
-server/core.mjs                 Systemprompt, Prüfung, Modellaufruf, Strom
-netlify/functions/<name>.mts    dünne Hülle fürs Netz, Schlüssel aus Netlify.env
-server/<name>.mjs               dünne Hülle für lokal, Schlüssel aus process.env
+server/core.mjs                     Systemprompt, Prüfung, Aufruf an die Modell-API
+netlify/edge-functions/<name>.ts    dünne Hülle fürs Netz, Schlüssel aus Netlify.env
+server/<name>.mjs                   dünne Hülle für lokal, Schlüssel aus process.env
 ```
 
 Der Kern liegt als reines JavaScript (`.mjs`) vor, damit ihn beide Seiten laden
-können — die TypeScript-Function bündelt ihn über esbuild mit, der lokale Server
-startet ihn direkt mit `node`, ohne Übersetzungsschritt. Ein Systemprompt an zwei
-Stellen driftet garantiert auseinander; deshalb steht er genau einmal im Kern.
+können. Ein Systemprompt an zwei Stellen driftet garantiert auseinander; deshalb
+steht er genau einmal im Kern.
+
+## Drei Dinge, die hier bereits Zeit gekostet haben
+
+Sie sehen alle gleich aus — „es lief, dann war die Antwort komisch" — und haben
+völlig verschiedene Ursachen. In dieser Reihenfolge prüfen:
+
+**1. Eine normale Function schneidet nach rund 26 Sekunden ab.** Keine
+Fehlermeldung, kein Ereignis, der Text endet mitten im Wort. Für alles, was
+streamt, gehört der Endpunkt in `netlify/edge-functions/`: dort muss nur die
+Kopfzeile innerhalb von 40 Sekunden raus, der Strom darf danach laufen.
+
+**2. Eine Edge-Function darf 50 Millisekunden rechnen.** Wartezeit zählt nicht
+mit, eigene Arbeit schon. Ein SDK, das jedes Token auswertet, ist damit nach
+etwa sechstausend Zeichen Antwort am Ende — und schneidet wieder mitten im Wort
+ab, diesmal später, was die Suche nicht leichter macht. Deshalb: **den
+Antwortstrom nicht anfassen.** Der Server prüft die Anfrage, ruft die API mit
+`stream: true` auf und gibt `upstream.body` unverändert zurück; die Ereignisse
+wertet der Browser aus, wo niemand die Rechenzeit zählt. Nebenwirkung: kein
+SDK, keine Pakete zur Laufzeit.
+
+Die Oberfläche liest damit unmittelbar das Format der Messages-API:
+`content_block_delta` mit `delta.type === "text_delta"` für den Text,
+`message_delta` für `stop_reason`, `message_stop` als Abschluss, `error` für
+Fehler unterwegs. **Ohne `message_stop` ist die Antwort unvollständig** — das
+muss in der Oberfläche dranstehen, sonst liest sich eine halbe Antwort wie eine
+ganze.
+
+**3. Die Gegenstelle ist nicht immer api.anthropic.com.** Netlify legt Projekten
+ein eigenes AI-Gateway davor: `ANTHROPIC_API_KEY` enthält dann kein `sk-ant-…`,
+sondern ein langes JWT, und die Adresse steht in `ANTHROPIC_BASE_URL`. Ein SDK
+liest beides von selbst aus der Umgebung — ein roher Aufruf nicht, und das
+Ergebnis ist ein 401, bei dem man den Fehler beim Schlüssel sucht. Also immer
+`ANTHROPIC_BASE_URL` bevorzugen, wenn gesetzt. Wenn ein 401 kommt: nicht raten,
+sondern die Klartextmeldung der API ansehen (vorübergehend durchreichen, hinter
+dem Zugangscode) — sie sagt „Invalid bearer token" statt „invalid x-api-key"
+und nennt damit die Ursache.
 
 Der lokale Server ist kein Spielzeug: auf Android läuft er in Termux direkt auf
 dem Telefon, und weil Chrome `localhost` als sichere Herkunft behandelt, lässt
@@ -63,20 +98,24 @@ kostet sonst Geld, das niemand ausgeben wollte.
 
 ## Protokoll zur Oberfläche
 
-`text/event-stream`, vier Ereignisse:
+`text/event-stream` — unverändert das, was die Modell-API schickt (siehe Punkt 2
+oben). Was nicht im Strom steht, kommt als Kopfzeile mit, weil Kopfzeilen nichts
+kosten:
 
 ```
-event: meta    data: {"model":"…","unprotected":true|false}
-event: delta   data: {"text":"…"}
-event: done    data: {"stop_reason":"end_turn"}
-event: error   data: {"message":"…","status":429}
+x-jarvis-model         welches Modell geantwortet hat
+x-jarvis-unprotected   "1", wenn kein Zugangscode gesetzt ist
 ```
+
+Fehler *vor* dem Strom (kein Schlüssel, falscher Code, abgelehnte Anfrage) sind
+ein gewöhnliches JSON mit passendem Statuscode — die Oberfläche kann dann noch
+sinnvoll reagieren, etwa die Code-Abfrage öffnen.
 
 Streamen ist hier kein Schmuck: eine Antwort, die wortweise erscheint, fühlt
-sich an wie ein Gespräch, eine, die nach zehn Sekunden am Stück erscheint, wie
-ein Formular. Abbrechen im Browser muss den Strom auch serverseitig abbrechen
-(`cancel()` der `ReadableStream`, bzw. `res.on("close")`), sonst schreibt das
-Modell auf Damasos Rechnung weiter.
+sich an wie ein Gespräch, eine, die nach dreißig Sekunden am Stück erscheint,
+wie ein Formular. Abbrechen im Browser muss den Strom auch serverseitig
+abbrechen (`req.signal` weiterreichen bzw. `res.on("close")`), sonst schreibt
+das Modell auf Damasos Rechnung weiter.
 
 ## Schutz
 

@@ -2,15 +2,12 @@
   "name": "wand-fuer-wand",
   "version": "1.0.0",
   "private": true,
-  "description": "Statische Website „Wand für Wand“ plus die Jarvis-App und ihre Netlify-Function.",
+  "description": "Statische Website „Wand für Wand“ plus die Jarvis-App und ihre Edge-Function.",
   "license": "UNLICENSED",
   "engines": {
     "node": ">=20"
   },
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.125.0"
-  },
   "devDependencies": {
-    "@netlify/functions": "^6.0.0"
+    "@netlify/edge-functions": "^2.12.0"
   }
 }

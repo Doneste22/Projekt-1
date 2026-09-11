@@ -31,6 +31,8 @@
   var gate = document.getElementById('gate');
   var gateForm = document.getElementById('gateForm');
   var gateInput = document.getElementById('gateInput');
+  var gateText = document.getElementById('gateText');
+  var GATE_DEFAULT = gateText.textContent;
 
   var messages = [];        // { role, content, local? }
   var voiceOutput = false;
@@ -193,9 +195,9 @@
     return div;
   }
 
-  function renderError(text, retry) {
+  function renderError(text, retry, kind) {
     var div = document.createElement('div');
-    div.className = 'msg error';
+    div.className = 'msg ' + (kind || 'error');
     div.setAttribute('role', 'alert');
     var p = document.createElement('span');
     p.textContent = text;
@@ -292,6 +294,17 @@
     warnBar.hidden = false;
   }
 
+  // Fehler, die mitten im Strom kommen, meldet die Modell-API selbst.
+  function apiErrorText(type) {
+    if (type === 'overloaded_error' || type === 'rate_limit_error') {
+      return 'Das Modell ist gerade ausgelastet. Gleich nochmal versuchen.';
+    }
+    if (type === 'invalid_request_error') {
+      return 'Die Anfrage wurde abgelehnt. Lösch den Verlauf und versuch es neu.';
+    }
+    return 'Das Modell hat die Antwort abgebrochen. Versuch es nochmal.';
+  }
+
   function errorText(status, message) {
     if (status === 401) return 'Der Zugangscode stimmt nicht.';
     if (status === 429) return 'Zu viele Anfragen — kurz warten und nochmal senden.';
@@ -310,6 +323,8 @@
 
     var bubble = null;
     var answer = '';
+    var finished = false;   // erst message_stop macht eine Antwort vollständig
+    var stopReason = null;
 
     function append(text) {
       if (!bubble) {
@@ -340,19 +355,31 @@
         var detail = '';
         try { detail = (await response.json()).error || ''; } catch (e) { /* kein JSON */ }
         if (response.status === 401) {
+          // Beim ersten Mal war noch gar kein Code hinterlegt — dann ist die
+          // Abfrage die Antwort, keine Fehlermeldung.
+          openGate(code ? 'Der Code stimmt nicht. Versuch es nochmal.' : null);
           drop(KEY_PASSCODE);
-          openGate();
+          throw Object.assign(new Error(detail), { status: response.status, handled: true });
         }
         throw Object.assign(new Error(detail), { status: response.status });
       }
 
+      if (response.headers.get('x-jarvis-unprotected') === '1') {
+        showWarning('Dieser Jarvis ist ohne Zugangscode erreichbar. Setz JARVIS_PASSCODE in den Netlify-Variablen.');
+      }
+
+      // Der Server reicht den Strom der Modell-API unverändert durch (siehe
+      // server/core.mjs), ausgewertet wird er hier.
       await readStream(response.body, function (event, data) {
-        if (event === 'meta' && data.unprotected) {
-          showWarning('Dieser Jarvis ist ohne Zugangscode erreichbar. Setz JARVIS_PASSCODE in den Netlify-Variablen.');
-        } else if (event === 'delta') {
-          append(data.text);
+        if (event === 'content_block_delta') {
+          if (data.delta && data.delta.type === 'text_delta') append(data.delta.text);
+        } else if (event === 'message_delta') {
+          if (data.delta && data.delta.stop_reason) stopReason = data.delta.stop_reason;
+        } else if (event === 'message_stop') {
+          finished = true;
         } else if (event === 'error') {
-          throw Object.assign(new Error(data.message), { status: data.status || 500 });
+          var info = data.error || {};
+          throw Object.assign(new Error(apiErrorText(info.type)), { status: 500 });
         }
       });
 
@@ -360,9 +387,21 @@
         messages.push({ role: 'assistant', content: answer });
         saveMessages();
         feedSpeech('', true);
+        if (!finished) {
+          // Ohne message_stop ist die Verbindung unterwegs abgerissen. Das Stück
+          // bleibt stehen, aber es muss dranstehen — sonst liest sich eine halbe
+          // Antwort wie eine ganze.
+          renderError('Die Verbindung ist abgerissen, die Antwort ist unvollständig.', true);
+        } else if (stopReason === 'max_tokens') {
+          renderError('Die Antwort war zu lang und ist hier zu Ende. Frag nach dem Rest.', false, 'note');
+        }
       } else if (bubble) {
         bubble.remove();
-        renderError('Jarvis hat nichts geantwortet. Versuch es nochmal.', true);
+        if (stopReason === 'refusal') {
+          renderError('Dazu kann ich nichts sagen. Frag mich etwas anderes.', false, 'note');
+        } else {
+          renderError('Jarvis hat nichts geantwortet. Versuch es nochmal.', true);
+        }
       }
     } catch (err) {
       if (err.name === 'AbortError') {
@@ -375,7 +414,9 @@
         }
       } else {
         if (bubble && !answer.trim()) bubble.remove();
-        renderError(errorText(err.status, err.message), true);
+        // Die Code-Abfrage steht schon auf dem Schirm; eine rote Blase dazu
+        // wäre nur Lärm.
+        if (!err.handled) renderError(errorText(err.status, err.message), true);
       }
     } finally {
       if (bubble) bubble.classList.remove('streaming');
@@ -524,7 +565,8 @@
 
   /* ---------- Zugangscode ---------- */
 
-  function openGate() {
+  function openGate(hint) {
+    gateText.textContent = hint || GATE_DEFAULT;
     gate.hidden = false;
     setTimeout(function () { gateInput.focus(); }, 50);
   }

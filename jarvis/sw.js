@@ -2,7 +2,7 @@
    Zweck: die App startet auch ohne Netz. Antworten des Modells werden nie
    zwischengespeichert — /api/ geht immer ans Netz. */
 
-var CACHE = 'jarvis-v1';
+var CACHE = 'jarvis-v2';
 var SHELL = [
   './',
   'index.html',

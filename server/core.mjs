@@ -2,18 +2,39 @@
  * Gemeinsamer Kern für Jarvis.
  *
  * Wird von zwei Seiten benutzt:
- *   netlify/functions/jarvis.mts   — im Netz, Schlüssel in den Netlify-Variablen
- *   server/jarvis.mjs              — lokal (PC oder Termux auf dem Handy)
+ *   netlify/edge-functions/jarvis.ts  — im Netz, Schlüssel in den Netlify-Variablen
+ *   server/jarvis.mjs                 — lokal (PC oder Termux auf dem Handy)
  *
- * Beide sprechen dasselbe Protokoll mit der Oberfläche:
- *   meta   { model, unprotected }  einmal am Anfang
- *   delta  { text }                für jedes Stück Antworttext
- *   done   { stop_reason }         am Ende
- *   error  { message, status }     wenn unterwegs etwas schiefgeht
+ * Warum hier kein Anthropic-SDK, sondern ein roher Aufruf:
+ * Eine Netlify-Edge-Function darf pro Anfrage 50 Millisekunden rechnen —
+ * Wartezeit zählt nicht mit, eigene Arbeit schon. Das SDK wertet jedes
+ * einzelne Token aus, und ab etwa sechstausend Zeichen Antwort ist das Budget
+ * aufgebraucht: die Antwort brach mitten im Wort ab, ohne Fehlermeldung.
+ * Deshalb rührt der Server den Strom nicht an, sondern reicht ihn unverändert
+ * durch; ausgewertet wird er im Browser, wo niemand die Rechenzeit zählt.
+ * Nebenwirkung: das Projekt braucht zur Laufzeit überhaupt keine Pakete mehr.
+ *
+ * Die Oberfläche liest also unmittelbar das Ereignisformat der Messages-API
+ * (content_block_delta, message_delta, message_stop). Zwei Angaben, die nicht
+ * im Strom stehen, kommen als Kopfzeilen mit:
+ *   x-jarvis-model         welches Modell geantwortet hat
+ *   x-jarvis-unprotected   "1", wenn kein Zugangscode gesetzt ist
  */
 
-import Anthropic from "@anthropic-ai/sdk";
+export const API_BASE = "https://api.anthropic.com";
 
+/**
+ * Die Gegenstelle ist nicht immer api.anthropic.com: Netlify legt für Projekte
+ * ein eigenes AI-Gateway davor und hinterlegt dessen Adresse in
+ * ANTHROPIC_BASE_URL, dazu in ANTHROPIC_API_KEY ein signiertes Token statt
+ * eines Schlüssels. Wer die Adresse ignoriert, bekommt vom echten Endpunkt ein
+ * 401 und sucht den Fehler beim Schlüssel. Also: Umgebung schlägt Standard.
+ */
+export function messagesUrl(baseUrl) {
+  const base = String(baseUrl || API_BASE).trim().replace(/\/+$/, "");
+  return base.endsWith("/v1/messages") ? base : base + "/v1/messages";
+}
+export const API_VERSION = "2023-06-01";
 export const DEFAULT_MODEL = "claude-opus-5";
 export const MAX_TOKENS = 4000;
 export const MAX_MESSAGES = 24;
@@ -54,55 +75,94 @@ export function check(payload) {
   return { messages };
 }
 
-export function startStream({ apiKey, model, messages }) {
-  const client = new Anthropic({ apiKey });
-  // fallbacks/betas sind neuer als die SDK-Typen — der Aufruf selbst stimmt.
-  return client.beta.messages.stream({
-    model: model || DEFAULT_MODEL,
-    max_tokens: MAX_TOKENS,
-    system: SYSTEM_PROMPT,
-    thinking: { type: "adaptive" },
-    output_config: { effort: "medium" },
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
-    messages
-  });
+/**
+ * Zugangsdaten können zweierlei sein, und sie sehen sich zum Verwechseln
+ * ähnlich: ein API-Schlüssel gehört in `x-api-key`, ein OAuth-Token in
+ * `Authorization: Bearer` samt eigenem Beta-Kopf. Das falsche Paar ergibt ein
+ * 401, das wie ein ungültiger Schlüssel aussieht. Wir raten anhand der Form
+ * und probieren im Zweifel das andere (siehe `oauth`).
+ */
+export function isOauthToken(apiKey) {
+  return /^sk-ant-oat/i.test(String(apiKey || "").trim());
 }
 
-function describe(status) {
-  if (status === 401) return "Der API-Schlüssel wird abgelehnt.";
-  if (status === 429) return "Das Modell ist gerade ausgelastet. Gleich nochmal versuchen.";
-  if (status >= 500) return "Das Modell antwortet gerade nicht. Gleich nochmal versuchen.";
-  return "Die Anfrage ist nicht durchgegangen.";
+const FALLBACK_BETA = "server-side-fallback-2026-07-01";
+
+function authHeaders(apiKey, oauth) {
+  const key = String(apiKey || "").trim();
+  return oauth
+    ? { authorization: `Bearer ${key}`, "anthropic-beta": `oauth-2025-04-20,${FALLBACK_BETA}` }
+    : { "x-api-key": key, "anthropic-beta": FALLBACK_BETA };
 }
 
 /**
- * Fährt den Strom ab und meldet jedes Stück über `emit(event, data)`.
- * Gibt zurück, wenn die Antwort fertig ist — Fehler landen als error-Ereignis.
+ * Baut den Aufruf an die Messages-API. Modellparameter stehen nur hier.
+ * `url` überschreibt das Ziel — damit lässt sich die ganze Kette gegen den
+ * Mock aus .claude/skills/hausstil/scripts/mock-anthropic.mjs prüfen.
  */
-export async function pump(stream, emit) {
-  try {
-    let produced = false;
-    for await (const event of stream) {
-      if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
-        produced = true;
-        emit("delta", { text: event.delta.text });
-      }
+export function upstreamRequest({ apiKey, model, messages, signal, url, oauth }) {
+  return [
+    messagesUrl(url),
+    {
+      method: "POST",
+      signal,
+      headers: Object.assign(
+        {
+          "content-type": "application/json",
+          "anthropic-version": API_VERSION
+        },
+        // Wird die Anfrage aus Sicherheitsgründen abgelehnt, läuft sie
+        // serverseitig auf einem anderen Modell weiter, statt leer zurückzukommen.
+        authHeaders(apiKey, oauth === undefined ? isOauthToken(apiKey) : oauth)
+      ),
+      body: JSON.stringify({
+        model: model || DEFAULT_MODEL,
+        max_tokens: MAX_TOKENS,
+        stream: true,
+        system: SYSTEM_PROMPT,
+        thinking: { type: "adaptive" },
+        output_config: { effort: "medium" },   // Chat am Handy: Tempo vor Tiefe
+        fallbacks: "default",
+        messages
+      })
     }
-    const final = await stream.finalMessage();
-    if (final.stop_reason === "refusal" && !produced) {
-      emit("delta", { text: "Dazu kann ich nichts sagen. Frag mich etwas anderes." });
-    }
-    emit("done", { stop_reason: final.stop_reason });
-  } catch (error) {
-    const status = (error && error.status) || 500;
-    console.error("jarvis:", error);
-    emit("error", { message: describe(status), status });
-  }
+  ];
 }
 
-export const SSE_HEADERS = {
-  "content-type": "text/event-stream; charset=utf-8",
-  "cache-control": "no-store",
-  "x-accel-buffering": "no"
-};
+/**
+ * Ruft die Modell-API auf. Ein 401 kann bedeuten, dass die Zugangsdaten in der
+ * anderen Form geschickt werden müssen — dann genau einmal umschalten. Ein 401
+ * kostet nichts, der zweite Versuch ist also gratis.
+ */
+export async function callUpstream(options) {
+  const guess = isOauthToken(options.apiKey);
+  let [url, init] = upstreamRequest(Object.assign({}, options, { oauth: guess }));
+  let response = await fetch(url, init);
+  if (response.status === 401) {
+    console.error(`jarvis: 401 mit ${guess ? "Bearer" : "x-api-key"}, versuche die andere Form`);
+    try { await response.body?.cancel(); } catch { /* egal */ }
+    [url, init] = upstreamRequest(Object.assign({}, options, { oauth: !guess }));
+    response = await fetch(url, init);
+  }
+  return response;
+}
+
+export function sseHeaders({ model, unprotected }) {
+  return {
+    "content-type": "text/event-stream; charset=utf-8",
+    "cache-control": "no-store",
+    "x-accel-buffering": "no",
+    "x-jarvis-model": model,
+    "x-jarvis-unprotected": unprotected ? "1" : "0"
+  };
+}
+
+/** Übersetzt einen Fehler der Modell-API in etwas, das in der Oberfläche stehen darf. */
+export function describeUpstream(status, bodyText) {
+  if (status === 401 || status === 403) return "Der API-Schlüssel wird abgelehnt. Prüf ihn in den Einstellungen.";
+  if (status === 429) return "Das Modell ist gerade ausgelastet. Gleich nochmal versuchen.";
+  if (status === 400) return "Die Anfrage wurde abgelehnt. Lösch den Verlauf und versuch es neu.";
+  if (status >= 500) return "Das Modell antwortet gerade nicht. Gleich nochmal versuchen.";
+  console.error("jarvis: unerwartete Antwort", status, (bodyText || "").slice(0, 500));
+  return "Die Anfrage ist nicht durchgegangen.";
+}

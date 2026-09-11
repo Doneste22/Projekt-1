@@ -1,13 +1,10 @@
 # Die Seite selbst hat keinen Build-Schritt: das Repo wird so ausgeliefert, wie
-# es ist. Gebaut wird nur die Function für Jarvis (npm install macht Netlify
-# automatisch, sobald eine package.json da ist).
+# es ist. Gebaut wird nur die Edge-Function für Jarvis aus
+# netlify/edge-functions (npm install macht Netlify automatisch, sobald eine
+# package.json da ist).
 
 [build]
   publish = "."
-
-[functions]
-  directory = "netlify/functions"
-  node_bundler = "esbuild"
 
 # Jarvis ist privat und gehört nicht in Suchmaschinen.
 [[headers]]

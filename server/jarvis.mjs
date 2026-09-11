@@ -7,16 +7,17 @@
  * behandelt localhost als sichere Herkunft: Service Worker und "Zum
  * Startbildschirm hinzufügen" funktionieren also auch ohne Netzadresse.
  *
- * Es wird nichts protokolliert und nichts gespeichert; der Verlauf liegt
- * ausschließlich im Browser.
+ * Braucht keine Pakete — nur Node. Es wird nichts protokolliert und nichts
+ * gespeichert; der Verlauf liegt ausschließlich im Browser.
  */
 
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
-import { check, pump, startStream, DEFAULT_MODEL, SSE_HEADERS } from "./core.mjs";
+import { callUpstream, check, describeUpstream, sseHeaders, DEFAULT_MODEL } from "./core.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = Number(process.env.JARVIS_PORT || process.env.PORT || 8787);
@@ -75,19 +76,32 @@ async function handleChat(req, res) {
   const checked = check(payload);
   if (checked.error) return sendJson(res, checked.status, { error: checked.error });
 
-  const stream = startStream({ apiKey: API_KEY, model: MODEL, messages: checked.messages });
-  res.writeHead(200, SSE_HEADERS);
-
-  const emit = (event, data) => {
-    if (!res.writableEnded) res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-  };
-
   // Browser weggeklickt oder abgebrochen: dann muss das Modell nicht weiterschreiben.
-  res.on("close", () => { if (!res.writableEnded) stream.abort(); });
+  const controller = new AbortController();
+  res.on("close", () => controller.abort());
 
-  emit("meta", { model: MODEL, unprotected: !PASSCODE });
-  await pump(stream, emit);
-  res.end();
+  let upstream;
+  try {
+    upstream = await callUpstream({
+      apiKey: API_KEY,
+      model: MODEL,
+      messages: checked.messages,
+      signal: controller.signal,
+      // Gateway-Adresse, falls eine gesetzt ist; JARVIS_API_URL zum Prüfen gegen den Mock
+      url: process.env.JARVIS_API_URL || process.env.ANTHROPIC_BASE_URL
+    });
+  } catch (error) {
+    if (controller.signal.aborted) return;
+    return sendJson(res, 502, { error: "Das Modell war nicht erreichbar. Gleich nochmal versuchen." });
+  }
+
+  if (!upstream.ok || !upstream.body) {
+    const text = await upstream.text().catch(() => "");
+    return sendJson(res, upstream.status, { error: describeUpstream(upstream.status, text) });
+  }
+
+  res.writeHead(200, sseHeaders({ model: MODEL, unprotected: !PASSCODE }));
+  Readable.fromWeb(upstream.body).pipe(res);
 }
 
 async function serveFile(res, pathname) {
@@ -117,7 +131,8 @@ async function serveFile(res, pathname) {
 http.createServer((req, res) => {
   const url = new URL(req.url, "http://localhost");
   if (url.pathname === "/api/jarvis") {
-    handleChat(req, res).catch(() => {
+    handleChat(req, res).catch((error) => {
+      console.error("jarvis:", error);
       if (!res.headersSent) sendJson(res, 500, { error: "Serverfehler." });
       else res.end();
     });
