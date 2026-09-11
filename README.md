@@ -19,7 +19,9 @@ impressum.html                Impressum — Entwurf mit Platzhaltern
 datenschutz.html              Datenschutzerklärung — Entwurf mit Platzhaltern
 partnerlinks.html             Interne Arbeitsliste für die Affiliate-Links
 jarvis/                       Jarvis: eigenständige Assistenz-App (installierbar)
-netlify/functions/jarvis.mts  Backend für Jarvis — hält den API-Schlüssel
+server/core.mjs               Kern von Jarvis: Systemprompt, Prüfung, Modellaufruf
+server/jarvis.mjs             Jarvis lokal starten (PC oder Termux auf dem Handy)
+netlify/functions/jarvis.mts  Dasselbe im Netz — hält den API-Schlüssel
 netlify.toml                  Veröffentlichung und Function-Verzeichnis
 assets/css/site.css           Design-System (Tokens, Komponenten, Raster)
 assets/js/site.js             Mobile Navigation, Diagramm-Tooltip, Schichten-Highlight
@@ -139,10 +141,13 @@ Bei `prefers-reduced-motion` stehen alle Animationen still.
 ### Backend
 
 Der Browser spricht nie direkt mit der Modell-API. Er ruft `/api/jarvis` auf,
-und erst die Netlify-Function `netlify/functions/jarvis.mts` setzt den
-API-Schlüssel ein. Der Schlüssel steckt in den Netlify-Umgebungsvariablen und
-taucht nirgends im ausgelieferten Code auf — in eine HTML-Datei gehört er nicht,
-dort könnte ihn jeder Besucher lesen.
+und erst der Server setzt den API-Schlüssel ein. Es gibt zwei Server, die
+denselben Kern (`server/core.mjs`) benutzen und sich für die Oberfläche gleich
+verhalten: die Netlify-Function fürs Netz und `server/jarvis.mjs` für lokal.
+Systemprompt, Modellwahl und Grenzen stehen einmal in `core.mjs` — wer etwas
+daran ändert, ändert es für beide. Der Schlüssel steckt in den Umgebungsvariablen und taucht
+nirgends im ausgelieferten Code auf — in eine HTML-Datei gehört er nicht, dort
+könnte ihn jeder Besucher lesen.
 
 Die Antwort kommt als Strom (`text/event-stream`) zurück und erscheint Wort für
 Wort, statt dass man auf den ganzen Absatz wartet. Abbrechen bricht auch
@@ -172,16 +177,51 @@ Danach startet Jarvis im eigenen Fenster ohne Browserleiste, mit eigenem Icon.
 Der Gesprächsverlauf liegt im Speicher des Geräts (bis zu 200 Nachrichten, an
 die API gehen die letzten 24) und verlässt das Handy nur als Teil der Anfrage.
 
-### Lokal ausprobieren
+### Ohne Netz-Server: Termux auf dem Handy
+
+Jarvis läuft auch komplett auf dem Handy — Server und alles. Das braucht keine
+Veröffentlichung, kostet kein Hosting, und der Schlüssel verlässt das Gerät nie.
+In Termux (Android):
+
+```
+pkg install nodejs git
+git clone https://github.com/Doneste22/Projekt-1
+cd Projekt-1
+npm install
+export ANTHROPIC_API_KEY=sk-ant-...
+node server/jarvis.mjs
+```
+
+Dann im Chrome des Handys `http://localhost:8787/jarvis/` öffnen und über das
+Menü „Zum Startbildschirm hinzufügen“. Chrome behandelt `localhost` als sichere
+Herkunft, die Installation funktioniert also genauso wie bei einer echten
+Adresse.
+
+Was man dabei wissen muss:
+
+- Der Server muss laufen. Ist Termux zu, kommt keine Antwort — die App startet
+  zwar (der Service Worker hat sie gespeichert), aber jede Frage endet im
+  Fehlerhinweis. `termux-wake-lock` hält Termux wach, `termux-boot` startet es
+  nach dem Neustart des Handys.
+- Den Schlüssel dauerhaft hinterlegen: die `export`-Zeile ans Ende von
+  `~/.bashrc` schreiben. Er liegt dann im Klartext auf dem Handy — was in
+  Ordnung ist, solange das Handy selbst gesperrt ist.
+- Das gilt nur für Android. Auf dem iPhone gibt es kein Termux; dort braucht es
+  den Weg über eine veröffentlichte Adresse.
+- `JARVIS_PASSCODE` ist hier unnötig, solange nur `localhost` benutzt wird. Wer
+  vom Notebook aus über das WLAN zugreift, sollte ihn setzen.
+
+### Auf dem PC ausprobieren
 
 ```
 npm install
-npx netlify dev
+ANTHROPIC_API_KEY=sk-ant-... node server/jarvis.mjs
 ```
 
-Dann http://localhost:8888/jarvis/ aufrufen. Ohne `ANTHROPIC_API_KEY` in der
-Umgebung läuft die Oberfläche, aber jede Antwort endet im Hinweis, dass der
-Schlüssel fehlt.
+Dann http://localhost:8787/jarvis/ aufrufen. Ohne Schlüssel läuft die
+Oberfläche, aber jede Antwort endet im Hinweis, dass er fehlt. Wer die
+Netlify-Seite mitsamt Function testen will, nimmt stattdessen `npx netlify dev`
+und http://localhost:8888/jarvis/.
 
 ## Redaktionelle Hinweise
 

@@ -20,3 +20,23 @@
   for = "/jarvis/sw.js"
   [headers.values]
     Cache-Control = "no-cache"
+
+# Quelltext und Konfiguration liegen im selben Ordner wie die Seite, gehören
+# aber nicht ausgeliefert.
+[[redirects]]
+  from = "/netlify/*"
+  to = "/index.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/server/*"
+  to = "/index.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/package*.json"
+  to = "/index.html"
+  status = 404
+  force = true
