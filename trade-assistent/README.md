@@ -422,12 +422,27 @@ export HANDELSASSISTENT_WEBHOOK=https://ntfy.sh/dein-geheimes-thema
 Erkannt werden ntfy.sh, Discord, Slack und Telegram. Ein fehlgeschlagener
 Weckruf stört den Handel nie — er wird geschluckt und vermerkt.
 
-**Zum Themennamen bei ntfy.sh:** Dort gibt es weder Anmeldung noch Passwort.
-Wer den Namen kennt oder errät, liest alle Nachrichten mit — jeden Kauf,
-jeden Verkauf, jeden Kontostand. Der Name ist das einzige Geheimnis und
-gehört entsprechend gewählt: mindestens 16 zufällige Zeichen, kein Wort.
-`einrichten` beanstandet zu kurze und sprechende Namen und schlägt einen
-brauchbaren vor.
+**Zum Themennamen bei ntfy.sh:** Ohne Konto gibt es dort weder Anmeldung noch
+Passwort. Wer den Namen kennt oder errät, liest alle Nachrichten mit — jeden
+Kauf, jeden Verkauf, jeden Kontostand. Der Name ist dann das einzige
+Geheimnis und gehört entsprechend gewählt: mindestens 16 zufällige Zeichen,
+kein Wort. `einrichten` beanstandet zu kurze und sprechende Namen.
+
+Sauberer ist ein ntfy-Konto mit reserviertem Thema und Zugangstoken:
+
+```
+export HANDELSASSISTENT_WEBHOOK=https://ntfy.sh/dein-thema
+export HANDELSASSISTENT_WEBHOOK_TOKEN=tk_...
+```
+
+Dann hängt der Schutz am Zugang statt an der Namenswahl, und der Name darf
+heissen, wie er will. Der Token geht als `Authorization: Bearer` mit;
+`einrichten` unterscheidet 401 (Token fehlt oder falsch) von 403 (Token darf
+auf diesem Thema nicht senden) und sagt jeweils, was zu tun ist.
+
+Ein Token ist ein Geheimnis wie der Börsenschlüssel: nicht ins Repository,
+nicht in den Chat, und die Datei, in der er steht, gehört auf Modus 600. Das
+von `dienst --termux` erzeugte Startskript wird deshalb mit 700 angelegt.
 
 ## Dauerbetrieb auf Android (Termux)
 

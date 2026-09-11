@@ -433,15 +433,29 @@ def befehl_einrichten(a) -> int:
 
     _pruefpunkt(9, "Benachrichtigung")
     url = os.environ.get("HANDELSASSISTENT_WEBHOOK")
+    token = os.environ.get("HANDELSASSISTENT_WEBHOOK_TOKEN")
     if url:
-        schwach = notify.themenname_pruefen(url)
+        schwach = notify.themenname_pruefen(url, token)
         if schwach:
             _warnung(schwach)
             print(f"                Vorschlag: https://ntfy.sh/{notify.zufaelliges_thema()}")
+            print("                Oder ein ntfy-Konto anlegen und "
+                  "HANDELSASSISTENT_WEBHOOK_TOKEN setzen.")
             warnungen += 1
-        melder = notify.WebhookMelder(url)
+        elif token:
+            _ja("geschütztes Thema mit Zugangstoken — der Name muss dann nicht geheim sein")
+        melder = notify.WebhookMelder(url, token=token)
         melder.melden("Handelsassistent", "Testnachricht aus der Einrichtungsprüfung.")
-        if melder.fehler:
+        if melder.fehler and "401" in melder.fehler:
+            _nein("Zugang verweigert (401). Das Thema ist geschützt, der Token fehlt "
+                  "oder stimmt nicht.")
+            print("                HANDELSASSISTENT_WEBHOOK_TOKEN=tk_... setzen.")
+            fehler += 1
+        elif melder.fehler and "403" in melder.fehler:
+            _nein("Zugang verweigert (403). Der Token darf auf diesem Thema nicht senden.")
+            print("                Im ntfy-Konto dem Token Schreibrecht auf das Thema geben.")
+            fehler += 1
+        elif melder.fehler:
             _warnung(f"Webhook gesetzt, aber nicht erreichbar: {melder.fehler}")
             warnungen += 1
         else:
@@ -507,7 +521,9 @@ cd {arbeitsverzeichnis} || exit 1
 # Schlüssel liegen in einer Datei mit Modus 600, nicht hier drin.
 export HANDELSASSISTENT_SCHARF=ja-ich-will
 # Ohne Weckruf merkst du auf dem Handy nichts. Thema durch ein eigenes ersetzen:
-export HANDELSASSISTENT_WEBHOOK=https://ntfy.sh/dein-geheimes-thema
+export HANDELSASSISTENT_WEBHOOK=https://ntfy.sh/dein-thema
+# Nur nötig, wenn das Thema in deinem ntfy-Konto geschützt ist:
+# export HANDELSASSISTENT_WEBHOOK_TOKEN=tk_...
 
 # Android beendet Hintergrundprozesse ohne Vorwarnung. Der Zustand liegt auf
 # Platte, ein Wiederanlauf ist also gefahrlos — eine ausgelöste Sicherung
@@ -535,7 +551,7 @@ def befehl_dienst(a) -> int:
         if a.schreiben:
             ziel = Path(a.schreiben)
             ziel.write_text(vorlage)
-            ziel.chmod(0o755)
+            ziel.chmod(0o700)  # enthält womöglich einen Token
             print(f"\n  Geschrieben: {ziel}")
         else:
             print(vorlage)

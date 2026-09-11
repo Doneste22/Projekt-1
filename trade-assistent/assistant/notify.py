@@ -41,10 +41,17 @@ class WebhookMelder:
     wird jeder Fehler hier geschluckt und nur zurückgemeldet.
     """
 
-    def __init__(self, url: str, format: str = "auto", zeitgrenze: int = 10):
+    def __init__(
+        self,
+        url: str,
+        format: str = "auto",
+        zeitgrenze: int = 10,
+        token: str | None = None,
+    ):
         self.url = url
         self.zeitgrenze = zeitgrenze
         self.format = self._erkennen(url) if format == "auto" else format
+        self.token = token
         self.fehler: str | None = None
 
     @staticmethod
@@ -74,6 +81,10 @@ class WebhookMelder:
 
     def melden(self, betreff: str, text: str, dringend: bool = False) -> None:
         koerper, kopf = self._koerper(betreff, text, dringend)
+        if self.token:
+            # Geschütztes Thema: Der Zugang hängt am Token, nicht daran, dass
+            # niemand den Themennamen errät.
+            kopf["Authorization"] = f"Bearer {self.token}"
         try:
             req = urllib.request.Request(self.url, data=koerper, headers=kopf, method="POST")
             with urllib.request.urlopen(req, timeout=self.zeitgrenze):
@@ -94,16 +105,22 @@ class MehrfachMelder:
                 pass  # ein defekter Kanal darf die anderen nicht mitreissen
 
 
-def themenname_pruefen(url: str) -> str | None:
+def themenname_pruefen(url: str, token: str | None = None) -> str | None:
     """Warnt, wenn ein ntfy-Thema zu leicht zu erraten ist.
 
-    Bei ntfy.sh gibt es weder Anmeldung noch Passwort: Der Themenname ist das
-    einzige Geheimnis. Wer ihn errät, liest alle Nachrichten mit — also jeden
-    Kauf, jeden Verkauf, jeden Kontostand. Ein kurzer oder sprechender Name
-    ist deshalb keine Nachlässigkeit, sondern eine offene Tür.
+    Ohne Token gibt es bei ntfy.sh weder Anmeldung noch Passwort: Der
+    Themenname ist das einzige Geheimnis. Wer ihn errät, liest alle
+    Nachrichten mit — jeden Kauf, jeden Verkauf, jeden Kontostand. Ein kurzer
+    oder sprechender Name ist dann keine Nachlässigkeit, sondern eine offene
+    Tür.
 
-    Gibt den Warntext zurück, oder None wenn der Name taugt.
+    Mit Token liegt der Schutz am Zugang statt an der Namenswahl; dann darf
+    das Thema heissen, wie es will.
+
+    Gibt den Warntext zurück, oder None wenn es passt.
     """
+    if token:
+        return None
     if "ntfy.sh" not in url:
         return None  # andere Dienste bringen ihre eigene Zugangskontrolle mit
     thema = url.rstrip("/").rsplit("/", 1)[-1]
@@ -134,11 +151,15 @@ def zufaelliges_thema(laenge: int = 24) -> str:
 
 
 def aus_umgebung(konsole: bool = True) -> Melder:
-    """Baut den Melder aus HANDELSASSISTENT_WEBHOOK, falls gesetzt."""
+    """Baut den Melder aus der Umgebung.
+
+    HANDELSASSISTENT_WEBHOOK        Adresse
+    HANDELSASSISTENT_WEBHOOK_TOKEN  Zugangstoken, falls das Thema geschützt ist
+    """
     teile: list[Melder] = []
     if konsole:
         teile.append(KonsolenMelder())
     url = os.environ.get("HANDELSASSISTENT_WEBHOOK")
     if url:
-        teile.append(WebhookMelder(url))
+        teile.append(WebhookMelder(url, token=os.environ.get("HANDELSASSISTENT_WEBHOOK_TOKEN")))
     return MehrfachMelder(*teile) if teile else StillerMelder()

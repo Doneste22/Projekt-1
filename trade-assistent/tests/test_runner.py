@@ -200,6 +200,66 @@ if __name__ == "__main__":
     unittest.main()
 
 
+class TestWebhookToken(unittest.TestCase):
+    """Geschützte ntfy-Themen brauchen einen Bearer-Kopf."""
+
+    def _abfangen(self, melder):
+        """Schickt die Meldung ab und gibt die Anfrage zurück, ohne Netz."""
+        import urllib.request
+
+        from assistant import notify
+
+        gefangen = {}
+
+        class Antwort:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        def gefaelscht(req, timeout=None):
+            gefangen["req"] = req
+            return Antwort()
+
+        echt = urllib.request.urlopen
+        notify.urllib.request.urlopen = gefaelscht
+        try:
+            melder.melden("Betreff", "Text")
+        finally:
+            notify.urllib.request.urlopen = echt
+        return gefangen["req"]
+
+    def test_ohne_token_kein_autorisierungskopf(self):
+        from assistant.notify import WebhookMelder
+
+        req = self._abfangen(WebhookMelder("https://ntfy.sh/thema"))
+        self.assertNotIn("Authorization", dict(req.header_items()))
+
+    def test_mit_token_geht_bearer_mit(self):
+        from assistant.notify import WebhookMelder
+
+        req = self._abfangen(WebhookMelder("https://ntfy.sh/thema", token="tk_beispiel"))
+        koepfe = {k.lower(): v for k, v in req.header_items()}
+        self.assertEqual(koepfe.get("Authorization".lower()), "Bearer tk_beispiel")
+
+    def test_token_kommt_aus_der_umgebung(self):
+        import os
+
+        from assistant import notify
+
+        alt = dict(os.environ)
+        os.environ["HANDELSASSISTENT_WEBHOOK"] = "https://ntfy.sh/thema"
+        os.environ["HANDELSASSISTENT_WEBHOOK_TOKEN"] = "tk_ausUmgebung"
+        try:
+            melder = notify.aus_umgebung(konsole=False)
+            webhooks = [m for m in melder.melder if isinstance(m, notify.WebhookMelder)]
+            self.assertEqual(webhooks[0].token, "tk_ausUmgebung")
+        finally:
+            os.environ.clear()
+            os.environ.update(alt)
+
+
 class TestThemenname(unittest.TestCase):
     """Bei ntfy.sh ist der Themenname das einzige Geheimnis."""
 
@@ -218,6 +278,12 @@ class TestThemenname(unittest.TestCase):
         from assistant.notify import themenname_pruefen, zufaelliges_thema
 
         self.assertIsNone(themenname_pruefen(f"https://ntfy.sh/{zufaelliges_thema()}"))
+
+    def test_mit_token_ist_der_name_egal(self):
+        """Mit Zugangstoken schützt der Zugang, nicht die Namenswahl."""
+        from assistant.notify import themenname_pruefen
+
+        self.assertIsNone(themenname_pruefen("https://ntfy.sh/abe", token="tk_x"))
 
     def test_andere_dienste_werden_nicht_beanstandet(self):
         from assistant.notify import themenname_pruefen
