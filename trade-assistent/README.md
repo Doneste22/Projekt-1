@@ -422,27 +422,35 @@ export HANDELSASSISTENT_WEBHOOK=https://ntfy.sh/dein-geheimes-thema
 Erkannt werden ntfy.sh, Discord, Slack und Telegram. Ein fehlgeschlagener
 Weckruf stört den Handel nie — er wird geschluckt und vermerkt.
 
-**Zum Themennamen bei ntfy.sh:** Ohne Konto gibt es dort weder Anmeldung noch
-Passwort. Wer den Namen kennt oder errät, liest alle Nachrichten mit — jeden
-Kauf, jeden Verkauf, jeden Kontostand. Der Name ist dann das einzige
-Geheimnis und gehört entsprechend gewählt: mindestens 16 zufällige Zeichen,
-kein Wort. `einrichten` beanstandet zu kurze und sprechende Namen.
+**Zum Themennamen bei ntfy.sh:** Auf dem kostenlosen Tarif sind Themen
+öffentlich. Jeder kann auf ein nicht reserviertes Thema schreiben und
+mitlesen — ntfy sagt das selbst: ohne Anmeldung ist der Themenname praktisch
+das Passwort. Wer ihn errät, sieht jeden Kauf, jeden Verkauf, jeden
+Kontostand.
 
-Sauberer ist ein ntfy-Konto mit reserviertem Thema und Zugangstoken:
+**Ein Zugangstoken ändert daran nichts.** Er weist den Absender aus, er
+sperrt das Thema nicht. Reservierte Themen gibt es erst ab dem
+Supporter-Tarif (6 $/Monat) oder auf einem selbst betriebenen ntfy.
+
+Daraus folgen zwei brauchbare Wege:
+
+* **Kostenlos:** ein langer, zufälliger Themenname, mindestens 16 Zeichen.
+  Der Name ist dann das Geheimnis und muss entsprechend behandelt werden.
+* **Bezahlt oder selbst betrieben:** Thema reservieren und den Token setzen.
 
 ```
 export HANDELSASSISTENT_WEBHOOK=https://ntfy.sh/dein-thema
-export HANDELSASSISTENT_WEBHOOK_TOKEN=tk_...
+export HANDELSASSISTENT_WEBHOOK_TOKEN=tk_...      # nur bei reserviertem Thema nötig
 ```
 
-Dann hängt der Schutz am Zugang statt an der Namenswahl, und der Name darf
-heissen, wie er will. Der Token geht als `Authorization: Bearer` mit;
-`einrichten` unterscheidet 401 (Token fehlt oder falsch) von 403 (Token darf
-auf diesem Thema nicht senden) und sagt jeweils, was zu tun ist.
+`einrichten` mutmasst über all das nicht, sondern probiert es aus: Es schickt
+eine Nachricht **ohne** jede Anmeldung an dein Thema. Kommt sie an, ist das
+Thema offen — und der Beweis liegt auf deinem Handy. Wird sie mit 401 oder
+403 abgewiesen, ist es wirklich reserviert.
 
 Ein Token ist ein Geheimnis wie der Börsenschlüssel: nicht ins Repository,
-nicht in den Chat, und die Datei, in der er steht, gehört auf Modus 600. Das
-von `dienst --termux` erzeugte Startskript wird deshalb mit 700 angelegt.
+nicht in einen Chat, und die Datei, in der er steht, gehört auf Modus 600.
+Das von `dienst --termux` erzeugte Startskript wird deshalb mit 700 angelegt.
 
 ## Dauerbetrieb auf Android (Termux)
 

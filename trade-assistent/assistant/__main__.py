@@ -439,11 +439,27 @@ def befehl_einrichten(a) -> int:
         if schwach:
             _warnung(schwach)
             print(f"                Vorschlag: https://ntfy.sh/{notify.zufaelliges_thema()}")
-            print("                Oder ein ntfy-Konto anlegen und "
-                  "HANDELSASSISTENT_WEBHOOK_TOKEN setzen.")
             warnungen += 1
-        elif token:
-            _ja("geschütztes Thema mit Zugangstoken — der Name muss dann nicht geheim sein")
+        if "ntfy.sh" in url:
+            # Nicht mutmassen, sondern ausprobieren: eine Nachricht ohne
+            # Zugangsdaten. Kommt sie an, ist das Thema für jeden offen.
+            offen = notify.thema_ist_offen(url)
+            if offen is True:
+                _warnung("Das Thema ist NICHT reserviert — jeder kann darauf schreiben "
+                         "und mitlesen.")
+                print("                Auf deinem Handy müsste gerade eine Nachricht "
+                      "'Ist dein Thema offen?' liegen.")
+                print("                Sie kam ohne jede Anmeldung durch. Genau so kann "
+                      "auch ein Fremder mitlesen.")
+                print("                Schutz gibt es dann nur über einen langen, "
+                      "zufälligen Namen —")
+                print("                reservierte Themen kosten bei ntfy.sh ab 6 $/Monat.")
+                warnungen += 1
+            elif offen is False:
+                _ja("Thema ist reserviert — ohne Zugangsdaten kommt niemand heran")
+            else:
+                _warnung("Ob das Thema reserviert ist, liess sich nicht feststellen")
+                warnungen += 1
         melder = notify.WebhookMelder(url, token=token)
         melder.melden("Handelsassistent", "Testnachricht aus der Einrichtungsprüfung.")
         if melder.fehler and "401" in melder.fehler:

@@ -279,11 +279,14 @@ class TestThemenname(unittest.TestCase):
 
         self.assertIsNone(themenname_pruefen(f"https://ntfy.sh/{zufaelliges_thema()}"))
 
-    def test_mit_token_ist_der_name_egal(self):
-        """Mit Zugangstoken schützt der Zugang, nicht die Namenswahl."""
+    def test_token_entschaerft_einen_kurzen_namen_nicht(self):
+        """Regression: Ein Token macht ein Thema auf dem kostenlosen ntfy.sh
+        nicht privat. Die Warnung darf deshalb nicht entfallen."""
         from assistant.notify import themenname_pruefen
 
-        self.assertIsNone(themenname_pruefen("https://ntfy.sh/abe", token="tk_x"))
+        warnung = themenname_pruefen("https://ntfy.sh/abe", token="tk_x")
+        self.assertIsNotNone(warnung)
+        self.assertIn("Zugangstoken ändert daran nichts", warnung)
 
     def test_andere_dienste_werden_nicht_beanstandet(self):
         from assistant.notify import themenname_pruefen

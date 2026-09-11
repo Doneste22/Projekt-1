@@ -108,37 +108,67 @@ class MehrfachMelder:
 def themenname_pruefen(url: str, token: str | None = None) -> str | None:
     """Warnt, wenn ein ntfy-Thema zu leicht zu erraten ist.
 
-    Ohne Token gibt es bei ntfy.sh weder Anmeldung noch Passwort: Der
-    Themenname ist das einzige Geheimnis. Wer ihn errät, liest alle
-    Nachrichten mit — jeden Kauf, jeden Verkauf, jeden Kontostand. Ein kurzer
-    oder sprechender Name ist dann keine Nachlässigkeit, sondern eine offene
-    Tür.
+    Auf dem kostenlosen ntfy.sh sind Themen öffentlich — auch mit Token. Der
+    Token weist den Absender aus, er sperrt das Thema nicht. ntfy schreibt es
+    selbst so: ohne Anmeldung ist der Themenname praktisch das Passwort.
+    Reservierte Themen gibt es erst im Bezahltarif oder auf eigenem Server.
 
-    Mit Token liegt der Schutz am Zugang statt an der Namenswahl; dann darf
-    das Thema heissen, wie es will.
+    Ein vorhandener Token ist deshalb **kein** Grund, die Warnung wegzulassen.
+    Ob ein Thema wirklich geschützt ist, sagt nur `thema_ist_offen()`.
 
-    Gibt den Warntext zurück, oder None wenn es passt.
+    Gibt den Warntext zurück, oder None wenn der Name taugt.
     """
-    if token:
-        return None
     if "ntfy.sh" not in url:
         return None  # andere Dienste bringen ihre eigene Zugangskontrolle mit
     thema = url.rstrip("/").rsplit("/", 1)[-1]
     if not thema or thema == "ntfy.sh":
         return "Es fehlt ein Themenname hinter der Adresse."
+    nachsatz = (
+        " Ein Zugangstoken ändert daran nichts: Auf dem kostenlosen ntfy.sh "
+        "bleibt das Thema für alle offen."
+        if token else ""
+    )
     if len(thema) < 16:
         return (
             f"Das Thema '{thema}' hat nur {len(thema)} Zeichen. Bei ntfy.sh ist der "
             "Themenname das einzige Geheimnis — kurze Namen werden durchprobiert, "
             "und dann liest jemand deine Handelsnachrichten mit. "
-            "Mindestens 16 zufällige Zeichen nehmen."
+            "Mindestens 16 zufällige Zeichen nehmen." + nachsatz
         )
     if thema.isalpha() and thema.islower() and len(set(thema)) < 8:
         return (
             f"Das Thema '{thema}' sieht nach einem Wort aus. Bei ntfy.sh ist der "
-            "Themenname das einzige Geheimnis — lieber zufällige Zeichen."
+            "Themenname das einzige Geheimnis — lieber zufällige Zeichen." + nachsatz
         )
     return None
+
+
+def thema_ist_offen(url: str, zeitgrenze: int = 10) -> bool | None:
+    """Prüft, ob jeder ohne Anmeldung auf dieses Thema schreiben darf.
+
+    Statt über Tarife zu mutmassen, wird es ausprobiert: eine Nachricht ganz
+    ohne Zugangsdaten. Kommt sie durch, ist das Thema offen — dann kann auch
+    jeder mitlesen. Wird sie abgewiesen (401/403), ist es wirklich reserviert.
+
+    True = offen, False = geschützt, None = liess sich nicht feststellen.
+    """
+    try:
+        req = urllib.request.Request(
+            url,
+            data="Prüfung: Diese Nachricht wurde OHNE Zugangsdaten verschickt. "
+                 "Wenn du sie siehst, kann jeder auf dein Thema schreiben und mitlesen."
+                 .encode("utf-8"),
+            headers={"Title": "Ist dein Thema offen?", "Priority": "default"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=zeitgrenze) as antwort:
+            return 200 <= antwort.status < 300
+    except urllib.error.HTTPError as f:
+        if f.code in (401, 403):
+            return False
+        return None
+    except (urllib.error.URLError, OSError, TimeoutError):
+        return None
 
 
 def zufaelliges_thema(laenge: int = 24) -> str:
