@@ -422,6 +422,32 @@ export HANDELSASSISTENT_WEBHOOK=https://ntfy.sh/dein-geheimes-thema
 Erkannt werden ntfy.sh, Discord, Slack und Telegram. Ein fehlgeschlagener
 Weckruf stört den Handel nie — er wird geschluckt und vermerkt.
 
+## Dauerbetrieb auf Android (Termux)
+
+`python3 -m assistant dienst --termux` gibt ein Startskript samt vollständiger
+Einrichtungsanleitung aus. Drei Dinge entscheiden dort über Erfolg oder
+Stillstand:
+
+* **Termux und Termux:Boot aus F-Droid**, nicht aus dem Play Store — die
+  Play-Store-Fassung ist veraltet und funktioniert nicht.
+* **`termux-wake-lock`**, sonst legt Android den Prozess nach Minuten schlafen.
+* **Akku-Einstellung auf „Nicht eingeschränkt"** unter Einstellungen → Apps →
+  Termux → Akku.
+
+Ehrlich zur Zuverlässigkeit: Ein Telefon ist kein Server. Android beendet
+Hintergrundprozesse, wann es will, Updates starten neu, der Akku geht leer.
+Das Startskript läuft deshalb in einer Wiederanlaufschleife, und der Zustand
+liegt auf Platte.
+
+Entscheidend ist aber etwas anderes: **Der Stop liegt bei der Börse.** Stirbt
+das Telefon mit offener Position, löst Kraken die Absicherung trotzdem aus.
+Was in der Ausfallzeit fehlt, sind Gewinnmitnahmen, Strategieausstiege und
+neue Käufe — nicht der Schutz. Kommt das Telefon zurück, sieht der Abgleich
+einen ausgelösten Stop und trägt den Trade nach.
+
+Auf iOS geht das nicht. Dauerhaft laufende Hintergrundprozesse und eine echte
+Python-Umgebung mit Netzzugriff gibt es dort nicht.
+
 ## Dauerbetrieb per systemd
 
 ```ini

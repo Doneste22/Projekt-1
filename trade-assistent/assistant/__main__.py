@@ -475,9 +475,104 @@ def befehl_einrichten(a) -> int:
     return 0
 
 
+def _termux_vorlage(a, arbeitsverzeichnis: Path) -> str:
+    """Startskript für Termux auf Android.
+
+    Zwei Dinge sind hier anders als auf einem Server, und beide entscheiden
+    darüber, ob der Assistent überhaupt läuft:
+
+    * `termux-wake-lock` hindert Android daran, den Prozess schlafen zu legen.
+      Ohne das hält kein Durchlauf länger als ein paar Minuten durch.
+    * Die Schleife läuft in einem Wiederanlauf-Rahmen. Android beendet
+      Hintergrundprozesse, wann es will; der Zustand liegt auf Platte, also
+      ist ein Neustart harmlos — aber er muss eben stattfinden.
+    """
+    takt = max(a.takt_sekunden if hasattr(a, "takt_sekunden") else 300, 300)
+    return f"""#!/data/data/com.termux/files/usr/bin/bash
+# ~/.termux/boot/handelsassistent.sh
+# Ausführbar machen: chmod +x ~/.termux/boot/handelsassistent.sh
+# Braucht die App "Termux:Boot" (F-Droid), damit es einen Neustart übersteht.
+
+# Android darf den Prozess nicht schlafen legen.
+termux-wake-lock
+
+cd {arbeitsverzeichnis} || exit 1
+
+# Schlüssel liegen in einer Datei mit Modus 600, nicht hier drin.
+export HANDELSASSISTENT_SCHARF=ja-ich-will
+# Ohne Weckruf merkst du auf dem Handy nichts. Thema durch ein eigenes ersetzen:
+export HANDELSASSISTENT_WEBHOOK=https://ntfy.sh/dein-geheimes-thema
+
+# Android beendet Hintergrundprozesse ohne Vorwarnung. Der Zustand liegt auf
+# Platte, ein Wiederanlauf ist also gefahrlos — eine ausgelöste Sicherung
+# bleibt dabei ausgelöst und verhindert weiteren Handel.
+while true; do
+    python -m assistant \\
+        --paar {a.paar} --takt {a.takt} --strategie {a.strategie} \\
+        --max-order {a.max_order:g} --max-einsatz {a.max_einsatz:g} \\
+        --max-tagesverlust {a.max_tagesverlust:g} \\
+        --max-gesamtverlust {a.max_gesamtverlust:g} \\
+        --betrieb {arbeitsverzeichnis / a.betrieb} \\
+        live --scharf --takt-sekunden {takt} >> {arbeitsverzeichnis / a.betrieb}/termux.log 2>&1
+    echo "$(date -u +%FT%TZ) Prozess beendet, Wiederanlauf in 60 s" \\
+        >> {arbeitsverzeichnis / a.betrieb}/termux.log
+    sleep 60
+done
+"""
+
+
 def befehl_dienst(a) -> int:
-    """systemd-Einheit ausgeben, passend zu den gesetzten Grenzen."""
+    """Startvorlage ausgeben, passend zu den gesetzten Grenzen."""
     arbeitsverzeichnis = Path.cwd()
+    if a.termux:
+        vorlage = _termux_vorlage(a, arbeitsverzeichnis)
+        if a.schreiben:
+            ziel = Path(a.schreiben)
+            ziel.write_text(vorlage)
+            ziel.chmod(0o755)
+            print(f"\n  Geschrieben: {ziel}")
+        else:
+            print(vorlage)
+        print("""
+# ---------------------------------------------------------------------------
+# Einrichtung auf Android, der Reihe nach
+# ---------------------------------------------------------------------------
+# 1. Termux und Termux:Boot aus F-DROID installieren, nicht aus dem Play Store.
+#    Die Play-Store-Fassung ist veraltet und funktioniert nicht.
+#      https://f-droid.org/packages/com.termux/
+#      https://f-droid.org/packages/com.termux.boot/
+#
+# 2. Termux:Boot einmal öffnen und wieder schliessen. Ohne das startet nichts
+#    nach einem Neustart.
+#
+# 3. In Android: Einstellungen → Apps → Termux → Akku → "Nicht eingeschränkt".
+#    Sonst beendet Android den Assistenten nach wenigen Minuten.
+#
+# 4. In Termux:
+#      pkg update && pkg upgrade -y
+#      pkg install -y python git
+#      git clone -b claude/video-anschauen-ejtvd9 \\
+#          https://github.com/Doneste22/Projekt-1.git
+#      cd Projekt-1/trade-assistent
+#      python -m unittest discover -s tests -t .
+#
+# 5. Schlüssel ablegen (direkt auf dem Handy tippen oder einfügen):
+#      mkdir -p betrieb
+#      printf '%s\\n%s\\n' "DEIN_KEY" "DEIN_SECRET" > betrieb/kraken.key
+#      chmod 600 betrieb/kraken.key
+#
+# 6. Prüfen:
+#      python -m assistant einrichten
+#
+# 7. Erst danach dieses Skript nach ~/.termux/boot/ legen:
+#      mkdir -p ~/.termux/boot
+#      python -m assistant dienst --termux --schreiben \\
+#          ~/.termux/boot/handelsassistent.sh
+#
+# Laufende Ausgabe ansehen:  tail -f betrieb/termux.log
+# Sofort anhalten:           python -m assistant notbremse ziehen
+# ---------------------------------------------------------------------------""")
+        return 0
     einheit = f"""# /etc/systemd/system/handelsassistent.service
 # Erzeugt von: python3 -m assistant dienst
 [Unit]
@@ -657,8 +752,12 @@ def parser() -> argparse.ArgumentParser:
     u.add_parser("konto", help="Börsenzugang und Guthaben prüfen — bewegt nichts")
     u.add_parser("einrichten", help="alles der Reihe nach prüfen, bevor scharf geschaltet wird")
 
-    ds = u.add_parser("dienst", help="systemd-Einheit für den Dauerbetrieb ausgeben")
+    ds = u.add_parser("dienst", help="Startvorlage für den Dauerbetrieb ausgeben")
     ds.add_argument("--schreiben", help="in diese Datei schreiben statt auszugeben")
+    ds.add_argument("--termux", action="store_true",
+                    help="Startskript für Android/Termux statt systemd")
+    ds.add_argument("--takt-sekunden", dest="takt_sekunden", type=int, default=300,
+                    help="Taktabstand im erzeugten Skript")
 
     e = u.add_parser("live", help="Betrieb an der echten Börse")
     e.add_argument("--scharf", action="store_true",
