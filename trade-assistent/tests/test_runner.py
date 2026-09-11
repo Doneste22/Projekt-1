@@ -198,3 +198,35 @@ class TestBrokerUnterscheidung(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestThemenname(unittest.TestCase):
+    """Bei ntfy.sh ist der Themenname das einzige Geheimnis."""
+
+    def test_kurzes_thema_wird_beanstandet(self):
+        from assistant.notify import themenname_pruefen
+
+        self.assertIsNotNone(themenname_pruefen("https://ntfy.sh/abe"))
+        self.assertIn("einzige Geheimnis", themenname_pruefen("https://ntfy.sh/abe"))
+
+    def test_wort_als_thema_wird_beanstandet(self):
+        from assistant.notify import themenname_pruefen
+
+        self.assertIsNotNone(themenname_pruefen("https://ntfy.sh/trading"))
+
+    def test_langes_zufallsthema_geht_durch(self):
+        from assistant.notify import themenname_pruefen, zufaelliges_thema
+
+        self.assertIsNone(themenname_pruefen(f"https://ntfy.sh/{zufaelliges_thema()}"))
+
+    def test_andere_dienste_werden_nicht_beanstandet(self):
+        from assistant.notify import themenname_pruefen
+
+        self.assertIsNone(themenname_pruefen("https://discord.com/api/webhooks/1/xy"))
+
+    def test_vorschlag_ist_lang_und_verschieden(self):
+        from assistant.notify import zufaelliges_thema
+
+        a, b = zufaelliges_thema(), zufaelliges_thema()
+        self.assertNotEqual(a, b)
+        self.assertGreaterEqual(len(a), 20)

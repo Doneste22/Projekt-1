@@ -422,6 +422,13 @@ export HANDELSASSISTENT_WEBHOOK=https://ntfy.sh/dein-geheimes-thema
 Erkannt werden ntfy.sh, Discord, Slack und Telegram. Ein fehlgeschlagener
 Weckruf stört den Handel nie — er wird geschluckt und vermerkt.
 
+**Zum Themennamen bei ntfy.sh:** Dort gibt es weder Anmeldung noch Passwort.
+Wer den Namen kennt oder errät, liest alle Nachrichten mit — jeden Kauf,
+jeden Verkauf, jeden Kontostand. Der Name ist das einzige Geheimnis und
+gehört entsprechend gewählt: mindestens 16 zufällige Zeichen, kein Wort.
+`einrichten` beanstandet zu kurze und sprechende Namen und schlägt einen
+brauchbaren vor.
+
 ## Dauerbetrieb auf Android (Termux)
 
 `python3 -m assistant dienst --termux` gibt ein Startskript samt vollständiger

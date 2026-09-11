@@ -432,8 +432,14 @@ def befehl_einrichten(a) -> int:
         fehler += 1
 
     _pruefpunkt(9, "Benachrichtigung")
-    if os.environ.get("HANDELSASSISTENT_WEBHOOK"):
-        melder = notify.WebhookMelder(os.environ["HANDELSASSISTENT_WEBHOOK"])
+    url = os.environ.get("HANDELSASSISTENT_WEBHOOK")
+    if url:
+        schwach = notify.themenname_pruefen(url)
+        if schwach:
+            _warnung(schwach)
+            print(f"                Vorschlag: https://ntfy.sh/{notify.zufaelliges_thema()}")
+            warnungen += 1
+        melder = notify.WebhookMelder(url)
         melder.melden("Handelsassistent", "Testnachricht aus der Einrichtungsprüfung.")
         if melder.fehler:
             _warnung(f"Webhook gesetzt, aber nicht erreichbar: {melder.fehler}")

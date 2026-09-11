@@ -94,6 +94,45 @@ class MehrfachMelder:
                 pass  # ein defekter Kanal darf die anderen nicht mitreissen
 
 
+def themenname_pruefen(url: str) -> str | None:
+    """Warnt, wenn ein ntfy-Thema zu leicht zu erraten ist.
+
+    Bei ntfy.sh gibt es weder Anmeldung noch Passwort: Der Themenname ist das
+    einzige Geheimnis. Wer ihn errät, liest alle Nachrichten mit — also jeden
+    Kauf, jeden Verkauf, jeden Kontostand. Ein kurzer oder sprechender Name
+    ist deshalb keine Nachlässigkeit, sondern eine offene Tür.
+
+    Gibt den Warntext zurück, oder None wenn der Name taugt.
+    """
+    if "ntfy.sh" not in url:
+        return None  # andere Dienste bringen ihre eigene Zugangskontrolle mit
+    thema = url.rstrip("/").rsplit("/", 1)[-1]
+    if not thema or thema == "ntfy.sh":
+        return "Es fehlt ein Themenname hinter der Adresse."
+    if len(thema) < 16:
+        return (
+            f"Das Thema '{thema}' hat nur {len(thema)} Zeichen. Bei ntfy.sh ist der "
+            "Themenname das einzige Geheimnis — kurze Namen werden durchprobiert, "
+            "und dann liest jemand deine Handelsnachrichten mit. "
+            "Mindestens 16 zufällige Zeichen nehmen."
+        )
+    if thema.isalpha() and thema.islower() and len(set(thema)) < 8:
+        return (
+            f"Das Thema '{thema}' sieht nach einem Wort aus. Bei ntfy.sh ist der "
+            "Themenname das einzige Geheimnis — lieber zufällige Zeichen."
+        )
+    return None
+
+
+def zufaelliges_thema(laenge: int = 24) -> str:
+    """Schlägt einen Themennamen vor, der nicht zu erraten ist."""
+    import secrets
+    import string
+
+    zeichen = string.ascii_lowercase + string.digits
+    return "ha-" + "".join(secrets.choice(zeichen) for _ in range(laenge))
+
+
 def aus_umgebung(konsole: bool = True) -> Melder:
     """Baut den Melder aus HANDELSASSISTENT_WEBHOOK, falls gesetzt."""
     teile: list[Melder] = []
