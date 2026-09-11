@@ -309,6 +309,88 @@ def _warnung(text: str) -> None:
     print(f"     [ACHTUNG] {text}")
 
 
+def befehl_schluessel(a) -> int:
+    """Fragt Schlüssel und Geheimnis ab und legt die Datei richtig an.
+
+    Gibt es dafür, weil der Weg über die Kommandozeile auf einer
+    Handytastatur an Anführungszeichen und Backslashes scheitert — und weil
+    ein Geheimnis, das dabei auf dem Bildschirm steht, verbrannt ist, sobald
+    jemand ein Bildschirmfoto macht. Das Geheimnis bleibt deshalb unsichtbar.
+    """
+    import getpass
+
+    datei = _schluesseldatei(a)
+    datei.parent.mkdir(parents=True, exist_ok=True)
+
+    print("\n  KRAKEN-SCHLÜSSEL HINTERLEGEN")
+    print("  " + "=" * 62)
+    print(f"  Ziel: {datei}")
+    if datei.exists():
+        print("\n  Diese Datei gibt es schon.")
+        if input("  Überschreiben? (ja/nein) ").strip().lower() not in ("ja", "j", "y", "yes"):
+            print("  Abgebrochen, nichts geändert.\n")
+            return 0
+
+    print("\n  Beides findest du bei Kraken unter Settings → API.")
+    print("  Einfügen geht in Termux mit langem Druck auf den Bildschirm → Paste.\n")
+
+    schluessel = input("  API-Key (darf sichtbar sein):  ").strip()
+    if not schluessel:
+        print("\n  Kein Schlüssel eingegeben, nichts geändert.\n")
+        return 1
+
+    print("\n  Jetzt das Secret. Es bleibt beim Einfügen UNSICHTBAR —")
+    print("  das ist Absicht, kein hängengebliebener Bildschirm.")
+    geheimnis = getpass.getpass("  API-Secret (unsichtbar):       ").strip()
+    if not geheimnis:
+        print("\n  Kein Secret eingegeben, nichts geändert.\n")
+        return 1
+
+    # Kraken-Secrets sind base64 und deutlich länger als der Key. Ein Hinweis,
+    # kein Ausschlusskriterium — die Börse hat das letzte Wort.
+    warnung = ""
+    if len(geheimnis) < 40:
+        warnung = f"  Achtung: Das Secret ist nur {len(geheimnis)} Zeichen lang. Vertauscht?"
+    elif len(schluessel) > len(geheimnis):
+        warnung = "  Achtung: Der Key ist länger als das Secret. Vielleicht vertauscht?"
+
+    datei.write_text(f"{schluessel}\n{geheimnis}\n")
+    datei.chmod(0o600)
+
+    def maskiert(wert: str) -> str:
+        return f"{wert[:4]}…{wert[-4:]} ({len(wert)} Zeichen)" if len(wert) > 12 else "(sehr kurz)"
+
+    print(f"\n  Geschrieben: {datei} (Modus 600, nur für dich lesbar)")
+    print(f"    Key    {maskiert(schluessel)}")
+    print(f"    Secret {maskiert(geheimnis)}")
+    if warnung:
+        print("\n" + warnung)
+
+    print("\n  Probe bei der Börse …")
+    try:
+        client = _client(a)
+        guthaben = {k: v for k, v in client.guthaben().items() if v}
+        print("  Der Schlüssel funktioniert. Guthaben:")
+        for w, betrag in sorted(guthaben.items()):
+            print(f"    {w:<8}{betrag:>18,.8f}")
+        if not guthaben:
+            print("    (leer — es ist noch kein Geld auf dem Konto)")
+    except BoersenFehler as f:
+        print(f"  Die Börse lehnt ab: {f}")
+        if "Invalid key" in str(f):
+            print("\n  Das heisst fast immer eines von zweien:")
+            print("    - Key und Secret vertauscht (das Secret ist das längere)")
+            print("    - beim Kopieren ist etwas mitgerutscht oder abgeschnitten")
+            print("  Einfach nochmal: python -m assistant schluessel")
+        elif "Permission denied" in str(f):
+            print("\n  Der Schlüssel stimmt, ihm fehlt aber das Recht 'Query Funds'.")
+            print("  Bei Kraken unter Settings → API nachtragen.")
+        return 2
+
+    print("\n  Weiter mit:  python -m assistant einrichten\n")
+    return 0
+
+
 def befehl_einrichten(a) -> int:
     """Prüft der Reihe nach alles, was der Echtbetrieb braucht.
 
@@ -792,6 +874,7 @@ def parser() -> argparse.ArgumentParser:
     u.add_parser("stand", help="Zustand des Dauerbetriebs zeigen")
     u.add_parser("daten", help="Cache-Inhalt zeigen")
     u.add_parser("konto", help="Börsenzugang und Guthaben prüfen — bewegt nichts")
+    u.add_parser("schluessel", help="Kraken-Schlüssel abfragen und sicher ablegen")
     u.add_parser("einrichten", help="alles der Reihe nach prüfen, bevor scharf geschaltet wird")
 
     ds = u.add_parser("dienst", help="Startvorlage für den Dauerbetrieb ausgeben")
@@ -826,6 +909,7 @@ def main(argv: list[str] | None = None) -> int:
         "laufen": befehl_laufen, "stand": befehl_stand, "daten": befehl_daten,
         "konto": befehl_konto, "live": befehl_live,
         "einrichten": befehl_einrichten, "dienst": befehl_dienst,
+        "schluessel": befehl_schluessel,
         "notbremse": befehl_notbremse, "sicherung": befehl_sicherung,
     }
     try:

@@ -111,7 +111,7 @@ assistant/exchange.py     Signierter Kraken-Zugang, Nonce, Drossel, Paar-Regeln
 assistant/live.py         Echte Orders, Teilausführungen, Abgleich mit der Börse
 assistant/safety.py       Notbremse, absolute Grenzen, Auslöser
 assistant/notify.py       Weckruf per Webhook — unbeaufsichtigt heisst nicht unbemerkt
-tests/                    128 Tests
+tests/                    142 Tests
 ```
 
 ### Die drei Regeln der Backtest-Maschine
@@ -197,7 +197,7 @@ das Rauschen für Fortschritt.
 python3 -m unittest discover -s tests -t .
 ```
 
-128 Tests, alle ohne Netz. Die Indikatoren werden gegen Wilders
+142 Tests, alle ohne Netz. Die Indikatoren werden gegen Wilders
 Original-Datenreihe aus *New Concepts in Technical Trading Systems* geprüft,
 die Backtest-Maschine gegen konstruierte Fälle mit von Hand bekanntem
 Ergebnis, der Dauerbetrieb gegen eine erfundene Kursquelle, und der echte
@@ -267,7 +267,18 @@ Der Unterschied zwischen einem schlechten Tag und einem leeren Konto.
 Bei *Key Expiration* ruhig ein Ablaufdatum setzen, und die IP-Beschränkung
 nutzen, falls der Rechner eine feste Adresse hat.
 
-Dann Schlüssel und Geheimnis ablegen:
+Dann Schlüssel und Geheimnis ablegen. Am einfachsten so:
+
+```
+python3 -m assistant schluessel
+```
+
+Das fragt beides ab, legt die Datei mit Modus 600 an und probiert den
+Zugang gleich bei der Börse aus. Das Secret bleibt bei der Eingabe
+unsichtbar — wer auf einem Telefon arbeitet und Bildschirmfotos
+weiterschickt, hat es sonst schneller verbrannt, als ihm lieb ist.
+
+Von Hand ginge es auch:
 
 ```
 mkdir -p betrieb
@@ -278,6 +289,7 @@ chmod 600 betrieb/kraken.key
 ## Der Weg dorthin
 
 ```
+python3 -m assistant schluessel               # Schlüssel abfragen und sicher ablegen
 python3 -m assistant einrichten               # prüft alles der Reihe nach
 python3 -m assistant konto                    # Zugang und Guthaben, bewegt nichts
 python3 -m assistant live                     # Probelauf: Börse prüft jede Order, führt keine aus

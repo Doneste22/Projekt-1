@@ -287,3 +287,65 @@ class TestAbsicherungImBetrieb(ScharferRunner):
         self.assertIn("XBTUSD", r.depot.positionen)
         self.assertEqual(self.boerse.aufgegeben[-1]["seite"], "buy",
                          "es darf kein Verkauf abgeschickt worden sein")
+
+
+class TestSchluesselAblegen(unittest.TestCase):
+    """Der Schlüssel muss sicher landen, ohne dass das Secret je sichtbar wird."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _ausfuehren(self, key, secret, eingaben=()):
+        """Ruft den Befehl mit vorgegebenen Eingaben auf, ohne Terminal."""
+        import builtins
+        import getpass
+        import io
+        import sys
+
+        from assistant.__main__ import main
+
+        antworten = list(eingaben) + [key]
+        echt_input, echt_getpass = builtins.input, getpass.getpass
+        builtins.input = lambda p="": antworten.pop(0)
+        getpass.getpass = lambda p="": secret
+        ausgabe = io.StringIO()
+        echt_stdout = sys.stdout
+        sys.stdout = ausgabe
+        try:
+            code = main(["--betrieb", self.tmp.name, "schluessel"])
+        finally:
+            builtins.input, getpass.getpass = echt_input, echt_getpass
+            sys.stdout = echt_stdout
+        return code, ausgabe.getvalue()
+
+    def test_datei_ist_nur_fuer_den_besitzer_lesbar(self):
+        self._ausfuehren("KEY12345678", "c2VjcmV0" * 8)
+        datei = Path(self.tmp.name) / "kraken.key"
+        self.assertTrue(datei.exists())
+        self.assertEqual(datei.stat().st_mode & 0o777, 0o600)
+
+    def test_secret_taucht_nirgends_in_der_ausgabe_auf(self):
+        """Wer Bildschirmfotos verschickt, darf sein Secret nicht darauf haben."""
+        secret = "GEHEIMES_SECRET_DAS_NICHT_ERSCHEINEN_DARF_1234567890=="
+        _, ausgabe = self._ausfuehren("KEY12345678", secret)
+        self.assertNotIn(secret, ausgabe)
+        self.assertNotIn(secret[8:40], ausgabe, "auch kein längeres Bruchstück")
+
+    def test_zwei_zeilen_key_dann_secret(self):
+        self._ausfuehren("MEINKEY12345", "MEINSECRET" * 6)
+        zeilen = (Path(self.tmp.name) / "kraken.key").read_text().splitlines()
+        self.assertEqual(zeilen[0], "MEINKEY12345")
+        self.assertEqual(zeilen[1], "MEINSECRET" * 6)
+
+    def test_vertauschte_eingabe_wird_bemerkt(self):
+        """Key länger als Secret heisst fast immer: vertauscht."""
+        _, ausgabe = self._ausfuehren("X" * 80, "kurz")
+        self.assertIn("Achtung", ausgabe)
+
+    def test_leere_eingabe_legt_nichts_an(self):
+        code, _ = self._ausfuehren("", "egal")
+        self.assertEqual(code, 1)
+        self.assertFalse((Path(self.tmp.name) / "kraken.key").exists())
