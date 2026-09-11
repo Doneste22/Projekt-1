@@ -332,18 +332,42 @@ def befehl_schluessel(a) -> int:
             return 0
 
     print("\n  Beides findest du bei Kraken unter Settings → API.")
-    print("  Einfügen geht in Termux mit langem Druck auf den Bildschirm → Paste.\n")
+    print("  Einfügen geht in Termux mit langem Druck auf den Bildschirm → Paste.")
+    print("\n  Füge sie NUR hier ein, solange gefragt wird. An der normalen")
+    print("  Eingabeaufforderung landen sie im Klartext im Verlauf.\n")
 
-    schluessel = input("  API-Key (darf sichtbar sein):  ").strip()
+    # Nicht beim ersten leeren Enter aufgeben. Wer hier aussteigt, steht
+    # wieder an der normalen Eingabeaufforderung — und fügt seine
+    # Zugangsdaten dann womöglich DORT ein. Dann landen sie im Klartext im
+    # Verlauf und auf dem Bildschirm. Lieber nachfragen als rauswerfen.
+    schluessel = ""
+    for versuch in range(3):
+        schluessel = input("  API-Key (darf sichtbar sein):  ").strip()
+        if schluessel:
+            break
+        if versuch < 2:
+            print("  Nichts angekommen. Lange auf den Bildschirm drücken → Paste,")
+            print("  und erst danach Enter. Nochmal:\n")
     if not schluessel:
-        print("\n  Kein Schlüssel eingegeben, nichts geändert.\n")
+        print("\n  Dreimal nichts bekommen, abgebrochen. Nichts geändert.")
+        print("  WICHTIG: Füge deine Zugangsdaten NICHT an der normalen")
+        print("  Eingabeaufforderung ein — dort landen sie im Klartext im Verlauf.")
+        print("  Starte stattdessen diesen Befehl neu:  python -m assistant schluessel\n")
         return 1
 
     print("\n  Jetzt das Secret. Es bleibt beim Einfügen UNSICHTBAR —")
     print("  das ist Absicht, kein hängengebliebener Bildschirm.")
-    geheimnis = getpass.getpass("  API-Secret (unsichtbar):       ").strip()
+    geheimnis = ""
+    for versuch in range(3):
+        geheimnis = getpass.getpass("  API-Secret (unsichtbar):       ").strip()
+        if geheimnis:
+            break
+        if versuch < 2:
+            print("  Nichts angekommen. Paste, dann Enter. Nochmal:")
     if not geheimnis:
-        print("\n  Kein Secret eingegeben, nichts geändert.\n")
+        print("\n  Dreimal nichts bekommen, abgebrochen. Nichts geändert.")
+        print("  Das Secret gehört NUR hier hinein, niemals an die normale")
+        print("  Eingabeaufforderung.\n")
         return 1
 
     # Kraken-Secrets sind base64 und deutlich länger als der Key. Ein Hinweis,

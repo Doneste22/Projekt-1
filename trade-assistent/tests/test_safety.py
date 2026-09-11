@@ -346,6 +346,17 @@ class TestSchluesselAblegen(unittest.TestCase):
         self.assertIn("Achtung", ausgabe)
 
     def test_leere_eingabe_legt_nichts_an(self):
-        code, _ = self._ausfuehren("", "egal")
+        code, _ = self._ausfuehren("", "egal", eingaben=("", ""))
         self.assertEqual(code, 1)
         self.assertFalse((Path(self.tmp.name) / "kraken.key").exists())
+
+    def test_versehentliches_enter_wirft_nicht_gleich_raus(self):
+        """Wer hier rausfliegt, fügt seine Zugangsdaten danach womöglich an
+        der normalen Eingabeaufforderung ein — und damit in den Verlauf."""
+        code, ausgabe = self._ausfuehren("ECHTERKEY123", "c2VjcmV0" * 8, eingaben=("",))
+        self.assertIn("Nichts angekommen", ausgabe)
+        self.assertTrue((Path(self.tmp.name) / "kraken.key").exists())
+
+    def test_abbruch_warnt_vor_der_falschen_stelle(self):
+        _, ausgabe = self._ausfuehren("", "egal", eingaben=("", ""))
+        self.assertIn("NICHT an der normalen", ausgabe)
