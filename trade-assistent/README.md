@@ -3,8 +3,12 @@
 Rechnet Handelssignale aus Kursdaten, prüft sie gegen die Vergangenheit und
 handelt sie selbstständig — auf Papier.
 
-Reines Python 3.11, Standardbibliothek, keine Abhängigkeiten. Wie der Rest
-dieses Repositorys: kein Build-Schritt, nichts zu installieren.
+Reines Python, Standardbibliothek, keine Abhängigkeiten. Wie der Rest dieses
+Repositorys: kein Build-Schritt, nichts zu installieren.
+
+**Mindestens Python 3.10** (die Datenklassen nutzen `slots=True`). Ältere
+Versionen bekommen beim Start eine Meldung mit dem passenden Befehl, keinen
+Fehler aus den Innereien.
 
 ```
 python3 -m assistant signal        # was die Regeln gerade sagen, mit voller Begründung

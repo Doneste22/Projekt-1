@@ -320,10 +320,14 @@ def befehl_einrichten(a) -> int:
     fehler, warnungen = 0, 0
 
     _pruefpunkt(1, "Python")
-    if sys.version_info >= (3, 11):
-        _ja(f"Python {sys.version_info.major}.{sys.version_info.minor}")
+    from . import MINDESTVERSION
+
+    lauf = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    if sys.version_info >= MINDESTVERSION:
+        _ja(f"Python {lauf}")
     else:
-        _nein(f"Python {sys.version_info.major}.{sys.version_info.minor} — 3.11 oder neuer nötig")
+        _nein(f"Python {lauf} — mindestens "
+              f"{MINDESTVERSION[0]}.{MINDESTVERSION[1]} nötig")
         fehler += 1
 
     _pruefpunkt(2, "Schlüssel")
