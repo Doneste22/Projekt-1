@@ -407,3 +407,68 @@ class TestSchluesselAblegen(unittest.TestCase):
     def test_abbruch_warnt_vor_der_falschen_stelle(self):
         _, ausgabe = self._ausfuehren("", "egal", eingaben=("", ""))
         self.assertIn("NICHT an der normalen", ausgabe)
+
+
+class TestBoersenDiagnose(unittest.TestCase):
+    """Rohe Börsenmeldungen sind für niemanden verwertbar."""
+
+    def _diagnose(self, meldung):
+        import io
+        import sys
+
+        from assistant import __main__ as cli
+        from assistant.exchange import BoersenFehler
+
+        class Stubs:
+            def systemstatus(self):
+                return "online"
+
+            def guthaben(self):
+                return {"ZUSD": 100.0}
+
+            def offene_orders(self, userref=None):
+                return {}
+
+            def paar_info(self, paar):
+                from tests.test_live import INFO
+
+                return INFO
+
+            def letzter_kurs(self, paar):
+                return 100_000.0
+
+            def privat(self, methode, **kw):
+                raise BoersenFehler("EGeneral:Permission denied")
+
+            def order_aufgeben(self, *a, **kw):
+                raise BoersenFehler(meldung)
+
+        echt = cli._client
+        cli._client = lambda a: Stubs()
+        ausgabe, echt_stdout = io.StringIO(), sys.stdout
+        sys.stdout = ausgabe
+        try:
+            with tempfile.TemporaryDirectory() as t:
+                (Path(t) / "kraken.key").write_text("k\ns\n")
+                (Path(t) / "kraken.key").chmod(0o600)
+                cli.main(["--betrieb", t, "einrichten"])
+        except SystemExit:
+            pass
+        finally:
+            cli._client = echt
+            sys.stdout = echt_stdout
+        return ausgabe.getvalue()
+
+    def test_gesperrtes_konto_wird_erklaert(self):
+        ausgabe = self._diagnose("ETrade:User Locked")
+        self.assertIn("nicht zum Handeln freigeschaltet", ausgabe)
+        self.assertIn("Identitätsprüfung", ausgabe)
+        self.assertNotIn("Guthaben reicht", ausgabe, "das ist hier gerade nicht der Grund")
+
+    def test_fehlendes_recht_wird_erklaert(self):
+        ausgabe = self._diagnose("EGeneral:Permission denied")
+        self.assertIn("Create & Modify Orders", ausgabe)
+
+    def test_zu_wenig_guthaben_wird_erklaert(self):
+        ausgabe = self._diagnose("EOrder:Insufficient funds")
+        self.assertIn("Guthaben reicht", ausgabe)

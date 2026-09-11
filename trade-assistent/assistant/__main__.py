@@ -583,8 +583,19 @@ def befehl_einrichten(a) -> int:
         _ja("Recht 'Create & Modify Orders' vorhanden")
     except BoersenFehler as f:
         _nein(f"abgelehnt: {f}")
-        if "permission" in str(f).lower():
+        text = str(f).lower()
+        if "locked" in text:
+            # Das ist keine Frage von Guthaben oder Rechten. Kraken sperrt das
+            # Konto fürs Handeln, solange die Identitätsprüfung nicht durch ist.
+            print("                Das Konto ist nicht zum Handeln freigeschaltet —")
+            print("                weder Guthaben noch Schlüsselrechte sind hier das Problem.")
+            print("                Fast immer fehlt die Identitätsprüfung: bei Kraken unter")
+            print("                'Verify' mindestens die Stufe 'Intermediate' abschliessen.")
+            print("                Ist die durch und es bleibt dabei, hilft nur der Support.")
+        elif "permission" in text:
             print("                Bei Kraken das Recht 'Create & Modify Orders' setzen.")
+        elif "insufficient" in text or "funds" in text:
+            print("                Das Guthaben reicht für diese Ordergrösse nicht.")
         fehler += 1
 
     _pruefpunkt(9, "Benachrichtigung")
