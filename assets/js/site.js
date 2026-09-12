@@ -96,4 +96,61 @@
       }
     });
   }
+
+  /* ---------- Anfrageformular: baut eine fertige E-Mail ----------
+     Kein Backend, kein Formulardienst: der Browser öffnet das Mailprogramm
+     des Besuchers. Damit verlässt kein Datensatz die Seite und die
+     Datenschutzerklärung bleibt kurz. Die Zieladresse steht genau einmal
+     im HTML — im Ausweichlink unter dem Knopf. */
+  var anfrage = document.getElementById('anfrage-form');
+  if (anfrage) {
+    var leistungsfeld = document.getElementById('af-leistung');
+
+    /* Die Knöpfe auf den Leistungskarten wählen die passende Zeile vor. */
+    document.querySelectorAll('[data-leistung]').forEach(function (knopf) {
+      knopf.addEventListener('click', function () {
+        var wunsch = knopf.getAttribute('data-leistung');
+        Array.prototype.forEach.call(leistungsfeld.options, function (opt) {
+          if (opt.text.indexOf(wunsch) === 0) leistungsfeld.value = opt.value;
+        });
+      });
+    });
+
+    /* Die Zieladresse einmal beim Laden merken. Sie steht im Ausweichlink und
+       muss dort unangetastet bleiben — Meldungen bekommen eine eigene Zeile. */
+    var ausweich = document.querySelector('#anfrage-adresse a[href^="mailto:"]');
+    var adresse = ausweich ? ausweich.getAttribute('href').replace('mailto:', '') : '';
+
+    anfrage.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var hinweis = document.getElementById('anfrage-status');
+      var name = document.getElementById('af-name');
+
+      if (!name.value.trim()) {
+        name.focus();
+        hinweis.textContent = 'Bitte tragen Sie noch einen Namen ein.';
+        hinweis.style.color = '#A6472A';
+        return;
+      }
+
+      var leistung = leistungsfeld.value;
+      var text = [
+        'Leistung: ' + leistung,
+        'Name: ' + name.value.trim(),
+        'Ort: ' + document.getElementById('af-ort').value.trim(),
+        '',
+        'Vorhaben:',
+        document.getElementById('af-vorhaben').value.trim(),
+        ''
+      ].join('\n');
+
+      window.location.href = 'mailto:' + adresse +
+        '?subject=' + encodeURIComponent('Anfrage: ' + leistung) +
+        '&body=' + encodeURIComponent(text);
+
+      hinweis.textContent = 'Ihr E-Mail-Programm sollte sich jetzt öffnen. Passiert nichts, ' +
+        'schreiben Sie bitte direkt an ' + adresse + '.';
+      hinweis.style.color = '#C89B6A';
+    });
+  }
 })();
