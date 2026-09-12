@@ -11,11 +11,8 @@
  * Datum, nicht ins Nichts. Solange der Ordner existiert, ist jeder Schritt
  * zurückzuholen. Wirklich gelöscht wird nur, was du selbst löschst.
  *
- * Zwei Kopien desselben Fotos werden daran erkannt, dass sie Byte für Byte
- * gleich sind: erst nach Größe gruppiert, dann von den gleich großen die
- * Prüfsumme gebildet. Gleicher Name allein genügt nicht — und ein Foto, das
- * einmal durch WhatsApp gelaufen ist, ist eine andere Datei und wird deshalb
- * bewusst nicht angefasst.
+ * Die eigentliche Arbeit steht in ../server/dateien.mjs — damit dieses Skript
+ * und die Werkzeuge, die Jarvis benutzt, garantiert dasselbe tun.
  *
  *   --papierkorb    überzählige Kopien und Müll in den Papierkorb verschieben
  *   --liste <datei> vollständigen Bericht in eine Textdatei schreiben
@@ -23,179 +20,9 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import crypto from "node:crypto";
-import os from "node:os";
-
-/* ---------- Was als Müll gilt. Bewusst kurz und eindeutig. ---------- */
-
-const MUELL_ORDNER = new Set([".thumbnails", ".thumbdata", "LOST.DIR"]);
-const MUELL_ENDUNGEN = [".tmp", ".temp", ".crdownload", ".part", ".partial"];
-const MUELL_NAMEN = new Set(["thumbs.db", ".ds_store", "desktop.ini"]);
-
-/* Ordner, in denen eine Datei am ehesten „das Original" ist — je weiter vorn,
-   desto lieber wird diese Kopie behalten. */
-const RANGFOLGE = ["dcim/camera", "dcim", "pictures", "movies", "music", "documents", "download"];
-
-/* Diese Pfade fasst das Skript nicht an, auch wenn man sie ihm nennt. */
-const TABU = ["/", "/system", "/data", "/proc", "/dev", os.homedir()];
-
-/* ---------- Hilfsmittel ---------- */
-
-function groesse(bytes) {
-  if (bytes >= 1024 ** 3) return (bytes / 1024 ** 3).toFixed(2) + " GB";
-  if (bytes >= 1024 ** 2) return (bytes / 1024 ** 2).toFixed(1) + " MB";
-  if (bytes >= 1024) return Math.round(bytes / 1024) + " KB";
-  return bytes + " B";
-}
-
-function istMuell(datei) {
-  const name = path.basename(datei).toLowerCase();
-  if (MUELL_NAMEN.has(name)) return "Systemdatei";
-  if (name.startsWith(".trashed-")) return "vom Handy gelöscht, nur noch Rest";
-  if (MUELL_ENDUNGEN.some((e) => name.endsWith(e))) return "abgebrochener Download";
-  return null;
-}
-
-function rang(datei) {
-  const p = datei.toLowerCase().replace(/\\/g, "/");
-  const treffer = RANGFOLGE.findIndex((ordner) => p.includes("/" + ordner + "/"));
-  return treffer === -1 ? RANGFOLGE.length : treffer;
-}
-
-/** Welche Kopie bleibt: bester Ordner, dann die ältere, dann der kürzere Pfad. */
-function besteKopie(a, b) {
-  if (rang(a.pfad) !== rang(b.pfad)) return rang(a.pfad) - rang(b.pfad);
-  if (a.zeit !== b.zeit) return a.zeit - b.zeit;
-  return a.pfad.length - b.pfad.length;
-}
-
-function hash(datei) {
-  return new Promise((fertig, fehler) => {
-    const h = crypto.createHash("sha256");
-    const strom = fs.createReadStream(datei);
-    strom.on("data", (d) => h.update(d));
-    strom.on("end", () => fertig(h.digest("hex")));
-    strom.on("error", fehler);
-  });
-}
-
-/* ---------- Einlesen ---------- */
-
-/** Größe eines ganzen Ordners — für Caches, die als Block verschoben werden. */
-async function ordnerGroesse(wurzel) {
-  let summe = 0;
-  let eintraege;
-  try { eintraege = await fs.promises.readdir(wurzel, { withFileTypes: true }); } catch { return 0; }
-  for (const e of eintraege) {
-    const p = path.join(wurzel, e.name);
-    if (e.isSymbolicLink()) continue;
-    if (e.isDirectory()) { summe += await ordnerGroesse(p); continue; }
-    try { summe += (await fs.promises.stat(p)).size; } catch { /* weg ist weg */ }
-  }
-  return summe;
-}
-
-async function einlesen(wurzel, gefunden, muell, uebersprungen) {
-  let eintraege;
-  try {
-    eintraege = await fs.promises.readdir(wurzel, { withFileTypes: true });
-  } catch {
-    uebersprungen.push(wurzel + " (nicht lesbar)");
-    return;
-  }
-
-  for (const eintrag of eintraege) {
-    const pfad = path.join(wurzel, eintrag.name);
-    if (eintrag.isSymbolicLink()) continue;                       // Verknüpfungen nie verfolgen
-    if (eintrag.isDirectory()) {
-      if (eintrag.name.startsWith("Papierkorb-")) continue;         // eigener Papierkorb, nicht nochmal einsammeln
-      if (MUELL_ORDNER.has(eintrag.name)) {
-        muell.push({ pfad, grund: "Vorschaubilder-Cache", groesse: await ordnerGroesse(pfad), ordner: true });
-        continue;                                                   // nicht hineingehen, der ganze Ordner geht weg
-      }
-      await einlesen(pfad, gefunden, muell, uebersprungen);
-      continue;
-    }
-    if (!eintrag.isFile()) continue;
-
-    let stat;
-    try { stat = await fs.promises.stat(pfad); } catch { continue; }
-
-    const grund = istMuell(pfad);
-    if (grund) { muell.push({ pfad, grund, groesse: stat.size }); continue; }
-    if (stat.size === 0) { muell.push({ pfad, grund: "leere Datei", groesse: 0 }); continue; }
-
-    gefunden.push({ pfad, groesse: stat.size, zeit: stat.mtimeMs });
-  }
-}
-
-/* ---------- Doppelte finden ---------- */
-
-async function doppelteFinden(dateien) {
-  const nachGroesse = new Map();
-  for (const d of dateien) {
-    if (!nachGroesse.has(d.groesse)) nachGroesse.set(d.groesse, []);
-    nachGroesse.get(d.groesse).push(d);
-  }
-
-  const gruppen = [];
-  for (const [, kandidaten] of nachGroesse) {
-    if (kandidaten.length < 2) continue;                          // allein kann nicht doppelt sein
-    const nachHash = new Map();
-    for (const d of kandidaten) {
-      let summe;
-      try { summe = await hash(d.pfad); } catch { continue; }
-      if (!nachHash.has(summe)) nachHash.set(summe, []);
-      nachHash.get(summe).push(d);
-    }
-    for (const [, gleiche] of nachHash) {
-      if (gleiche.length < 2) continue;
-      gleiche.sort(besteKopie);
-      gruppen.push({ behalten: gleiche[0], ueberzaehlig: gleiche.slice(1), groesse: gleiche[0].groesse });
-    }
-  }
-  gruppen.sort((a, b) => b.groesse * b.ueberzaehlig.length - a.groesse * a.ueberzaehlig.length);
-  return gruppen;
-}
-
-/* ---------- Überblick nach Art ---------- */
-
-const ARTEN = [
-  ["Bilder", [".jpg", ".jpeg", ".png", ".heic", ".webp", ".gif", ".bmp", ".dng"]],
-  ["Videos", [".mp4", ".mov", ".3gp", ".mkv", ".avi", ".webm"]],
-  ["Ton", [".mp3", ".m4a", ".opus", ".ogg", ".wav", ".amr"]],
-  ["Dokumente", [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".txt", ".odt", ".csv"]],
-  ["Archive", [".zip", ".rar", ".7z", ".tar", ".gz", ".apk"]]
-];
-
-function art(datei) {
-  const endung = path.extname(datei).toLowerCase();
-  for (const [name, endungen] of ARTEN) if (endungen.includes(endung)) return name;
-  return "Sonstiges";
-}
-
-/* ---------- Verschieben ---------- */
-
-async function inPapierkorb(pfad, papierkorb) {
-  const ziel = path.join(papierkorb, path.basename(path.dirname(pfad)), path.basename(pfad));
-  await fs.promises.mkdir(path.dirname(ziel), { recursive: true });
-  let endgueltig = ziel;
-  let n = 1;
-  while (fs.existsSync(endgueltig)) {
-    const e = path.extname(ziel);
-    endgueltig = ziel.slice(0, ziel.length - e.length) + "-" + n++ + e;
-  }
-  try {
-    await fs.promises.rename(pfad, endgueltig);
-  } catch {
-    // Über Speichergrenzen hinweg geht rename nicht — dann kopieren und löschen.
-    await fs.promises.cp(pfad, endgueltig, { recursive: true });
-    await fs.promises.rm(pfad, { recursive: true });
-  }
-  return endgueltig;
-}
-
-/* ---------- Hauptlauf ---------- */
+import {
+  TABU, art, aufraeumen, doppelteFinden, durchsehen, groesse
+} from "../server/dateien.mjs";
 
 const argumente = process.argv.slice(2);
 const verschieben = argumente.includes("--papierkorb");
@@ -217,6 +44,7 @@ Ohne --papierkorb wird nur gezeigt, nichts angefasst.`);
   process.exit(0);
 }
 
+const wurzeln = [];
 for (const o of ordner) {
   const voll = path.resolve(o);
   if (TABU.includes(voll)) {
@@ -227,14 +55,11 @@ for (const o of ordner) {
     console.error(`Abbruch: ${voll} gibt es nicht.`);
     process.exit(1);
   }
+  wurzeln.push(voll);
 }
 
-const dateien = [];
-const muell = [];
-const uebersprungen = [];
-
 console.log("Lese ein …");
-for (const o of ordner) await einlesen(path.resolve(o), dateien, muell, uebersprungen);
+const { dateien, muell, uebersprungen } = await durchsehen(wurzeln);
 
 const gesamt = dateien.reduce((s, d) => s + d.groesse, 0);
 console.log(`\n${dateien.length} Dateien, ${groesse(gesamt)}.\n`);
@@ -341,27 +166,15 @@ if (zuHolen === 0) {
   process.exit(0);
 }
 
-const stempel = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
-const papierkorb = path.resolve(ordner[0], "..", "Papierkorb-" + stempel);
-await fs.promises.mkdir(papierkorb, { recursive: true });
-
-let verschoben = 0;
-let gespart = 0;
-for (const g of gruppen) {
-  for (const u of g.ueberzaehlig) {
-    try { await inPapierkorb(u.pfad, papierkorb); verschoben++; gespart += u.groesse; }
-    catch (e) { console.error(`  konnte nicht verschieben: ${u.pfad} (${e.message})`); }
-  }
-}
-for (const m of muell) {
-  try { await inPapierkorb(m.pfad, papierkorb); verschoben++; gespart += m.groesse; }
-  catch (e) { console.error(`  konnte nicht verschieben: ${m.pfad} (${e.message})`); }
-}
+// Der Befund von oben wird weitergereicht, damit nicht ein zweites Mal
+// durch den ganzen Speicher gelesen und gerechnet wird.
+const ergebnis = await aufraeumen(wurzeln, { gruppen, muell });
+ergebnis.fehler.forEach((f) => console.error(`  konnte nicht verschieben: ${f}`));
 
 console.log(`\n${"═".repeat(52)}`);
-console.log(`${verschoben} Dateien verschoben, ${groesse(gespart)} frei.`);
-console.log(`Sie liegen jetzt hier: ${papierkorb}`);
+console.log(`${ergebnis.verschoben} Dateien verschoben, ${groesse(ergebnis.gespart)} frei.`);
+console.log(`Sie liegen jetzt hier: ${ergebnis.papierkorb}`);
 console.log(`\nSieh in dem Ordner nach, ob wirklich nichts Wichtiges dabei ist.`);
 console.log(`Passt es, kannst du ihn löschen — im Dateimanager oder mit:`);
-console.log(`  rm -rf "${papierkorb}"`);
+console.log(`  rm -rf "${ergebnis.papierkorb}"`);
 console.log(`Passt es nicht, schieb die Dateien einfach zurück.`);

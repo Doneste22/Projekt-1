@@ -15,9 +15,10 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
-import { callUpstream, check, describeUpstream, sseHeaders, DEFAULT_MODEL } from "./core.mjs";
+import { check, sseHeaders, DEFAULT_MODEL } from "./core.mjs";
+import { fuehren } from "./gespraech.mjs";
+import { wurzeln } from "./werkzeuge.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = Number(process.env.JARVIS_PORT || process.env.PORT || 8787);
@@ -80,28 +81,29 @@ async function handleChat(req, res) {
   const controller = new AbortController();
   res.on("close", () => controller.abort());
 
-  let upstream;
+  res.writeHead(200, sseHeaders({ model: MODEL, unprotected: !PASSCODE, lokal: true }));
+  const sende = (ereignis, daten) => {
+    if (!res.writableEnded) res.write(`event: ${ereignis}\ndata: ${JSON.stringify(daten)}\n\n`);
+  };
+
   try {
-    upstream = await callUpstream({
+    await fuehren({
       apiKey: API_KEY,
       model: MODEL,
       messages: checked.messages,
       signal: controller.signal,
       // Gateway-Adresse, falls eine gesetzt ist; JARVIS_API_URL zum Prüfen gegen den Mock
-      url: process.env.JARVIS_API_URL || process.env.ANTHROPIC_BASE_URL
+      url: process.env.JARVIS_API_URL || process.env.ANTHROPIC_BASE_URL,
+      sende
     });
   } catch (error) {
-    if (controller.signal.aborted) return;
-    return sendJson(res, 502, { error: "Das Modell war nicht erreichbar. Gleich nochmal versuchen." });
+    if (controller.signal.aborted) return;                         // Browser hat abgebrochen
+    console.error("jarvis:", error);
+    // Eigener Fehlertyp: die Oberfläche zeigt bei dem den Text im Klartext an,
+    // weil er schon auf Deutsch und für Damaso geschrieben ist.
+    sende("error", { type: "error", error: { type: "jarvis_fehler", message: error.message } });
   }
-
-  if (!upstream.ok || !upstream.body) {
-    const text = await upstream.text().catch(() => "");
-    return sendJson(res, upstream.status, { error: describeUpstream(upstream.status, text) });
-  }
-
-  res.writeHead(200, sseHeaders({ model: MODEL, unprotected: !PASSCODE }));
-  Readable.fromWeb(upstream.body).pipe(res);
+  res.end();
 }
 
 async function serveFile(res, pathname) {
@@ -153,6 +155,12 @@ http.createServer((req, res) => {
   console.log(`  http://localhost:${PORT}/jarvis/   (auf diesem Gerät)`);
   addresses.forEach((line) => console.log(line));
   console.log(`Modell: ${MODEL}`);
+  const ordner = wurzeln();
+  if (ordner.length) {
+    console.log(`Werkzeuge an — Jarvis darf ansehen und aufräumen: ${ordner.join(", ")}`);
+  } else {
+    console.log("Werkzeuge aus — kein Ordner freigegeben. Mit JARVIS_ORDNER=~/storage/shared starten.");
+  }
   if (!API_KEY) console.log("ACHTUNG: ANTHROPIC_API_KEY fehlt — die Oberfläche läuft, Antworten nicht.");
   if (!PASSCODE) console.log("Hinweis: kein JARVIS_PASSCODE gesetzt. Lokal in Ordnung, im WLAN offen.");
 });

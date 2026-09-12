@@ -294,6 +294,16 @@
     warnBar.hidden = false;
   }
 
+  // Was Jarvis gerade tut — in Worten, die Damaso etwas sagen.
+  var WERKZEUG_NAMEN = {
+    speicher_uebersicht: 'sieht den Speicher an',
+    ordner_lesen: 'liest den Ordner',
+    dateien_suchen: 'sucht Dateien',
+    aufraeumen_pruefen: 'prüft, was doppelt ist',
+    aufraeumen_ausfuehren: 'räumt auf',
+    grenze: 'abgebrochen'
+  };
+
   // Fehler, die mitten im Strom kommen, meldet die Modell-API selbst.
   function apiErrorText(type) {
     if (type === 'overloaded_error' || type === 'rate_limit_error') {
@@ -322,21 +332,62 @@
     setState('thinking');
 
     var bubble = null;
+    var werkzeugTeil = null;
+    var textTeil = null;
     var answer = '';
     var finished = false;   // erst message_stop macht eine Antwort vollständig
     var stopReason = null;
 
+    // Die Blase hat zwei Teile: oben was Jarvis anfasst, darunter was er sagt.
+    // Beides getrennt, damit der laufende Text die Werkzeugzeilen nicht
+    // überschreibt.
+    function blaseSicherstellen() {
+      if (bubble) return;
+      bubble = renderMessage('assistant', '');
+      bubble.innerHTML = '';
+      werkzeugTeil = document.createElement('div');
+      werkzeugTeil.className = 'msg__werkzeuge';
+      textTeil = document.createElement('div');
+      textTeil.className = 'msg__text';
+      bubble.appendChild(werkzeugTeil);
+      bubble.appendChild(textTeil);
+    }
+
     function append(text) {
-      if (!bubble) {
-        bubble = renderMessage('assistant', '');
+      var neu = !bubble;
+      blaseSicherstellen();
+      if (neu) {
         bubble.classList.add('streaming');
         setState('speaking');   // das Gesicht redet mit, sobald die Antwort läuft
       }
       var stick = isNearBottom();
       answer += text;
-      bubble.innerHTML = renderMarkdown(answer);
+      textTeil.innerHTML = renderMarkdown(answer);
       scrollToBottom(stick);
       feedSpeech(text, false);
+    }
+
+    function werkzeugZeigen(data) {
+      blaseSicherstellen();
+      var stick = isNearBottom();
+      var name = WERKZEUG_NAMEN[data.name] || data.name;
+      if (data.status === 'laeuft') {
+        var zeile = document.createElement('div');
+        zeile.className = 'werkzeug laeuft';
+        zeile.dataset.werkzeug = data.name;
+        zeile.textContent = name + ' …';
+        werkzeugTeil.appendChild(zeile);
+      } else {
+        var offen = werkzeugTeil.querySelector('.werkzeug.laeuft[data-werkzeug="' + data.name + '"]');
+        if (!offen) {
+          offen = document.createElement('div');
+          offen.className = 'werkzeug laeuft';
+          werkzeugTeil.appendChild(offen);
+        }
+        offen.className = 'werkzeug ' + (data.fehler ? 'fehler' : 'fertig');
+        offen.textContent = data.text || name;
+      }
+      scrollToBottom(stick);
     }
 
     try {
@@ -365,7 +416,9 @@
       }
 
       if (response.headers.get('x-jarvis-unprotected') === '1') {
-        showWarning('Dieser Jarvis ist ohne Zugangscode erreichbar. Setz JARVIS_PASSCODE in den Netlify-Variablen.');
+        showWarning(response.headers.get('x-jarvis-lokal') === '1'
+          ? 'Dieser Jarvis läuft ohne Zugangscode. Im WLAN käme jeder dran — starte den Server mit JARVIS_PASSCODE.'
+          : 'Dieser Jarvis ist ohne Zugangscode erreichbar. Setz JARVIS_PASSCODE in den Netlify-Variablen.');
       }
 
       // Der Server reicht den Strom der Modell-API unverändert durch (siehe
@@ -377,9 +430,13 @@
           if (data.delta && data.delta.stop_reason) stopReason = data.delta.stop_reason;
         } else if (event === 'message_stop') {
           finished = true;
+        } else if (event === 'werkzeug') {
+          werkzeugZeigen(data);
         } else if (event === 'error') {
           var info = data.error || {};
-          throw Object.assign(new Error(apiErrorText(info.type)), { status: 500 });
+          // Der lokale Server schreibt seine Fehler schon auf Deutsch.
+          var text = info.type === 'jarvis_fehler' && info.message ? info.message : apiErrorText(info.type);
+          throw Object.assign(new Error(text), { status: 500 });
         }
       });
 
@@ -396,10 +453,12 @@
           renderError('Die Antwort war zu lang und ist hier zu Ende. Frag nach dem Rest.', false, 'note');
         }
       } else if (bubble) {
-        bubble.remove();
         if (stopReason === 'refusal') {
+          bubble.remove();
           renderError('Dazu kann ich nichts sagen. Frag mich etwas anderes.', false, 'note');
         } else {
+          // Werkzeugzeilen stehen lassen — sie zeigen, wie weit er gekommen ist.
+          if (!werkzeugTeil || !werkzeugTeil.children.length) bubble.remove();
           renderError('Jarvis hat nichts geantwortet. Versuch es nochmal.', true);
         }
       }

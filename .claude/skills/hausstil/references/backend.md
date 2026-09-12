@@ -117,6 +117,41 @@ wie ein Formular. Abbrechen im Browser muss den Strom auch serverseitig
 abbrechen (`req.signal` weiterreichen bzw. `res.on("close")`), sonst schreibt
 das Modell auf Damasos Rechnung weiter.
 
+## Werkzeuge (nur lokal)
+
+Soll das Modell etwas *tun* statt nur zu reden, braucht der Server eine
+Schleife: fragen → Modell will ein Werkzeug → ausführen → `tool_result`
+zurückgeben → Modell schreibt weiter. Das geht nur dort, wo der Server den
+Strom auswerten darf — also **nicht** in der Edge-Function (50 ms Rechenzeit),
+sondern im lokalen Server. `server/gespraech.mjs` macht das; nach außen sieht
+es aus wie eine einzige Antwort, weil `message_stop` genau einmal gesendet wird,
+wenn wirklich alles gesagt ist.
+
+Was man dabei aus dem Strom zusammensetzen muss: Text kommt als `text_delta`,
+die Werkzeug-Eingabe stückweise als `input_json_delta` (erst am Ende mit
+`JSON.parse` lesen, nie auf dem Rohtext herumschneiden), Denkblöcke als
+`thinking_delta` plus `signature_delta`. **Die Denkblöcke gehören unverändert
+in die nächste Runde zurück**, sonst lehnt die API ab. Mehrere `tool_use`-Blöcke
+einer Runde werden ausgeführt und ihre Ergebnisse zusammen in *einer* Nachricht
+zurückgeschickt — getrennt verschickt gewöhnt sich das Modell ab, mehrere
+Werkzeuge auf einmal zu nehmen.
+
+Drei Regeln machen Werkzeuge am fremden Gerät erst vertretbar. Sie stehen nicht
+im Prompt, sondern im Code — ein Prompt ist eine Bitte, keine Sperre:
+
+1. **Nichts wird gelöscht**, nur in einen datierten Papierkorb verschoben.
+2. **Jeder Pfad wird gegen eine Freigabeliste geprüft**, nach dem Auflösen von
+   `..`. Heimatverzeichnis und Systemordner sind gesperrt.
+3. **Das schreibende Werkzeug nimmt keine Dateiliste entgegen.** Es sucht selbst
+   nach dem, was eindeutig weg kann. Damit kann auch ein Dateiname, der wie eine
+   Anweisung klingt, nichts auslösen — das ist der eigentliche Angriffsweg bei
+   Werkzeugen, die fremde Daten sehen.
+
+Prüfen lässt sich die ganze Schleife ohne Modell: `scripts/mock-anthropic.mjs`
+spielt eine Werkzeug-Runde nach, wenn die Anfrage `tools` mitschickt
+(`MOCK_WERKZEUG` und `MOCK_EINGABE` bestimmen, was aufgerufen wird). Damit
+lassen sich auch die Abweisungen testen — etwa ein Werkzeugaufruf auf `/etc`.
+
 ## Schutz
 
 `ANTHROPIC_API_KEY` liegt in den Netlify-Variablen (offenbar auf Team-Ebene, er

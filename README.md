@@ -22,6 +22,9 @@ partnerlinks.html             Interne Arbeitsliste für die Affiliate-Links
 robots.txt, sitemap.xml       Für Suchmaschinen — Domain ist noch Platzhalter
 jarvis/                       Jarvis: eigenständige Assistenz-App (installierbar)
 server/core.mjs               Kern von Jarvis: Systemprompt, Prüfung, Modellaufruf
+server/gespraech.mjs          Werkzeug-Schleife — nur lokal
+server/werkzeuge.mjs          Was Jarvis am Gerät darf: ansehen, suchen, aufräumen
+server/dateien.mjs            Dateilogik: doppelt, Müll, Papierkorb
 server/jarvis.mjs             Jarvis lokal starten (PC oder Termux auf dem Handy)
 netlify/edge-functions/       Dasselbe im Netz — hält den Schlüssel
 netlify.toml                  Veröffentlichung, Kopfzeilen, Sperren
@@ -236,6 +239,51 @@ ebenfalls dort und nicht im Browser, damit er von außen nicht zu ändern ist.
 Danach startet Jarvis im eigenen Fenster ohne Browserleiste, mit eigenem Icon.
 Der Gesprächsverlauf liegt im Speicher des Geräts (bis zu 200 Nachrichten, an
 die API gehen die letzten 24) und verlässt das Handy nur als Teil der Anfrage.
+
+### Was Jarvis am Gerät darf
+
+Läuft Jarvis lokal, bekommt er Werkzeuge und kann den Speicher des Geräts
+ansehen und aufräumen. Dann geht das im Gespräch:
+
+> „Wie voll ist mein Speicher?“
+> „Zeig mir die zehn größten Videos.“
+> „Ist was doppelt in DCIM?“
+> „Dann räum das weg.“
+
+| Werkzeug | Was es tut |
+| --- | --- |
+| `speicher_uebersicht` | Wie voll das Gerät ist, was in den Ordnern liegt, nach Art aufgeteilt |
+| `ordner_lesen` | Dateien mit Größe und Datum, nach Größe, Datum oder Name |
+| `dateien_suchen` | Dateien, deren Name einen Text enthält |
+| `aufraeumen_pruefen` | Was doppelt und was Müll ist — verschiebt nichts |
+| `aufraeumen_ausfuehren` | Verschiebt die überzähligen Kopien und den Müll in den Papierkorb |
+
+Freigegeben wird über `JARVIS_ORDNER`; ohne die Variable nimmt Jarvis
+`~/storage/shared`, und wenn es das nicht gibt, hat er **keine** Werkzeuge:
+
+```
+ANTHROPIC_API_KEY=sk-ant-... JARVIS_ORDNER=~/storage/shared/DCIM,~/storage/shared/Download \
+  node server/jarvis.mjs
+```
+
+Beim Start steht in der Ausgabe, welche Ordner freigegeben sind. In der App
+steht über jeder Antwort, welches Werkzeug gelaufen ist und was es gefunden hat.
+
+**Warum das ungefährlich ist** — drei Dinge sind fest verbaut:
+
+- **Gelöscht wird nie.** Auch Jarvis verschiebt nur in einen Papierkorb mit
+  Datum. Erst wenn du den wegwirfst, ist etwas weg.
+- **Kein Pfad außerhalb der Freigabe.** Jede Ordnerangabe wird geprüft, auch
+  Umwege über `..`. Das Heimatverzeichnis und Systemordner sind gesperrt.
+- **Das Aufräum-Werkzeug nimmt keine Dateiliste entgegen.** Es sucht selbst
+  nach Byte-gleichen Doppelten und eindeutigem Müll. Niemand kann ihm also eine
+  bestimmte Datei unterschieben — auch kein Dateiname, der wie eine Anweisung
+  aussieht.
+
+**Die Netz-Fassung bekommt diese Werkzeuge nicht.** Sie läuft in einem fremden
+Rechenzentrum und hat dort nichts anzufassen; außerdem darf eine Edge-Function
+pro Anfrage nur 50 Millisekunden rechnen — für eine Werkzeug-Schleife reicht das
+ohnehin nicht.
 
 ### Ohne Netz-Server: Termux auf dem Handy
 
