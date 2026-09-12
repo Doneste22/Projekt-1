@@ -1,26 +1,56 @@
-/* Jarvis — eigenständige App, teilt bewusst nichts mit der Ratgeber-Seite.
-   Keine externen Schriften: die App soll offline vollständig funktionieren. */
+/* Jarvis — eigenständige App.
+ *
+ * Bewusst *nicht* im Papier-Stil der Ratgeber-Seite: Damaso wollte es
+ * futuristisch. Das Bild dahinter ist ein Messgerät im Dunkeln — tiefer
+ * blauschwarzer Grund, feine Linien, und Licht als Material. Die orange Blase
+ * der Wasserwaage bleibt als einziger Farbakzent; sie ist die Identität und
+ * taucht auch im App-Icon auf.
+ *
+ * Keine externen Schriften: die App muss offline vollständig laufen. Das
+ * Futuristische kommt deshalb aus Raum, Licht und Bewegung, nicht aus einer
+ * Techno-Schrift.
+ *
+ * Ein Farbraum, kein Hell/Dunkel-Wechsel — das ist eine Entscheidung, kein
+ * Versehen. Alle Farben sind explizit gesetzt, damit die Seite auf jedem
+ * Untergrund hält.
+ */
 
 :root{
-  --ink:#16283D;
-  --ink-soft:#4A5C70;
-  --paper:#F3EEE1;
-  --card:#FFFDF8;
-  --line:#DCD4BE;
-  --accent:#D9631F;
-  --accent-soft:#F3DAC4;
-  --danger:#B3402A;
-  --danger-soft:#FBEAE5;
-  --sans:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
+  color-scheme: dark;
+
+  --grund:#070B12;          /* Nacht mit Blaustich, nicht Schwarz */
+  --grund-tief:#04070C;
+  --flaeche:#0D1521;        /* gehobene Fläche, z. B. Eingabe */
+  --flaeche-hell:#131E2C;
+  --linie:#1C2837;
+  --linie-fein:#141E2B;
+
+  --text:#E8EFF7;
+  --text-leise:#93A6BC;
+  --text-still:#5E7183;
+
+  --akzent:#FF7A2F;         /* die Libellenblase, nur heller fürs Dunkle */
+  --akzent-tief:#C9541A;
+  --akzent-schimmer:rgba(255,122,47,.16);
+  --warn:#FF6B4A;
+  --warn-schimmer:rgba(255,107,74,.12);
+  --gut:#5BD6A4;
+
+  --sans:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;
+  --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+
+  --rand:18px;              /* Eckenradius der großen Flächen */
 }
 
 *{box-sizing:border-box;}
 html,body{height:100%;}
 body{
   margin:0;
-  background:var(--ink);
+  background:var(--grund-tief);
+  color:var(--text);
   font-family:var(--sans);
-  color:var(--ink);
+  font-size:15.5px;
+  line-height:1.55;
   -webkit-tap-highlight-color:transparent;
   overscroll-behavior-y:none;
 }
@@ -29,79 +59,120 @@ body{
   max-width:480px;
   margin:0 auto;
   height:100dvh;
-  background:var(--paper);
   display:flex;
   flex-direction:column;
   position:relative;
-  box-shadow:0 0 40px rgba(0,0,0,.35);
+  isolation:isolate;
+  background:
+    radial-gradient(120% 60% at 50% -10%, rgba(255,122,47,.09), transparent 60%),
+    radial-gradient(90% 50% at 50% 108%, rgba(90,140,200,.07), transparent 70%),
+    var(--grund);
+}
+
+/* Feines Raster, das nach unten verschwindet — Millimeterpapier bei Nacht. */
+.app::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size:34px 34px;
+  -webkit-mask-image:linear-gradient(180deg, #000 0%, rgba(0,0,0,.35) 55%, transparent 100%);
+          mask-image:linear-gradient(180deg, #000 0%, rgba(0,0,0,.35) 55%, transparent 100%);
 }
 
 /* ---------- Kopfzeile ---------- */
 
 .app__header{
-  background:var(--ink);
-  color:var(--paper);
-  padding:12px 14px;
-  padding-top:max(12px, env(safe-area-inset-top));
   display:flex;
   align-items:center;
-  gap:11px;
+  gap:13px;
+  padding:14px 16px 13px;
+  padding-top:max(14px, env(safe-area-inset-top));
   flex-shrink:0;
+  position:relative;
 }
-.brand{display:flex;flex-direction:column;line-height:1.25;min-width:0;flex:1;}
+.app__header::after{               /* Lichtkante statt Trennlinie */
+  content:"";
+  position:absolute;
+  left:16px; right:16px; bottom:0;
+  height:1px;
+  background:linear-gradient(90deg, transparent, var(--linie) 15%, var(--linie) 85%, transparent);
+}
+
+.brand{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1;}
 .brand__name{
-  font-size:18px;
+  font-size:15px;
   font-weight:600;
-  letter-spacing:.06em;
+  letter-spacing:.34em;
   text-transform:uppercase;
+  color:var(--text);
+  line-height:1;
 }
 .brand__state{
-  font-size:11.5px;
-  color:#AEBCCB;
   display:flex;
   align-items:center;
-  gap:6px;
+  gap:7px;
+  font-size:10.5px;
+  font-weight:500;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--text-still);
 }
 .brand__state::before{
   content:"";
-  width:6px;height:6px;
+  width:5px;height:5px;
   border-radius:50%;
-  background:var(--accent);
   flex-shrink:0;
+  background:var(--akzent);
+  box-shadow:0 0 8px var(--akzent);
 }
-.header__actions{display:flex;align-items:center;gap:2px;flex-shrink:0;}
+[data-state="thinking"] .brand__state,
+[data-state="speaking"] .brand__state,
+[data-state="listening"] .brand__state{color:var(--text-leise);}
+[data-state="offline"] .brand__state::before{background:var(--text-still);box-shadow:none;}
+
+.header__actions{display:flex;align-items:center;gap:4px;flex-shrink:0;}
 
 .icon-btn{
   background:transparent;
-  border:none;
-  color:#AEBCCB;
-  width:36px;height:36px;
-  border-radius:10px;
+  border:1px solid transparent;
+  color:var(--text-leise);          /* hell genug für draußen bei Tageslicht */
+  width:38px;height:38px;
+  border-radius:12px;
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;
-  transition:background .15s, color .15s;
   padding:0;
+  transition:color .18s ease, border-color .18s ease, background .18s ease;
 }
-.icon-btn:hover{background:rgba(255,255,255,.09);color:var(--paper);}
-.icon-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
-.icon-btn[aria-pressed="true"]{background:var(--accent);color:#fff;}
-.icon-btn svg{width:19px;height:19px;}
+.icon-btn:hover{color:var(--text);border-color:var(--linie);background:rgba(255,255,255,.03);}
+.icon-btn:focus-visible{outline:none;border-color:var(--akzent);color:var(--text);}
+.icon-btn[aria-pressed="true"]{
+  color:var(--akzent);
+  border-color:var(--akzent-tief);
+  background:var(--akzent-schimmer);
+}
+.icon-btn svg{width:18px;height:18px;}
 
 /* ---------- Gesicht ---------- */
 
 .face{
-  width:42px;height:42px;
+  width:46px;height:46px;
   flex-shrink:0;
   overflow:visible;
+  filter:drop-shadow(0 0 14px rgba(255,122,47,.18));
 }
-.face__plate{fill:var(--paper);stroke:var(--ink);stroke-width:2;}
-.face__marks line{stroke:var(--ink-soft);stroke-width:1.3;stroke-linecap:round;}
-.face__eye{fill:var(--ink);}
-.face__vial{fill:none;stroke:var(--ink);stroke-width:1.8;}
-.face__bubble{fill:var(--accent);}
+.face__plate{fill:#F2F6FB;stroke:none;}
+.face__marks line{stroke:#7E8EA0;stroke-width:1.3;stroke-linecap:round;}
+.face__eye{fill:#0B1220;}
+.face__vial{fill:none;stroke:#0B1220;stroke-width:1.8;}
+.face__bubble{fill:var(--akzent);}
 .face__halo{
   fill:none;
-  stroke:var(--accent);
+  stroke:var(--akzent);
   stroke-width:2;
   opacity:0;
 }
@@ -130,11 +201,12 @@ body{
 [data-state="listening"] .face__eyes{animation:blink 6.5s infinite;transform:scale(1.12);}
 [data-state="listening"] .face__halo{animation:halo 1.4s ease-out infinite;}
 @keyframes halo{
-  0%{opacity:.55;transform:scale(1);}
-  100%{opacity:0;transform:scale(1.16);}
+  0%{opacity:.6;transform:scale(1);}
+  100%{opacity:0;transform:scale(1.18);}
 }
 
 /* Denkt nach: Kopf legt sich schief, Blase wandert durch die Libelle */
+[data-state="thinking"] .face{filter:drop-shadow(0 0 18px rgba(255,122,47,.34));}
 [data-state="thinking"] .face__head{animation:tilt 2.6s ease-in-out infinite;}
 [data-state="thinking"] .face__bubble{animation:sweep 1.5s ease-in-out infinite alternate;}
 [data-state="thinking"] .face__eyes{animation:blink 6.5s infinite;transform:translateY(-1.5px);}
@@ -147,7 +219,8 @@ body{
   to{transform:translateX(10px);}
 }
 
-/* Spricht: der Mund bewegt sich */
+/* Spricht: der Mund bewegt sich, das Licht atmet mit */
+[data-state="speaking"] .face{animation:atmen 1.6s ease-in-out infinite;}
 [data-state="speaking"] .face__mouth{animation:talk .26s ease-in-out infinite alternate;}
 [data-state="speaking"] .face__bubble{animation:jitter .3s ease-in-out infinite alternate;}
 @keyframes talk{
@@ -158,16 +231,20 @@ body{
   from{transform:translateX(-2.5px);}
   to{transform:translateX(2.5px);}
 }
+@keyframes atmen{
+  0%,100%{filter:drop-shadow(0 0 12px rgba(255,122,47,.2));}
+  50%{filter:drop-shadow(0 0 22px rgba(255,122,47,.42));}
+}
 
-/* Offline: alles steht still, die Blase hängt am Anschlag */
+/* Offline: alles steht still, das Licht ist aus */
+[data-state="offline"] .face{filter:none;opacity:.62;}
 [data-state="offline"] .face__eyes,
 [data-state="offline"] .face__bubble,
 [data-state="offline"] .face__head{animation:none;}
-[data-state="offline"] .face__bubble{transform:translateX(9px);fill:var(--ink-soft);}
-[data-state="offline"] .brand__state::before{background:var(--ink-soft);}
+[data-state="offline"] .face__bubble{transform:translateX(10px);fill:var(--text-still);}
 
 @media (prefers-reduced-motion: reduce){
-  .face *{animation:none !important;}
+  .face,.face *{animation:none !important;}
 }
 
 /* ---------- Verlauf ---------- */
@@ -176,175 +253,204 @@ body{
   flex:1;
   overflow-y:auto;
   -webkit-overflow-scrolling:touch;
-  padding:18px 14px 10px;
+  padding:20px 16px 12px;
   display:flex;
   flex-direction:column;
-  gap:10px;
-  background-image:
-    repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(22,40,61,.05) 27px, rgba(22,40,61,.05) 28px),
-    repeating-linear-gradient(90deg, transparent, transparent 27px, rgba(22,40,61,.05) 27px, rgba(22,40,61,.05) 28px);
+  gap:18px;
 }
+
 .msg{
-  max-width:84%;
-  padding:10px 13px;
-  border-radius:14px;
-  font-size:15px;
-  line-height:1.5;
+  max-width:86%;
+  font-size:15.5px;
+  line-height:1.6;
   word-wrap:break-word;
   overflow-wrap:anywhere;
-  animation:rise .18s ease-out;
+  animation:auftauchen .22s ease-out;
 }
-@keyframes rise{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+@keyframes auftauchen{
+  from{opacity:0;transform:translateY(6px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+/* Eigene Nachrichten: kompakt, gefüllt, rechts */
 .msg.user{
   align-self:flex-end;
-  background:var(--ink);
-  color:var(--paper);
-  border-bottom-right-radius:4px;
+  background:var(--flaeche-hell);
+  border:1px solid var(--linie);
+  color:var(--text);
+  border-radius:16px 16px 5px 16px;
+  padding:10px 14px;
   white-space:pre-wrap;
+  max-width:82%;
 }
+
+/* Jarvis spricht ohne Kasten — der Text steht frei auf dem Grund, markiert
+   durch eine Lichtlinie am linken Rand. Weniger Rahmen, mehr Ruhe. */
 .msg.assistant{
-  align-self:flex-start;
-  background:var(--card);
-  color:var(--ink);
-  border:1px solid var(--line);
-  border-bottom-left-radius:4px;
+  align-self:stretch;
+  max-width:100%;
+  padding:0 0 0 15px;
+  position:relative;
 }
-.msg.error{
-  align-self:flex-start;
-  background:var(--danger-soft);
-  color:var(--danger);
-  border:1px solid #E6B7A8;
-  border-bottom-left-radius:4px;
+.msg.assistant::before{
+  content:"";
+  position:absolute;
+  left:0; top:4px; bottom:4px;
+  width:2px;
+  border-radius:2px;
+  background:linear-gradient(180deg, var(--akzent), rgba(255,122,47,.08));
+  opacity:.75;
+}
+
+.msg.error,.msg.note{
+  align-self:stretch;
+  max-width:100%;
+  border-radius:13px;
+  padding:11px 14px;
   font-size:14px;
+  border:1px solid;
 }
+.msg.error{background:var(--warn-schimmer);border-color:rgba(255,107,74,.3);color:#FFB9A6;}
+.msg.note{background:rgba(255,255,255,.035);border-color:var(--linie);color:var(--text-leise);}
 .msg.error button{
   display:block;
-  margin-top:8px;
-  background:var(--danger);
-  color:#fff;
-  border:none;
-  border-radius:9px;
-  padding:7px 13px;
+  margin-top:10px;
+  background:transparent;
+  color:var(--warn);
+  border:1px solid rgba(255,107,74,.45);
+  border-radius:10px;
+  padding:7px 14px;
   font:inherit;
-  font-size:13.5px;
+  font-size:13px;
   cursor:pointer;
 }
+.msg.error button:hover{background:rgba(255,107,74,.12);}
 
-.msg.note{
-  align-self:flex-start;
-  background:var(--accent-soft);
-  color:var(--ink);
-  border:1px solid var(--line);
-  border-bottom-left-radius:4px;
-  font-size:14px;
-}
-
-/* Was Jarvis anfasst — steht über dem Text derselben Blase */
+/* Was Jarvis anfasst — steht über dem Text derselben Nachricht */
 .msg__werkzeuge:empty{display:none;}
 .msg__werkzeuge{
   display:flex;
   flex-direction:column;
-  gap:3px;
-  margin-bottom:9px;
-  padding-bottom:8px;
-  border-bottom:1px dashed var(--line);
+  gap:5px;
+  margin-bottom:11px;
 }
 .werkzeug{
   display:flex;
   align-items:baseline;
-  gap:7px;
-  font-size:12.5px;
-  line-height:1.35;
-  color:var(--ink-soft);
+  gap:8px;
+  font-family:var(--mono);
+  font-size:11.5px;
+  letter-spacing:.02em;
+  line-height:1.4;
+  color:var(--text-still);
 }
 .werkzeug::before{
   content:"";
-  width:6px;height:6px;
+  width:5px;height:5px;
   border-radius:50%;
   flex-shrink:0;
-  transform:translateY(-1px);
-  background:var(--line);
+  transform:translateY(-2px);
+  background:var(--text-still);
 }
-.werkzeug.laeuft::before{background:var(--accent);animation:pochen 1s ease-in-out infinite;}
-.werkzeug.fertig::before{background:var(--ink-soft);}
-.werkzeug.fehler{color:var(--danger);}
-.werkzeug.fehler::before{background:var(--danger);}
+.werkzeug.laeuft{color:var(--text-leise);}
+.werkzeug.laeuft::before{background:var(--akzent);box-shadow:0 0 8px var(--akzent);animation:pochen 1.1s ease-in-out infinite;}
+.werkzeug.fertig::before{background:var(--gut);box-shadow:0 0 6px rgba(91,214,164,.5);}
+.werkzeug.fehler{color:#FFB9A6;}
+.werkzeug.fehler::before{background:var(--warn);box-shadow:0 0 6px rgba(255,107,74,.5);}
 @keyframes pochen{0%,100%{opacity:1;}50%{opacity:.25;}}
 @media (prefers-reduced-motion: reduce){.werkzeug.laeuft::before{animation:none;}}
 
 /* Markdown im Antworttext */
-.msg.assistant p{margin:0 0 .65em;}
+.msg.assistant p{margin:0 0 .7em;}
 .msg.assistant .msg__text > *:last-child{margin-bottom:0;}
-.msg.assistant p:last-child{margin-bottom:0;}
-.msg.assistant ul,.msg.assistant ol{margin:0 0 .65em;padding-left:1.25em;}
-.msg.assistant li{margin-bottom:.25em;}
-.msg.assistant h3{font-size:15px;margin:.2em 0 .45em;}
-.msg.assistant strong{font-weight:600;}
+.msg.assistant ul,.msg.assistant ol{margin:0 0 .7em;padding-left:1.15em;}
+.msg.assistant li{margin-bottom:.3em;}
+.msg.assistant li::marker{color:var(--akzent);}
+.msg.assistant h3{
+  font-size:11.5px;
+  font-weight:600;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--text-leise);
+  margin:1.1em 0 .5em;
+}
+.msg.assistant .msg__text > h3:first-child{margin-top:0;}
+.msg.assistant strong{font-weight:600;color:#FFFFFF;}
 .msg.assistant code{
-  font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
-  font-size:13px;
-  background:var(--accent-soft);
-  padding:1px 5px;
-  border-radius:5px;
+  font-family:var(--mono);
+  font-size:12.5px;
+  background:rgba(255,122,47,.12);
+  color:#FFC49E;
+  padding:1px 6px;
+  border-radius:6px;
 }
 .msg.assistant pre{
-  margin:0 0 .65em;
-  background:var(--ink);
-  color:var(--paper);
-  padding:10px 12px;
-  border-radius:10px;
+  margin:0 0 .7em;
+  background:var(--flaeche);
+  border:1px solid var(--linie);
+  padding:12px 14px;
+  border-radius:12px;
   overflow-x:auto;
 }
-.msg.assistant pre code{background:none;color:inherit;padding:0;font-size:12.5px;}
-.msg.assistant a{color:var(--accent);}
+.msg.assistant pre code{background:none;color:var(--text-leise);padding:0;font-size:12px;}
+.msg.assistant a{color:var(--akzent);text-underline-offset:3px;}
 
 /* Cursor, solange die Antwort noch läuft */
-.msg.streaming::after{
+.msg.streaming .msg__text::after{
   content:"";
   display:inline-block;
-  width:7px;height:15px;
-  margin-left:2px;
+  width:8px;height:15px;
+  margin-left:3px;
   vertical-align:-2px;
-  background:var(--accent);
-  animation:caret 1s steps(2) infinite;
+  border-radius:2px;
+  background:var(--akzent);
+  box-shadow:0 0 10px var(--akzent);
+  animation:caret 1.1s ease-in-out infinite;
 }
-@keyframes caret{0%,50%{opacity:1;}51%,100%{opacity:0;}}
+@keyframes caret{0%,45%{opacity:1;}55%,100%{opacity:.12;}}
+
+::-webkit-scrollbar{width:0;}
 
 /* ---------- Hinweisleisten ---------- */
 
 .notice{
   display:flex;
   align-items:center;
-  gap:10px;
-  padding:10px 14px;
+  gap:12px;
+  margin:0 12px 10px;
+  padding:12px 14px;
   font-size:13px;
-  border-top:1px solid var(--line);
-  background:var(--accent-soft);
-  color:var(--ink);
+  line-height:1.4;
+  border-radius:14px;
+  border:1px solid var(--linie);
+  background:var(--flaeche);
+  color:var(--text-leise);
   flex-shrink:0;
 }
 .notice[hidden]{display:none;}
-.notice.warn{background:var(--danger-soft);color:var(--danger);}
-.notice p{margin:0;flex:1;line-height:1.35;}
+.notice.warn{border-color:rgba(255,107,74,.32);background:var(--warn-schimmer);color:#FFC0B0;}
+.notice p{margin:0;flex:1;}
 .notice button{
-  border:none;
-  border-radius:9px;
-  padding:7px 12px;
+  border:1px solid var(--akzent-tief);
+  border-radius:10px;
+  padding:8px 14px;
   font:inherit;
-  font-size:13px;
+  font-size:12.5px;
   font-weight:600;
+  letter-spacing:.04em;
   cursor:pointer;
-  background:var(--ink);
-  color:var(--paper);
+  background:var(--akzent-schimmer);
+  color:var(--akzent);
   flex-shrink:0;
 }
 .notice .notice__close{
   background:transparent;
+  border:none;
   color:inherit;
   padding:4px 6px;
-  font-size:17px;
+  font-size:18px;
   line-height:1;
-  opacity:.6;
+  opacity:.55;
 }
 
 /* ---------- Eingabe ---------- */
@@ -352,46 +458,62 @@ body{
 .composer{
   display:flex;
   align-items:flex-end;
-  gap:6px;
-  padding:9px 10px;
-  padding-bottom:max(9px, env(safe-area-inset-bottom));
-  background:var(--paper);
-  border-top:1px solid var(--line);
+  gap:8px;
+  padding:10px 12px;
+  padding-bottom:max(12px, env(safe-area-inset-bottom));
   flex-shrink:0;
+  position:relative;
+  background:linear-gradient(180deg, transparent, var(--grund-tief) 55%);
 }
 .composer__input{
   flex:1;
   resize:none;
-  border:1px solid var(--line);
-  background:var(--card);
-  color:var(--ink);
-  border-radius:17px;
-  padding:10px 14px;
+  border:1px solid var(--linie);
+  background:var(--flaeche);
+  color:var(--text);
+  border-radius:22px;
+  padding:11px 16px;
   font-family:inherit;
-  font-size:16px; /* unter 16px zoomt iOS beim Fokus */
-  max-height:120px;
-  line-height:1.4;
+  font-size:16px;                    /* unter 16px zoomt iOS beim Fokus */
+  max-height:130px;
+  line-height:1.45;
+  transition:border-color .18s ease, box-shadow .18s ease;
 }
-.composer__input:focus{outline:none;border-color:var(--accent);}
-.composer .icon-btn{color:var(--ink-soft);}
-.composer .icon-btn:hover{background:var(--accent-soft);color:var(--ink);}
-.composer .icon-btn[aria-pressed="true"]{background:var(--accent);color:#fff;}
-.composer .send{background:var(--ink);color:var(--paper);}
-.composer .send:hover{background:var(--ink);color:var(--paper);opacity:.9;}
-.composer .send:disabled{opacity:.35;cursor:default;}
-.composer .send.stop,
-.composer .send.stop:hover{background:var(--danger);color:#fff;}
-/* SVG-Elemente kennen kein hidden-Attribut — deshalb über die Klasse schalten. */
+.composer__input::placeholder{color:var(--text-still);}
+.composer__input:focus{
+  outline:none;
+  border-color:var(--akzent-tief);
+  box-shadow:0 0 0 3px var(--akzent-schimmer);
+}
+.composer .icon-btn{color:var(--text-leise);}
+.composer .icon-btn:hover{color:var(--text);}
+.composer .send{
+  background:var(--akzent);
+  border-color:var(--akzent);
+  color:#140A04;
+  box-shadow:0 0 18px rgba(255,122,47,.3);
+}
+.composer .send:hover{background:var(--akzent);border-color:var(--akzent);color:#140A04;opacity:.92;}
+.composer .send:disabled{opacity:.35;cursor:default;box-shadow:none;}
 .composer .send .stop__icon{display:none;}
+.composer .send.stop,
+.composer .send.stop:hover{
+  background:transparent;
+  border-color:var(--warn);
+  color:var(--warn);
+  box-shadow:0 0 14px rgba(255,107,74,.25);
+}
 .composer .send.stop .stop__icon{display:block;}
 .composer .send.stop .send__icon{display:none;}
 
-/* ---------- Passwortabfrage ---------- */
+/* ---------- Zugangscode ---------- */
 
 .gate{
   position:absolute;
   inset:0;
-  background:rgba(22,40,61,.9);
+  background:rgba(4,7,12,.86);
+  -webkit-backdrop-filter:blur(10px);
+          backdrop-filter:blur(10px);
   display:flex;
   align-items:center;
   justify-content:center;
@@ -400,34 +522,47 @@ body{
 }
 .gate[hidden]{display:none;}
 .gate__card{
-  background:var(--card);
-  border-radius:16px;
-  padding:20px;
+  background:var(--flaeche);
+  border:1px solid var(--linie);
+  border-radius:var(--rand);
+  padding:22px;
   width:100%;
-  max-width:320px;
+  max-width:330px;
+  box-shadow:0 24px 60px rgba(0,0,0,.55);
 }
-.gate__card h2{margin:0 0 6px;font-size:17px;}
-.gate__card p{margin:0 0 14px;font-size:13.5px;color:var(--ink-soft);line-height:1.4;}
+.gate__card h2{
+  margin:0 0 8px;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--akzent);
+}
+.gate__card p{margin:0 0 16px;font-size:13.5px;color:var(--text-leise);line-height:1.5;}
 .gate__card input{
   width:100%;
-  border:1px solid var(--line);
-  border-radius:11px;
-  padding:11px 13px;
+  border:1px solid var(--linie);
+  background:var(--grund);
+  color:var(--text);
+  border-radius:12px;
+  padding:12px 14px;
   font:inherit;
   font-size:16px;
-  margin-bottom:10px;
+  letter-spacing:.08em;
+  margin-bottom:12px;
 }
-.gate__card input:focus{outline:none;border-color:var(--accent);}
+.gate__card input:focus{outline:none;border-color:var(--akzent-tief);box-shadow:0 0 0 3px var(--akzent-schimmer);}
 .gate__card button{
   width:100%;
   border:none;
-  border-radius:11px;
-  padding:11px;
+  border-radius:12px;
+  padding:12px;
   font:inherit;
-  font-size:15px;
+  font-size:14px;
   font-weight:600;
-  background:var(--ink);
-  color:var(--paper);
+  letter-spacing:.06em;
+  background:var(--akzent);
+  color:#140A04;
   cursor:pointer;
 }
 
@@ -440,5 +575,3 @@ body{
   white-space:nowrap;
   border:0;
 }
-
-::-webkit-scrollbar{width:0;}
