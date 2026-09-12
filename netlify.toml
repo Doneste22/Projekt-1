@@ -18,6 +18,15 @@
   [headers.values]
     Cache-Control = "no-cache"
 
+# Android sucht die Verknüpfung zur App unter /.well-known/. Punkt-Ordner
+# liefert Netlify nicht aus, deshalb liegt die Datei ohne Punkt im Repo und
+# wird hierher umgeschrieben (200, keine Weiterleitung — Android folgt keiner).
+[[redirects]]
+  from = "/.well-known/assetlinks.json"
+  to = "/assetlinks.json"
+  status = 200
+  force = true
+
 # Quelltext und Konfiguration liegen im selben Ordner wie die Seite, gehören
 # aber nicht ausgeliefert.
 [[redirects]]

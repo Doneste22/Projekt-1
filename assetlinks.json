@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ch.damaso.jarvis",
+      "sha256_cert_fingerprints": [
+        "BA:42:90:A4:CE:80:B6:9C:2B:12:81:2B:5E:88:A7:71:46:1E:C7:32:4A:BC:A3:4D:D9:0F:55:58:C8:6E:C9:73"
+      ]
+    }
+  }
+]

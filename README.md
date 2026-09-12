@@ -164,6 +164,8 @@ jarvis/app.js                 Verlauf, Streaming, Sprache, Installation
 jarvis/sw.js                  Service Worker: App startet auch ohne Netz
 jarvis/manifest.webmanifest   Name, Farben, Icons für den Startbildschirm
 jarvis/icons/                 App-Icons (192, 512, maskierbar, Apple)
+android/                      Bauplan für die Android-App (APK)
+assetlinks.json               Verknüpft die App mit der Domain
 ```
 
 ### Das Gesicht
@@ -284,6 +286,19 @@ steht über jeder Antwort, welches Werkzeug gelaufen ist und was es gefunden hat
 Rechenzentrum und hat dort nichts anzufassen; außerdem darf eine Edge-Function
 pro Anfrage nur 50 Millisekunden rechnen — für eine Werkzeug-Schleife reicht das
 ohnehin nicht.
+
+### Als Android-App (APK)
+
+Jarvis gibt es zusätzlich als richtige Android-App zum Sideloaden — eine
+**Trusted Web Activity**: ein Container, der die veröffentlichte Adresse im
+Vollbild zeigt, ohne Adressleiste, mit eigenem Eintrag im App-Menü. Bauplan und
+Anleitung: `android/`. Die Verknüpfung zwischen App und Domain steht in
+`assetlinks.json` und wird über `netlify.toml` unter
+`/.well-known/assetlinks.json` ausgeliefert — ohne sie zeigt Android eine
+Adressleiste.
+
+Die APK braucht Netz und den Zugangscode und hat **keine** Werkzeuge für den
+Handyspeicher; die gibt es nur im lokalen Server unter Termux.
 
 ### Ohne Netz-Server: Termux auf dem Handy
 

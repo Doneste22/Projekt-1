@@ -1,0 +1,52 @@
+{
+  "packageId": "ch.damaso.jarvis",
+  "host": "jarvis-damaso.netlify.app",
+  "name": "Jarvis",
+  "launcherName": "Jarvis",
+  "display": "standalone",
+  "themeColor": "#070B12",
+  "themeColorDark": "#070B12",
+  "navigationColor": "#070B12",
+  "navigationColorDark": "#070B12",
+  "navigationDividerColor": "#070B12",
+  "navigationDividerColorDark": "#070B12",
+  "backgroundColor": "#070B12",
+  "enableNotifications": false,
+  "startUrl": "/jarvis/",
+  "iconUrl": "https://jarvis-damaso.netlify.app/jarvis/icons/icon-512.png",
+  "maskableIconUrl": "https://jarvis-damaso.netlify.app/jarvis/icons/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "jarvis"
+  },
+  "appVersionName": "2",
+  "appVersionCode": 2,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://jarvis-damaso.netlify.app/jarvis/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://jarvis-damaso.netlify.app/jarvis/",
+  "minSdkVersion": 21,
+  "orientation": "portrait",
+  "fingerprints": [
+    {
+      "name": "jarvis",
+      "value": "BA:42:90:A4:CE:80:B6:9C:2B:12:81:2B:5E:88:A7:71:46:1E:C7:32:4A:BC:A3:4D:D9:0F:55:58:C8:6E:C9:73"
+    }
+  ],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "launchHandlerClientMode": "",
+  "displayOverride": [],
+  "appVersion": "2"
+}
