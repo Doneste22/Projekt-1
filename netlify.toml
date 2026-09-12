@@ -33,6 +33,12 @@
   force = true
 
 [[redirects]]
+  from = "/scripts/*"
+  to = "/index.html"
+  status = 404
+  force = true
+
+[[redirects]]
   from = "/package*.json"
   to = "/index.html"
   status = 404

@@ -31,6 +31,7 @@ assets/fonts/*.woff2          Die Schriftdateien selbst (Variable Fonts, latin +
 assets/js/site.js             Navigation, Diagramm-Tooltip, Schichten-Highlight, Anfrageformular
 assets/js/partnerlinks.js     Alle Partnerlink-Ziele an einer Stelle
 scripts/fonts-holen.sh        Frischt die Schriften auf und schreibt fonts.css neu
+scripts/aufraeumen.mjs        Findet doppelte Dateien und Müll im Handyspeicher
 MONETARISIERUNG.md            Wie aus der Seite Einnahmen werden — Wege, Zahlen, Reihenfolge
 ```
 
@@ -287,6 +288,56 @@ node .claude/skills/hausstil/scripts/mock-anthropic.mjs 9099
 ANTHROPIC_API_KEY=sk-test JARVIS_API_URL=http://localhost:9099/v1/messages \
   node server/jarvis.mjs
 ```
+
+## Handy aufräumen
+
+`scripts/aufraeumen.mjs` sucht doppelte Dateien und Müll im Speicher — gedacht
+fürs Handy, läuft in Termux, braucht keine Pakete. Es gehört nicht zur Website;
+es liegt hier, weil dieses Repo ohnehin auf dem Handy liegt.
+
+```
+pkg install nodejs git          # einmalig
+termux-setup-storage            # einmalig: Zugriff auf den Handyspeicher
+cd Projekt-1
+
+node scripts/aufraeumen.mjs ~/storage/shared/DCIM ~/storage/shared/Download
+```
+
+Der erste Lauf zeigt nur: wie viel wo liegt, welche Dateien doppelt sind, was
+Müll ist und welche Brocken am größten sind. **Angefasst wird nichts.** Stimmt
+der Befund, denselben Befehl nochmal mit `--papierkorb`:
+
+```
+node scripts/aufraeumen.mjs ~/storage/shared/DCIM ~/storage/shared/Download --papierkorb
+```
+
+Dann wandern die überzähligen Kopien in einen Ordner `Papierkorb-<Datum>` neben
+den durchsuchten Ordnern. Auch das ist noch kein Löschen: erst wenn du diesen
+Ordner selbst wegwirfst, ist der Platz frei — und bis dahin lässt sich jede
+Datei zurückschieben.
+
+Was das Werkzeug macht und was bewusst nicht:
+
+- **Doppelt heißt Byte für Byte gleich.** Erst werden gleich große Dateien
+  gesucht, dann von denen die Prüfsumme gebildet. Gleicher Name genügt nicht —
+  zwei verschiedene Fotos mit demselben Namen bleiben beide liegen. Ein Foto,
+  das durch WhatsApp gelaufen ist, ist neu komprimiert und damit eine andere
+  Datei; es wird nicht angerührt.
+- **Welche Kopie bleibt:** die im besseren Ordner (`DCIM/Camera` vor `DCIM` vor
+  `Pictures` vor `Download`), bei Gleichstand die ältere. Das Original bleibt
+  also an seinem Platz, die Kopie im Download-Ordner geht.
+- **Müll** sind nur eindeutige Fälle: leere Dateien, abgebrochene Downloads
+  (`.crdownload`, `.part`, `.tmp`), Reste gelöschter Bilder (`.trashed-…`),
+  `Thumbs.db` und Vorschaubild-Caches (`.thumbnails`).
+- **Was „nicht gebraucht wird", entscheidet niemand außer dir.** Alte Fotos,
+  große Videos, alte Downloads werden aufgelistet, aber nie automatisch
+  angefasst. Die Liste der größten Dateien steht nur zur Ansicht da.
+- `--liste bericht.txt` schreibt den vollständigen Befund in eine Textdatei,
+  wenn die Ausgabe im Terminal zu lang wird.
+
+Nicht gemacht: Sortieren nach Jahr und Monat. Das Verschieben von Fotos bringt
+die Galerie durcheinander, solange Android den Medienindex nicht neu aufbaut —
+das wäre ein eigener, vorsichtiger Schritt.
 
 ## Redaktionelle Hinweise
 
