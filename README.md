@@ -35,6 +35,7 @@ assets/js/site.js             Navigation, Diagramm-Tooltip, Schichten-Highlight,
 assets/js/partnerlinks.js     Alle Partnerlink-Ziele an einer Stelle
 scripts/fonts-holen.sh        Frischt die Schriften auf und schreibt fonts.css neu
 scripts/aufraeumen.mjs        Findet doppelte Dateien und Müll im Handyspeicher
+scripts/termux-einrichten.sh  Richtet Jarvis auf dem Handy ein (ein Befehl)
 MONETARISIERUNG.md            Wie aus der Seite Einnahmen werden — Wege, Zahlen, Reihenfolge
 ```
 
@@ -300,21 +301,50 @@ Adressleiste.
 Die APK braucht Netz und den Zugangscode und hat **keine** Werkzeuge für den
 Handyspeicher; die gibt es nur im lokalen Server unter Termux.
 
+Installieren lässt sie sich auch aus Termux heraus — Android übernimmt dann den
+Rest:
+
+```
+termux-open ~/storage/downloads/jarvis.apk
+```
+
 ### Ohne Netz-Server: Termux auf dem Handy
 
 Jarvis läuft auch komplett auf dem Handy — Server und alles. Das braucht keine
 Veröffentlichung, kostet kein Hosting, und der Schlüssel verlässt das Gerät nie.
 In Termux (Android):
 
+**Ein Befehl richtet alles ein.** In Termux:
+
 ```
-pkg install nodejs git
+pkg install -y git
 git clone https://github.com/Doneste22/Projekt-1
-cd Projekt-1
-export ANTHROPIC_API_KEY=sk-ant-...
-node server/jarvis.mjs
+bash Projekt-1/scripts/termux-einrichten.sh
 ```
 
-Kein `npm install` — der Server kommt mit dem aus, was Node mitbringt.
+Das Skript installiert Node, holt die Speicherfreigabe von Android, fragt nach
+Schlüssel, Zugangscode und den Ordnern, die Jarvis sehen darf, und legt den
+Befehl `jarvis` an. Danach genügt:
+
+```
+jarvis              # starten
+jarvis update       # neueste Fassung holen
+jarvis einrichten   # Schlüssel, Code oder Ordner ändern
+```
+
+Die Zugangsdaten liegen in `~/.jarvis.env`, nur für den eigenen Benutzer
+lesbar. Das Skript lässt sich jederzeit erneut laufen — es überschreibt nichts
+ungefragt. Ein `npm install` braucht es nicht: der Server kommt mit dem aus,
+was Node mitbringt.
+
+Wer lieber von Hand einrichtet:
+
+```
+pkg install nodejs git
+termux-setup-storage
+git clone https://github.com/Doneste22/Projekt-1 && cd Projekt-1
+ANTHROPIC_API_KEY=sk-ant-... JARVIS_ORDNER=~/storage/shared/DCIM node server/jarvis.mjs
+```
 
 Dann im Chrome des Handys `http://localhost:8787/jarvis/` öffnen und über das
 Menü „Zum Startbildschirm hinzufügen“. Chrome behandelt `localhost` als sichere
