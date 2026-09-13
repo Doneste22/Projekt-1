@@ -15,12 +15,13 @@
 
   "stimme": {
     "an": true,
-    "id": "onwK4e9ZLuTAKqWW03F9",
+    "id": "JBFqnCBsd6RMkjVDRZzb",
     "modell": "eleven_multilingual_v2",
     "stabilitaet": 0.4,
     "aehnlichkeit": 0.75,
     "tempo": 1.0,
-    "_id": "Stimmen-ID von elevenlabs.io. Voreingestellt ist die Standardstimme „Daniel“ (ruhig, britisch). Auf der ElevenLabs-Seite unter Voices die gewünschte Stimme öffnen, ID kopieren, hier eintragen.",
+    "_id": "Stimmen-ID von elevenlabs.io. Voreingestellt ist „George“ — die einzige britische Männerstimme unter den Standardstimmen, warm und reif. Andere Standardstimmen mit Ruhe: „Brian“ nPczCjzI2devNBz1zQrb (tief, tröstlich) und „Eric“ cjVigY5qzO86Huf0OWal (glatt, für Assistenten gemacht).",
+    "_tarif": "Achtung: die deutschen Stimmen aus der Bibliothek (Voice Library) verlangen den Creator-Tarif. Auf dem Gratis-Tarif gehen nur die Standardstimmen (premade) — die sprechen mit eleven_multilingual_v2 auch Deutsch, mit leichtem Akzent. Für einen britischen Butler ist das eher ein Vorteil.",
     "_modell": "eleven_multilingual_v2 klingt am besten und kann Deutsch. eleven_flash_v2_5 ist schneller und billiger, aber flacher.",
     "_freikontingent": "10.000 Zeichen pro Monat sind bei ElevenLabs kostenlos. Das reicht für rund 100 kurze Antworten. Danach kostet es oder die Stimme fällt auf die eingebaute Browserstimme zurück."
   },
