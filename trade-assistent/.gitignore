@@ -1,0 +1,7 @@
+# Kursdaten-Cache und Betriebszustand gehören nicht ins Repository:
+# beide werden zur Laufzeit erzeugt und wachsen beliebig.
+daten/
+betrieb/
+*.tmp
+*.kaputt
+__pycache__/
