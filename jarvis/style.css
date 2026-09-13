@@ -347,7 +347,8 @@ body{
 }
 .msg.error{background:var(--warn-schimmer);border-color:rgba(255,107,74,.3);color:#FFB9A6;}
 .msg.note{background:rgba(255,255,255,.035);border-color:var(--linie);color:var(--text-leise);}
-.msg.error button{
+.msg.error button,
+.msg.note button{
   display:block;
   margin-top:10px;
   background:transparent;
@@ -360,6 +361,10 @@ body{
   cursor:pointer;
 }
 .msg.error button:hover{background:rgba(255,107,74,.12);}
+
+/* In der ruhigen Blase soll der Knopf nicht nach Alarm aussehen. */
+.msg.note button{color:var(--text);border-color:var(--linie);}
+.msg.note button:hover{background:rgba(255,255,255,.06);}
 
 /* Was Jarvis anfasst — steht über dem Text derselben Nachricht */
 .msg__werkzeuge:empty{display:none;}

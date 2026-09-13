@@ -251,25 +251,40 @@
     return div;
   }
 
-  function renderError(text, retry, kind) {
+  /* `aktion` ist entweder true (dann „Nochmal versuchen"), oder
+     { text, tun } für einen eigenen Knopf. */
+  function renderError(text, aktion, kind) {
     var div = document.createElement('div');
     div.className = 'msg ' + (kind || 'error');
     div.setAttribute('role', 'alert');
     var p = document.createElement('span');
     p.textContent = text;
     div.appendChild(p);
-    if (retry) {
+    if (aktion) {
+      var eigen = typeof aktion === 'object';
       var btn = document.createElement('button');
       btn.type = 'button';
-      btn.textContent = 'Nochmal versuchen';
+      btn.textContent = eigen ? aktion.text : 'Nochmal versuchen';
       btn.addEventListener('click', function () {
         div.remove();
-        ask();
+        if (eigen) aktion.tun(); else ask();
       });
       div.appendChild(btn);
     }
     chatEl.appendChild(div);
     scrollToBottom(true);
+  }
+
+  /* Eine Antwort, die unterwegs abgerissen ist, noch einmal von vorn zu
+     verlangen, hilft nicht: sie reißt an derselben Stelle wieder ab. Was
+     hilft, ist weiterschreiben zu lassen — das Stück steht ja schon da. */
+  function weiterschreiben() {
+    var text = 'Schreib bitte genau da weiter, wo du aufgehört hast. Ohne Einleitung, ohne Wiederholung.';
+    messages.push({ role: 'user', content: text });
+    renderMessage('user', text);
+    saveMessages();
+    scrollToBottom(true);
+    ask();
   }
 
   /* ---------- Vorlesen ---------- */
@@ -600,9 +615,16 @@
           // Ohne message_stop ist die Verbindung unterwegs abgerissen. Das Stück
           // bleibt stehen, aber es muss dranstehen — sonst liest sich eine halbe
           // Antwort wie eine ganze.
-          renderError('Die Verbindung ist abgerissen, die Antwort ist unvollständig.', true);
+          //
+          // Beobachtet an der veröffentlichten Seite: sehr lange Antworten
+          // werden nach rund einer Minute abgeschnitten. Deshalb hier nicht
+          // „Nochmal versuchen" — das liefe in dieselbe Grenze —, sondern
+          // weiterschreiben lassen.
+          renderError('Die Antwort ist unvollständig — sie war zu lang für eine Übertragung.',
+            { text: 'Weiterschreiben', tun: weiterschreiben });
         } else if (stopReason === 'max_tokens') {
-          renderError('Die Antwort war zu lang und ist hier zu Ende. Frag nach dem Rest.', false, 'note');
+          renderError('Die Antwort war zu lang und ist hier zu Ende.',
+            { text: 'Weiterschreiben', tun: weiterschreiben }, 'note');
         }
       } else if (bubble) {
         if (stopReason === 'refusal') {
