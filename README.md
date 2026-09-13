@@ -460,8 +460,9 @@ bash Projekt-1/scripts/termux-einrichten.sh
 ```
 
 Das Skript installiert Node, holt die Speicherfreigabe von Android, fragt nach
-Schlüssel, Zugangscode und den Ordnern, die Jarvis sehen darf, und legt den
-Befehl `jarvis` an. Danach genügt:
+den beiden Schlüsseln (Anthropic fürs Denken, ElevenLabs für die Stimme — den
+zweiten darf man leer lassen), nach dem Zugangscode und den Ordnern, die Jarvis
+sehen darf, und legt den Befehl `jarvis` an. Danach genügt:
 
 ```
 jarvis              # starten
