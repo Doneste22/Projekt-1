@@ -1,0 +1,5 @@
+<resources>
+    <!-- Nur der Grund fürs Startbild; alle übrigen Farben stehen in Farben.kt,
+         mit denselben Werten wie jarvis/style.css. -->
+    <color name="grund_tief">#FF04070C</color>
+</resources>

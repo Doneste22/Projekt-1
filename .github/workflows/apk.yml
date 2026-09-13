@@ -1,0 +1,95 @@
+# Baut bei jedem Push eine installierbare APK und legt sie als Artefakt ab.
+#
+# Herunterladen: auf github.com unter „Actions" den Lauf anklicken, ganz unten
+# unter „Artifacts" liegt `jarvis-apk`. Das ist eine ZIP-Datei; darin die
+# .apk aufs Telefon kopieren und öffnen.
+name: APK bauen
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    name: Jarvis bauen
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Stand holen
+        uses: actions/checkout@v4
+
+      - name: Java einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Android-SDK einrichten
+        uses: android-actions/setup-android@v3
+
+      - name: Gradle-Wrapper prüfen
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Gradle einrichten
+        uses: gradle/actions/setup-gradle@v4
+
+      # Android installiert nur signierte Apps. Liegt Damasos eigener Schlüssel
+      # als Secret hinterlegt, wird der genommen — dann legt sich jede neue
+      # Fassung über die installierte. Sonst wird einer erzeugt, der nur für
+      # diesen Lauf gilt; die App lässt sich damit installieren, aber nicht
+      # aktualisieren.
+      - name: Signaturschlüssel bereitlegen
+        working-directory: jarvis-android
+        env:
+          SCHLUESSEL: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$SCHLUESSEL" ]; then
+            echo "$SCHLUESSEL" | base64 -d > schluessel.jks
+            echo "Signiert mit dem hinterlegten Schlüssel — Updates legen sich über die installierte App." >> "$GITHUB_STEP_SUMMARY"
+          else
+            keytool -genkeypair -keystore schluessel.jks -alias jarvis \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass jarvis -keypass jarvis \
+              -dname "CN=Jarvis, O=Damaso Estevez, C=CH"
+            {
+              echo "**Achtung: Wegwerfschlüssel.**"
+              echo ""
+              echo "Diese APK ist mit einem Schlüssel signiert, den es nur in diesem Lauf gab."
+              echo "Sie lässt sich installieren, aber die nächste Fassung nicht darüber —"
+              echo "dafür müsste die App erst deinstalliert werden, und der Gesprächsverlauf wäre weg."
+              echo ""
+              echo "Abhilfe: den eigenen Schlüssel unter Settings → Secrets als \`ANDROID_KEYSTORE_BASE64\` hinterlegen."
+              echo "Wie das geht, steht in \`jarvis-android/README.md\`."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Prüfen
+        working-directory: jarvis-android
+        run: ./gradlew --no-daemon testReleaseUnitTest
+
+      - name: APK bauen
+        working-directory: jarvis-android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'jarvis' }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'jarvis' }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || 'jarvis' }}
+        run: ./gradlew --no-daemon assembleRelease
+
+      - name: APK benennen
+        working-directory: jarvis-android
+        run: |
+          mkdir -p ausgabe
+          cp app/build/outputs/apk/release/app-release.apk \
+             "ausgabe/jarvis-${GITHUB_SHA::7}.apk"
+          ls -lh ausgabe
+
+      - name: APK ablegen
+        uses: actions/upload-artifact@v4
+        with:
+          name: jarvis-apk
+          path: jarvis-android/ausgabe/*.apk
+          if-no-files-found: error
+          retention-days: 90

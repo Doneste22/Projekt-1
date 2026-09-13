@@ -1,0 +1,11 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Nur das Nötigste: die Oberfläche malt Compose, nicht das Theme.
+         Wichtig ist allein, dass beim Start nichts Weißes aufblitzt. -->
+    <style name="Theme.Jarvis" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/grund_tief</item>
+        <item name="android:statusBarColor">@color/grund_tief</item>
+        <item name="android:navigationBarColor">@color/grund_tief</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
+    </style>
+</resources>

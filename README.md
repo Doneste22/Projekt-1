@@ -165,7 +165,8 @@ jarvis/app.js                 Verlauf, Streaming, Sprache, Installation
 jarvis/sw.js                  Service Worker: App startet auch ohne Netz
 jarvis/manifest.webmanifest   Name, Farben, Icons für den Startbildschirm
 jarvis/icons/                 App-Icons (192, 512, maskierbar, Apple)
-android/                      Bauplan für die Android-App (APK)
+android/                      Bauplan für die Android-App (TWA, APK)
+jarvis-android/               Jarvis als eigenständige Kotlin-App
 assetlinks.json               Verknüpft die App mit der Domain
 ```
 
@@ -301,8 +302,19 @@ Adressleiste.
 Die APK braucht Netz und den Zugangscode und hat **keine** Werkzeuge für den
 Handyspeicher; die gibt es nur im lokalen Server unter Termux.
 
-Installieren lässt sie sich auch aus Termux heraus — Android übernimmt dann den
-Rest:
+### Als eigenständige Kotlin-App
+
+Daneben gibt es Jarvis als richtige Android-App in Kotlin: `jarvis-android/`.
+Sie spricht direkt mit der Claude-API, braucht **keinen Server und keinen
+Zugangscode**, und der API-Schlüssel liegt verschlüsselt auf dem Telefon statt
+auf Netlify. Der Verlauf liegt ebenfalls dort und übersteht einen Neustart.
+
+Die APK wird bei jedem Push gebaut (`.github/workflows/apk.yml`) und liegt
+unter Actions → der Lauf → Artifacts → `jarvis-apk`. Anleitung, auch zum
+Signaturschlüssel: `jarvis-android/README.md`.
+
+Installieren lässt sich die TWA-Fassung auch aus Termux heraus — Android
+übernimmt dann den Rest:
 
 ```
 termux-open ~/storage/downloads/jarvis.apk

@@ -4,3 +4,12 @@ node_modules/
 android.keystore
 *.apk
 *.aab
+
+# Android-Projekt: Erzeugtes und Örtliches
+jarvis-android/.gradle/
+jarvis-android/build/
+jarvis-android/app/build/
+jarvis-android/local.properties
+jarvis-android/ausgabe/
+jarvis-android/.kotlin/
+*.jks
