@@ -46,7 +46,13 @@ class JarvisModel(anwendung: Application) : AndroidViewModel(anwendung) {
 
     private var auftrag: Job? = null
 
-    val laeuft: Boolean get() = auftrag?.isActive == true
+    /**
+     * Läuft gerade eine Antwort? Bewusst aus `zustand` abgeleitet und nicht aus
+     * `auftrag.isActive`: nur `zustand` wird von der Ansicht beobachtet. Am Job
+     * abgelesen bliebe der Knopf auf „Abbrechen" stehen, nachdem die Antwort
+     * längst da ist.
+     */
+    val laeuft: Boolean get() = zustand == Zustand.DENKT
 
     init {
         val kontext = getApplication<Application>()

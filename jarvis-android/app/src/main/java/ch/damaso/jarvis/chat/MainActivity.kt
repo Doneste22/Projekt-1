@@ -305,10 +305,14 @@ private fun Gespraech(
 ) {
     val stand = rememberLazyListState()
 
-    // Immer beim Neuesten stehen bleiben, auch während die Antwort wächst.
+    // Immer ganz unten stehen bleiben, auch während die Antwort wächst.
+    // Der große Versatz heißt „so weit es geht": eine lange Antwort, deren
+    // Anfang oben ausgerichtet wäre, schriebe sonst unsichtbar aus dem Bild
+    // heraus. Ohne Animation, sonst rauft sich jedes neue Wort mit der
+    // vorigen Bewegung.
     LaunchedEffect(nachrichten.size, imFluss) {
         val letzte = nachrichten.size + (if (imFluss != null) 1 else 0) - 1
-        if (letzte >= 0) stand.animateScrollToItem(letzte)
+        if (letzte >= 0) stand.scrollToItem(letzte, 100_000)
     }
 
     LazyColumn(
