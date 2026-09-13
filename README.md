@@ -162,6 +162,8 @@ keine — nur Systemschriften, damit sie offline vollständig läuft).
 jarvis/index.html             Gerüst
 jarvis/style.css              Gestaltung und die Animationen des Gesichts
 jarvis/app.js                 Verlauf, Streaming, Sprache, Installation
+jarvis/klatschen.js           Erkennt zweimaliges Klatschen (Morgengruß)
+jarvis/konfiguration.json     Ort, Stimme, Ton, Morgenlied — ohne Schlüssel
 jarvis/sw.js                  Service Worker: App startet auch ohne Netz
 jarvis/manifest.webmanifest   Name, Farben, Icons für den Startbildschirm
 jarvis/icons/                 App-Icons (192, 512, maskierbar, Apple)
@@ -179,11 +181,16 @@ Element `.app` steuert alles, die Animationen stehen in `style.css`:
 
 | Zustand | Was das Gesicht macht |
 | --- | --- |
-| `idle` | blinzelt, die Blase driftet minimal |
-| `listening` | Augen etwas größer, ein Ring pulsiert (Spracheingabe läuft) |
-| `thinking` | Kopf legt sich schief, die Blase wandert durch die Libelle |
+| `idle` | blinzelt, die Blase driftet minimal, der Ring steht still |
+| `listening` | Augen etwas größer, der Ring dreht sich und pulsiert |
+| `thinking` | Kopf legt sich schief, die Blase wandert, der Ring dreht schnell |
 | `speaking` | der Mund bewegt sich, solange Text ankommt oder vorgelesen wird |
 | `offline` | alles steht still, die Blase hängt am Anschlag |
+
+Um den Kopf liegt ein gestrichelter Ring. Im Ruhezustand ist er nur eine feine
+graue Linie; sobald Jarvis zuhört, denkt oder spricht, wird er orange und
+dreht sich unterschiedlich schnell. Damit sieht man aus zwei Metern
+Entfernung, was er gerade tut, ohne die Zeile daneben zu lesen.
 
 Dasselbe Gesicht ist das App-Icon. Wer es ändert, ändert `jarvis/index.html`
 (das eingebettete SVG) und erzeugt die PNGs in `jarvis/icons/` neu.
@@ -226,12 +233,130 @@ serverseitig ab.
 | `ANTHROPIC_API_KEY` | ja | Schlüssel von console.anthropic.com — oder das Token, das Netlifys AI-Gateway selbst hinterlegt. |
 | `ANTHROPIC_BASE_URL` | nur mit Gateway | Setzt Netlify selbst, wenn das AI-Gateway aktiv ist. Der Server benutzt die Adresse, sobald sie da ist; wer sie ignoriert, bekommt ein 401 und sucht den Fehler beim Schlüssel. |
 | `JARVIS_PASSCODE` | empfohlen | Zugangscode. Ist er gesetzt, fragt die App ihn einmal ab und merkt ihn sich. Ohne ihn kann jeder, der die Adresse kennt, auf deine Rechnung Fragen stellen — die App warnt dann sichtbar. |
-| `JARVIS_MODEL` | nein | Anderes Modell, Standard ist `claude-opus-5`. |
+| `ELEVENLABS_API_KEY` | nein | Schlüssel von elevenlabs.io. Damit spricht Jarvis mit einer echten Stimme. Fehlt er, liest der Browser mit seiner eigenen vor — es geht also auch ohne. |
+| `JARVIS_MODEL` | nein | Erzwingt ein Modell für alles. Ohne die Variable nimmt das Gespräch `claude-opus-5` und der Morgengruß `claude-haiku-4-5`. |
 
 Eingestellt sind `effort: "medium"` und maximal 4000 Tokens pro Antwort — ein
 Kompromiss aus Tempo, Kosten und Ausführlichkeit; beides steht oben in
-`jarvis.mts`. Der Systemprompt (wer Jarvis ist, wie er antwortet) steht
+`server/core.mjs`. Der Systemprompt (wer Jarvis ist, wie er antwortet) steht
 ebenfalls dort und nicht im Browser, damit er von außen nicht zu ändern ist.
+Nur der *Ton* kommt aus `jarvis/konfiguration.json`, und auch der wird
+serverseitig geprüft: Was nicht in der Konfiguration steht, wird nicht genommen.
+
+**Zwei Modelle, aus Kostengründen.** Der gesprochene Morgengruß läuft bei jedem
+Start und darf deshalb nichts kosten — er nimmt Haiku. Das Gespräch nimmt Opus.
+Die Weiche steht in `MODI` in `server/core.mjs`. Eine Falle steckt darin, die
+sonst ein 400 gibt: Haiku kennt weder `thinking: {type:"adaptive"}` noch
+`output_config.effort`. Beides wird für Haiku weggelassen, `upstreamRequest`
+entscheidet das anhand des Modellnamens.
+
+Preise pro Million Tokens (Stand dieser Arbeit): Opus 5 fünf Dollar Eingabe,
+25 Dollar Ausgabe; Haiku 4.5 einen Dollar Eingabe, fünf Dollar Ausgabe. Bei
+normaler Nutzung sind das im Monat wenige Dollar.
+
+### Die Stimme
+
+Vorgelesen wird über ElevenLabs — deshalb klingt Jarvis nach einem Menschen und
+nicht nach einem Navigationsgerät. Der Aufbau ist derselbe wie beim Modell, aus
+demselben Grund: der Schlüssel bleibt auf dem Server.
+
+```
+server/stimme.mjs                  Kern: Aufruf, Grenzen, Fehlertexte
+netlify/edge-functions/stimme.ts   /api/stimme im Netz
+server/jarvis.mjs                  /api/stimme lokal
+```
+
+Auch hier wird der Antwortstrom unverändert durchgereicht — ein MP3 Byte für
+Byte durch eigenen Code zu schieben, sprengt die 50 Millisekunden Rechenzeit
+einer Edge-Function nach dem ersten Kilobyte.
+
+- **Welche Stimme**, steht in `jarvis/konfiguration.json` unter `stimme.id`.
+  Voreingestellt ist die ElevenLabs-Standardstimme „Daniel" (ruhig, britisch).
+  Eine andere: auf elevenlabs.io unter *Voices* die gewünschte öffnen, die ID
+  kopieren, hier eintragen.
+- **Das Kontingent** sind 10.000 Zeichen im Monat gratis, also grob hundert
+  kurze Antworten. Damit eine einzige lange Antwort nicht den halben Monat
+  frisst, liest Jarvis höchstens 700 Zeichen am Stück vor und schneidet an
+  einer Satzgrenze ab (`MAX_ZEICHEN` in `server/stimme.mjs`).
+- **Wenn etwas fehlt**, bleibt Jarvis nicht stumm: kein Schlüssel, falsche
+  Stimmen-ID, Kontingent leer — in allen Fällen sagt er einmal, was los ist,
+  und liest ab da mit der eingebauten Stimme des Browsers weiter.
+
+Prüfen ohne Kontingent zu verbrauchen:
+
+```bash
+node .claude/skills/hausstil/scripts/mock-elevenlabs.mjs        # Port 8790
+MOCK_STATUS=429 node .claude/skills/hausstil/scripts/mock-elevenlabs.mjs
+ELEVENLABS_API_KEY=egal JARVIS_STIMME_URL=http://localhost:8790 node server/jarvis.mjs
+```
+
+### Der Morgengruß
+
+Beim ersten Start am Tag holt Jarvis das Wetter, lässt sich vom billigen Modell
+zwei Sätze dazu schreiben und liest sie vor — „Guten Abend, Sir. Draußen in
+Zürich herrscht eine etwas launische Stimmung." Danach nur noch auf Knopfdruck
+(*Einstellungen → Morgengruß jetzt*).
+
+Das Wetter kommt von [open-meteo.com](https://open-meteo.com) und braucht keinen
+Schlüssel und keine Anmeldung — deshalb darf das ausnahmsweise direkt aus dem
+Browser gehen, da ist nichts zu verraten. Ort und Koordinaten stehen in
+`jarvis/konfiguration.json`. Die Abfrage hat vier Sekunden Zeit; danach grüßt
+Jarvis ohne Wetter, statt hängenzubleiben.
+
+Steht in der Konfiguration unter `morgen.lied` ein Spotify-Link, öffnet Jarvis
+ihn beim Morgengruß mit. Mehr geht aus einem Browser nicht: er darf Spotify
+nicht fernsteuern, nur den Link aufmachen — auf dem Handy übernimmt dann die
+Spotify-App.
+
+### Freihändig und Klatschen
+
+| Bedienung | Wie | Grenze |
+| --- | --- | --- |
+| Mikrofonknopf | einmal zuhören, dann senden | — |
+| Freihändig | dauerhaft zuhören, reagiert auf „Jarvis …" | nur Chrome/Android, iPhone kann das nicht |
+| Klatschen | zweimal klatschen startet den Morgengruß | nur solange die App offen und sichtbar ist |
+
+**Freihändig** hört dauerhaft zu und nimmt nur, was nach dem Wort „Jarvis"
+kommt. Sagt man nur den Namen, antwortet er kurz („Sir?") — ohne das Modell zu
+fragen, das kostet also nichts — und nimmt die nächsten acht Sekunden auch ohne
+Weckwort an. Zugehört wird nur, wenn Jarvis weder denkt noch spricht: sonst
+hört das Mikrofon den Lautsprecher und Jarvis redet mit sich selbst.
+
+**Klatschen** ist die Abkürzung zum Morgengruß aus dem Video. Was dort gezeigt
+wird — Rechner hochfahren, klatschen, und im Hintergrund startet alles — geht
+im Browser nicht: eine Webseite darf nicht mithören, während sie geschlossen
+ist. Das kann nur ein Programm außerhalb des Browsers. Was hier geht: die App
+ist offen, zweimal klatschen, Jarvis grüßt.
+
+Die Erkennung selbst (`jarvis/klatschen.js`) bekommt nur Lautstärkewerte zu
+sehen und entscheidet danach — deshalb lässt sie sich prüfen, ohne dass jemand
+vor dem Rechner klatscht:
+
+```bash
+node scripts/pruefe-klatschen.mjs
+```
+
+### Ton und Konfiguration
+
+`jarvis/konfiguration.json` ist das eine Blatt, auf dem steht, wie Jarvis sein
+soll. **Es enthält keine Schlüssel** — die Datei geht an den Browser, jeder
+Besucher kann sie lesen. Schlüssel stehen in den Umgebungsvariablen.
+
+| Eintrag | Wofür |
+| --- | --- |
+| `ort` | Name und Koordinaten fürs Wetter |
+| `morgen.beim_start_gruessen` | ob der Morgengruß von selbst kommt |
+| `morgen.lied` | Spotify-Link, der beim Morgengruß aufgeht |
+| `stimme` | Stimmen-ID, Sprachmodell, Stabilität, Tempo |
+| `ton` | welche Tonlage voreingestellt ist |
+| `toene` | die Tonlagen selbst: Name, Weckantwort, Anweisung ans Modell |
+| `modelle` | welches Modell fürs Gespräch, welches für den Gruß |
+
+Mitgeliefert sind drei Tonlagen: *Sachlich* (duzt, nüchtern), *Sir* (siezt,
+britischer Butler mit trockenem Sarkasmus) und *Coach* (duzt, treibt an).
+Umstellen in der App unter *Einstellungen → Ton*. Eigene erfinden: einen
+weiteren Eintrag unter `toene` anlegen — Text in normalem Deutsch, das ist der
+ganze Trick daran.
 
 ### Auf dem Handy installieren
 
@@ -390,9 +515,18 @@ Modell-API und schickt den Server dorthin:
 
 ```
 node .claude/skills/hausstil/scripts/mock-anthropic.mjs 9099
-ANTHROPIC_API_KEY=sk-test JARVIS_API_URL=http://localhost:9099/v1/messages \
+node .claude/skills/hausstil/scripts/mock-elevenlabs.mjs
+
+ANTHROPIC_API_KEY=sk-test ELEVENLABS_API_KEY=el-test \
+  JARVIS_API_URL=http://localhost:9099 JARVIS_STIMME_URL=http://localhost:8790 \
   node server/jarvis.mjs
 ```
+
+Damit läuft alles durch — Gespräch, Morgengruß, Stimme — und in den beiden
+Nachbauten steht im Protokoll, welches Modell, welche Parameter und welcher
+Text tatsächlich gesendet wurden. Für die Fehlerwege: `MOCK_STATUS=429` beim
+Stimmen-Nachbau spielt „Kontingent leer" nach, `MOCK_STATUS=401` einen falschen
+Schlüssel.
 
 ## Handy aufräumen
 

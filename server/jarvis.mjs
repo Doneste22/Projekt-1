@@ -16,7 +16,8 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
-import { check, sseHeaders, DEFAULT_MODEL } from "./core.mjs";
+import { check, sseHeaders, MODI } from "./core.mjs";
+import { AUDIO_HEADERS, callStimme, describeStimme, pruefeText, STIMME } from "./stimme.mjs";
 import { fuehren } from "./gespraech.mjs";
 import { wurzeln } from "./werkzeuge.mjs";
 
@@ -24,7 +25,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = Number(process.env.JARVIS_PORT || process.env.PORT || 8787);
 const API_KEY = process.env.ANTHROPIC_API_KEY;
 const PASSCODE = process.env.JARVIS_PASSCODE;
-const MODEL = process.env.JARVIS_MODEL || DEFAULT_MODEL;
+const MODEL = process.env.JARVIS_MODEL || null;      // gesetzt: übergeht die Betriebsart
+const STIMME_KEY = process.env.ELEVENLABS_API_KEY;
 
 const TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -77,11 +79,14 @@ async function handleChat(req, res) {
   const checked = check(payload);
   if (checked.error) return sendJson(res, checked.status, { error: checked.error });
 
+  // Das Gespräch nimmt das starke Modell, der gesprochene Morgengruß das billige.
+  const model = MODEL || MODI[checked.modus].model;
+
   // Browser weggeklickt oder abgebrochen: dann muss das Modell nicht weiterschreiben.
   const controller = new AbortController();
   res.on("close", () => controller.abort());
 
-  res.writeHead(200, sseHeaders({ model: MODEL, unprotected: !PASSCODE, lokal: true }));
+  res.writeHead(200, sseHeaders({ model, unprotected: !PASSCODE, lokal: true, stimme: !!STIMME_KEY }));
   const sende = (ereignis, daten) => {
     if (!res.writableEnded) res.write(`event: ${ereignis}\ndata: ${JSON.stringify(daten)}\n\n`);
   };
@@ -89,8 +94,10 @@ async function handleChat(req, res) {
   try {
     await fuehren({
       apiKey: API_KEY,
-      model: MODEL,
+      model,
       messages: checked.messages,
+      modus: checked.modus,
+      ton: checked.ton,
       signal: controller.signal,
       // Gateway-Adresse, falls eine gesetzt ist; JARVIS_API_URL zum Prüfen gegen den Mock
       url: process.env.JARVIS_API_URL || process.env.ANTHROPIC_BASE_URL,
@@ -102,6 +109,64 @@ async function handleChat(req, res) {
     // Eigener Fehlertyp: die Oberfläche zeigt bei dem den Text im Klartext an,
     // weil er schon auf Deutsch und für Damaso geschrieben ist.
     sende("error", { type: "error", error: { type: "jarvis_fehler", message: error.message } });
+  }
+  res.end();
+}
+
+/**
+ * Vorlesen über ElevenLabs. Genau wie im Netz: Schlüssel bleibt hier, der
+ * Audiostrom wird unverändert an den Browser durchgereicht.
+ */
+async function handleStimme(req, res) {
+  if (req.method !== "POST") return sendJson(res, 405, { error: "Nur POST." });
+
+  if (!STIMME_KEY) {
+    return sendJson(res, 503, {
+      error: "ELEVENLABS_API_KEY ist nicht gesetzt. Server mit gesetztem Schlüssel neu starten."
+    });
+  }
+  if (!STIMME.id) {
+    return sendJson(res, 503, { error: "In jarvis/konfiguration.json fehlt „stimme.id“." });
+  }
+  if (PASSCODE && req.headers["x-jarvis-passcode"] !== PASSCODE) {
+    return sendJson(res, 401, { error: "Zugangscode fehlt oder stimmt nicht." });
+  }
+
+  let payload;
+  try {
+    payload = await readBody(req);
+  } catch {
+    return sendJson(res, 400, { error: "Ungültige Anfrage." });
+  }
+
+  const geprueft = pruefeText(payload);
+  if (geprueft.error) return sendJson(res, geprueft.status, { error: geprueft.error });
+
+  const controller = new AbortController();
+  res.on("close", () => controller.abort());
+
+  let antwort;
+  try {
+    antwort = await callStimme({
+      apiKey: STIMME_KEY,
+      text: geprueft.text,
+      signal: controller.signal,
+      url: process.env.JARVIS_STIMME_URL
+    });
+  } catch (error) {
+    if (controller.signal.aborted) return;
+    return sendJson(res, 502, { error: "ElevenLabs war nicht erreichbar." });
+  }
+
+  if (!antwort.ok || !antwort.body) {
+    const text = await antwort.text().catch(() => "");
+    return sendJson(res, antwort.status, { error: describeStimme(antwort.status, text) });
+  }
+
+  res.writeHead(200, AUDIO_HEADERS);
+  for await (const stueck of antwort.body) {
+    if (res.writableEnded) break;
+    res.write(stueck);
   }
   res.end();
 }
@@ -140,6 +205,14 @@ http.createServer((req, res) => {
     });
     return;
   }
+  if (url.pathname === "/api/stimme") {
+    handleStimme(req, res).catch((error) => {
+      console.error("stimme:", error);
+      if (!res.headersSent) sendJson(res, 500, { error: "Serverfehler." });
+      else res.end();
+    });
+    return;
+  }
   if (url.pathname === "/") {
     res.writeHead(302, { location: "/jarvis/" }).end();
     return;
@@ -154,7 +227,7 @@ http.createServer((req, res) => {
   console.log("Jarvis läuft.");
   console.log(`  http://localhost:${PORT}/jarvis/   (auf diesem Gerät)`);
   addresses.forEach((line) => console.log(line));
-  console.log(`Modell: ${MODEL}`);
+  console.log(`Modell: ${MODEL || `${MODI.chat.model} (Gespräch), ${MODI.gruss.model} (Morgengruß)`}`);
   const ordner = wurzeln();
   if (ordner.length) {
     console.log(`Werkzeuge an — Jarvis darf ansehen und aufräumen: ${ordner.join(", ")}`);
@@ -162,5 +235,7 @@ http.createServer((req, res) => {
     console.log("Werkzeuge aus — kein Ordner freigegeben. Mit JARVIS_ORDNER=~/storage/shared starten.");
   }
   if (!API_KEY) console.log("ACHTUNG: ANTHROPIC_API_KEY fehlt — die Oberfläche läuft, Antworten nicht.");
+  if (STIMME_KEY) console.log(`Stimme an — ElevenLabs, Stimmen-ID ${STIMME.id || "(fehlt!)"}`);
+  else console.log("Stimme aus — ohne ELEVENLABS_API_KEY liest der Browser mit seiner eigenen Stimme vor.");
   if (!PASSCODE) console.log("Hinweis: kein JARVIS_PASSCODE gesetzt. Lokal in Ordnung, im WLAN offen.");
 });

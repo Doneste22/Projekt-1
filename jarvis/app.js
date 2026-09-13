@@ -6,12 +6,29 @@
   'use strict';
 
   var API_URL = '/api/jarvis';
+  var STIMME_URL = '/api/stimme';
+  var WETTER_URL = 'https://api.open-meteo.com/v1/forecast';
   var KEY_MESSAGES = 'jarvis.messages.v1';
   var KEY_PASSCODE = 'jarvis.passcode.v1';
   var KEY_VOICE = 'jarvis.voice.v1';
   var KEY_INSTALL_HIDDEN = 'jarvis.install-hidden.v1';
+  var KEY_TON = 'jarvis.ton.v1';
+  var KEY_FREIHAND = 'jarvis.freihand.v1';
+  var KEY_KLATSCHEN = 'jarvis.klatschen.v1';
+  var KEY_GRUSS = 'jarvis.gruss.v1';
   var MAX_STORED = 200;
   var MAX_CONTEXT = 24;
+
+  // Voreinstellung für den Fall, dass konfiguration.json fehlt oder kaputt ist.
+  // Jarvis soll dann trotzdem laufen, nur eben ohne Wetter und mit dem
+  // schlichten Ton.
+  var KONFIG = {
+    ort: null,
+    morgen: { beim_start_gruessen: false, lied: '' },
+    stimme: { an: true },
+    ton: 'sachlich',
+    toene: { sachlich: { name: 'Sachlich' } }
+  };
 
   var app = document.getElementById('app');
   var chatEl = document.getElementById('chat');
@@ -28,6 +45,14 @@
   var warnBar = document.getElementById('warnBar');
   var warnText = document.getElementById('warnText');
   var warnClose = document.getElementById('warnClose');
+  var freihandBtn = document.getElementById('freihandBtn');
+  var menuBtn = document.getElementById('menuBtn');
+  var sheet = document.getElementById('sheet');
+  var sheetClose = document.getElementById('sheetClose');
+  var tonWahl = document.getElementById('tonWahl');
+  var klatschBox = document.getElementById('klatschBox');
+  var grussBtn = document.getElementById('grussBtn');
+  var stimmeInfo = document.getElementById('stimmeInfo');
   var gate = document.getElementById('gate');
   var gateForm = document.getElementById('gateForm');
   var gateInput = document.getElementById('gateInput');
@@ -40,6 +65,10 @@
   var controller = null;    // AbortController der laufenden Anfrage
   var listening = false;
   var deferredInstall = null;
+  var freihand = false;     // hört dauerhaft auf das Weckwort „Jarvis"
+  var serverStimme = false; // hat der Server einen ElevenLabs-Schlüssel?
+  var stimmeDefekt = false; // in dieser Sitzung schon einmal fehlgeschlagen
+  var klatschHoerer = null;
 
   /* ---------- kleiner, sicherer Speicher ---------- */
 
@@ -71,6 +100,33 @@
     } catch (e) {
       return false;
     }
+  }
+
+  /* ---------- Konfiguration ---------- */
+  /* jarvis/konfiguration.json ist das eine Blatt, auf dem steht, wie Jarvis
+     sein soll: Ort fürs Wetter, Stimme, Ton, Morgenlied. Keine Schlüssel —
+     die stehen serverseitig in den Umgebungsvariablen. */
+
+  async function ladeKonfig() {
+    try {
+      var antwort = await fetch('konfiguration.json', { cache: 'no-cache' });
+      if (!antwort.ok) return;
+      var gelesen = await antwort.json();
+      KONFIG = Object.assign(KONFIG, gelesen);
+      KONFIG.morgen = Object.assign({}, KONFIG.morgen, gelesen.morgen);
+      KONFIG.stimme = Object.assign({}, KONFIG.stimme, gelesen.stimme);
+    } catch (e) {
+      // Ohne Konfiguration läuft Jarvis weiter, nur schlichter.
+    }
+  }
+
+  /* Welcher Ton gilt gerade: was Damaso zuletzt gewählt hat, sonst der aus der
+     Konfiguration. Der Server glaubt das nicht ungeprüft — dort muss der Name
+     in der Konfiguration stehen, sonst nimmt er den Standard. */
+  function tonAktuell() {
+    var gewaehlt = read(KEY_TON);
+    if (gewaehlt && KONFIG.toene && KONFIG.toene[gewaehlt]) return gewaehlt;
+    return KONFIG.ton;
   }
 
   /* ---------- Zustand ---------- */
@@ -217,9 +273,20 @@
   }
 
   /* ---------- Vorlesen ---------- */
+  /* Jarvis hat zwei Stimmen. Erste Wahl ist die von ElevenLabs — die klingt
+     wie ein Mensch, kostet aber Kontingent (10.000 Zeichen im Monat sind
+     gratis) und braucht Netz. Geht die nicht, redet die eingebaute Stimme des
+     Browsers weiter: die klingt nach Automat, ist dafür immer da.
+
+     Die Stücke werden satzweise abgeholt und der Reihe nach abgespielt, damit
+     Jarvis schon spricht, während der Rest der Antwort noch läuft. */
 
   var speechBuffer = '';
-  var speaking = 0;
+  var stimmeLaeuft = 0;        // wie viele Stücke gerade sprechen oder warten
+  var stimmeMarke = 0;         // hochzählen lässt alles Laufende verfallen
+  var stimmeKette = Promise.resolve();
+  var audioEl = null;
+  var tonGesperrt = false;     // Browser lässt Ton erst nach einer Berührung zu
 
   function plainText(text) {
     return text
@@ -239,43 +306,125 @@
     return null;
   }
 
-  function utter(text) {
+  // Die eingebaute Stimme. Das Versprechen ist erfüllt, wenn sie fertig ist.
+  function browserStimme(text) {
+    return new Promise(function (fertig) {
+      if (!('speechSynthesis' in window)) return fertig();
+      try {
+        var u = new SpeechSynthesisUtterance(text);
+        var voice = pickVoice();
+        if (voice) u.voice = voice;
+        u.lang = voice ? voice.lang : 'de-DE';
+        u.rate = 1.02;
+        u.onend = u.onerror = function () { fertig(); };
+        window.speechSynthesis.speak(u);
+      } catch (e) { fertig(); }
+    });
+  }
+
+  // ElevenLabs über den eigenen Endpunkt — der Schlüssel bleibt auf dem Server.
+  async function holeStimme(text) {
+    var headers = { 'Content-Type': 'application/json' };
+    var code = read(KEY_PASSCODE);
+    if (code) headers['X-Jarvis-Passcode'] = code;
+
+    var antwort = await fetch(STIMME_URL, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({ text: text })
+    });
+    if (!antwort.ok) {
+      var grund = '';
+      try { grund = (await antwort.json()).error || ''; } catch (e) { /* kein JSON */ }
+      throw new Error(grund || ('Status ' + antwort.status));
+    }
+    return URL.createObjectURL(await antwort.blob());
+  }
+
+  function spieleAb(url, marke) {
+    return new Promise(function (fertig) {
+      var el = new Audio(url);
+      var erledigt = false;
+      function aufraeumen() {
+        if (erledigt) return;
+        erledigt = true;
+        URL.revokeObjectURL(url);
+        if (audioEl === el) audioEl = null;
+        fertig();
+      }
+      el.addEventListener('ended', aufraeumen);
+      el.addEventListener('error', aufraeumen);
+      if (marke !== stimmeMarke) return aufraeumen();
+      audioEl = el;
+      var versuch = el.play();
+      if (versuch && versuch.catch) {
+        versuch.catch(function () {
+          // Kein Fehler, sondern eine Regel: ohne vorherige Berührung der Seite
+          // darf ein Browser keinen Ton abspielen.
+          if (!tonGesperrt) {
+            tonGesperrt = true;
+            showWarning('Einmal irgendwo tippen — vorher lässt der Browser Jarvis nicht sprechen.');
+          }
+          aufraeumen();
+        });
+      }
+    });
+  }
+
+  /* Ein Stück Text sprechen. Die Stücke stehen in einer Kette, damit sie
+     nacheinander kommen und nicht durcheinander. */
+  function sprich(text) {
     var clean = plainText(text);
-    if (!clean) return;
-    try {
-      var u = new SpeechSynthesisUtterance(clean);
-      var voice = pickVoice();
-      if (voice) u.voice = voice;
-      u.lang = voice ? voice.lang : 'de-DE';
-      u.rate = 1.02;
-      speaking++;
-      setState('speaking');
-      u.onend = u.onerror = function () {
-        speaking = Math.max(0, speaking - 1);
-        if (!speaking && !busy) setState('idle');
-      };
-      window.speechSynthesis.speak(u);
-    } catch (e) { /* Sprachausgabe ist Zugabe, kein Muss */ }
+    if (!clean || !voiceOutput) return;
+
+    var marke = stimmeMarke;
+    stimmeLaeuft++;
+    setState('speaking');
+
+    stimmeKette = stimmeKette.then(function () {
+      if (marke !== stimmeMarke) return;
+      if (!serverStimme || stimmeDefekt || KONFIG.stimme.an === false) return browserStimme(clean);
+      return holeStimme(clean).then(function (url) {
+        return spieleAb(url, marke);
+      }).catch(function (err) {
+        // Einmal sagen, was los ist, dann still auf die Browserstimme umsteigen.
+        if (!stimmeDefekt) {
+          stimmeDefekt = true;
+          showWarning(err.message + ' Jarvis spricht weiter mit der Stimme des Browsers.');
+        }
+        if (marke !== stimmeMarke) return;
+        return browserStimme(clean);
+      });
+    }).then(function () {
+      stimmeLaeuft = Math.max(0, stimmeLaeuft - 1);
+      if (!stimmeLaeuft && !busy) setState('idle');
+    });
   }
 
   // Satzweise vorlesen, damit Jarvis schon spricht, während der Rest noch läuft.
   function feedSpeech(chunk, flush) {
-    if (!voiceOutput || !('speechSynthesis' in window)) return;
+    if (!voiceOutput) return;
     speechBuffer += chunk;
     var match;
     while ((match = speechBuffer.match(/^[\s\S]*?[.!?:…]["')]?\s/))) {
-      utter(match[0]);
+      sprich(match[0]);
       speechBuffer = speechBuffer.slice(match[0].length);
     }
     if (flush) {
-      utter(speechBuffer);
+      sprich(speechBuffer);
       speechBuffer = '';
     }
   }
 
   function stopSpeech() {
     speechBuffer = '';
-    speaking = 0;
+    stimmeLaeuft = 0;
+    stimmeMarke++;                    // alles Wartende verfällt
+    stimmeKette = Promise.resolve();
+    if (audioEl) {
+      try { audioEl.pause(); } catch (e) { /* egal */ }
+      audioEl = null;
+    }
     if ('speechSynthesis' in window) {
       try { window.speechSynthesis.cancel(); } catch (e) { /* egal */ }
     }
@@ -398,7 +547,7 @@
       var response = await fetch(API_URL, {
         method: 'POST',
         headers: headers,
-        body: JSON.stringify({ messages: payload }),
+        body: JSON.stringify({ messages: payload, ton: tonAktuell() }),
         signal: controller.signal
       });
 
@@ -414,6 +563,9 @@
         }
         throw Object.assign(new Error(detail), { status: response.status });
       }
+
+      // Der Server sagt in der Kopfzeile, ob er eine echte Stimme hat.
+      serverStimme = response.headers.get('x-jarvis-stimme') === '1';
 
       if (response.headers.get('x-jarvis-unprotected') === '1') {
         showWarning(response.headers.get('x-jarvis-lokal') === '1'
@@ -481,7 +633,7 @@
       if (bubble) bubble.classList.remove('streaming');
       controller = null;
       setBusy(false);
-      if (!speaking) setState('idle');
+      if (!stimmeLaeuft) setState('idle');
     }
   }
 
@@ -586,11 +738,41 @@
   });
 
   /* ---------- Spracheingabe ---------- */
+  /* Zwei Betriebsarten:
+       Knopf drücken   einmal zuhören, dann senden.
+       Freihändig      dauerhaft zuhören und auf das Weckwort „Jarvis" warten.
+
+     Freihändig hat eine Falle, die zwei Anläufe gekostet hat: der Lautsprecher
+     spielt Jarvis' Antwort ab, das Mikrofon hört sie, und Jarvis redet mit
+     sich selbst. Deshalb wird nur zugehört, wenn er weder denkt noch spricht —
+     dafür sorgt der Takt weiter unten, statt an fünf Stellen im Code. */
 
   var Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var recognition = null;
+  var wartetAufBefehl = 0;      // Zeitpunkt, bis zu dem „Jarvis?" noch nachwirkt
+  var NACHWIRKUNG = 8000;
+
+  function weckantwort() {
+    var ton = (KONFIG.toene || {})[tonAktuell()];
+    return (ton && ton.weckantwort) || 'Ja?';
+  }
+
+  function hoerenStarten(dauerhaft) {
+    if (!recognition || listening) return;
+    recognition.continuous = !!dauerhaft;
+    if (klatschHoerer) klatschHoerer.pause(true);
+    try { recognition.start(); } catch (e) { /* läuft schon */ }
+  }
+
+  function befehlAusfuehren(text) {
+    if (!text) return;
+    inputEl.value = text;
+    send();
+  }
+
   if (Recognition) {
     micBtn.hidden = false;
-    var recognition = new Recognition();
+    recognition = new Recognition();
     recognition.lang = 'de-DE';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
@@ -598,29 +780,137 @@
     micBtn.addEventListener('click', function () {
       if (listening) { recognition.stop(); return; }
       stopSpeech();
-      try { recognition.start(); } catch (e) { /* läuft schon */ }
+      hoerenStarten(false);
     });
+
     recognition.addEventListener('start', function () {
       listening = true;
       micBtn.setAttribute('aria-pressed', 'true');
       setState('listening');
     });
+
     recognition.addEventListener('end', function () {
       listening = false;
       micBtn.setAttribute('aria-pressed', 'false');
-      if (!busy && !speaking) setState('idle');
+      if (klatschHoerer) klatschHoerer.pause(false);
+      if (!busy && !stimmeLaeuft) setState('idle');
+      // Neu gestartet wird nicht hier, sondern im Takt — sonst dreht sich das
+      // im Kreis, wenn der Browser die Erkennung sofort wieder beendet.
     });
-    recognition.addEventListener('error', function () {
+
+    recognition.addEventListener('error', function (e) {
       listening = false;
       micBtn.setAttribute('aria-pressed', 'false');
-      if (!busy && !speaking) setState('idle');
+      if (klatschHoerer) klatschHoerer.pause(false);
+      // Ohne Erlaubnis fürs Mikrofon hat Freihändig keinen Sinn — dann aus,
+      // statt es alle paar Sekunden erfolglos zu versuchen.
+      if (e && (e.error === 'not-allowed' || e.error === 'service-not-allowed')) {
+        freihandSetzen(false);
+        showWarning('Kein Zugriff aufs Mikrofon. Freihändig ist aus.');
+      }
+      if (!busy && !stimmeLaeuft) setState('idle');
     });
+
     recognition.addEventListener('result', function (e) {
-      var transcript = e.results[0][0].transcript;
-      inputEl.value = transcript;
-      send();
+      var text = '';
+      for (var i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) text += e.results[i][0].transcript;
+      }
+      text = text.trim();
+      if (!text) return;
+
+      if (!freihand) {
+        befehlAusfuehren(text);
+        return;
+      }
+
+      // Freihändig: nur mit Weckwort — oder kurz danach, wenn schon „Jarvis"
+      // gesagt wurde und die Antwort noch aussteht.
+      var treffer = text.match(/\bjarvis\b[\s,.:;!?-]*/i);
+      if (treffer) {
+        var befehl = text.slice(treffer.index + treffer[0].length).trim();
+        if (befehl) {
+          wartetAufBefehl = 0;
+          befehlAusfuehren(befehl);
+        } else {
+          // Nur der Name. Kurz antworten, ohne das Modell zu fragen.
+          wartetAufBefehl = Date.now() + NACHWIRKUNG;
+          var vorherAn = voiceOutput;
+          voiceOutput = true;
+          sprich(weckantwort());
+          voiceOutput = vorherAn;
+        }
+        return;
+      }
+
+      if (wartetAufBefehl && Date.now() < wartetAufBefehl) {
+        wartetAufBefehl = 0;
+        befehlAusfuehren(text);
+      }
     });
   }
+
+  /* ---------- Freihändig ---------- */
+
+  function freihandSetzen(an) {
+    freihand = !!an && !!Recognition;
+    store(KEY_FREIHAND, freihand ? '1' : '0');
+    if (freihandBtn) {
+      freihandBtn.setAttribute('aria-pressed', String(freihand));
+      freihandBtn.hidden = !Recognition;
+    }
+    if (!freihand && listening) {
+      try { recognition.stop(); } catch (e) { /* egal */ }
+    }
+  }
+
+  if (freihandBtn) {
+    freihandBtn.hidden = !Recognition;
+    freihandBtn.addEventListener('click', function () { freihandSetzen(!freihand); });
+  }
+
+  // Der Takt hält den gewünschten Zustand nach: zuhören, sobald Jarvis weder
+  // denkt noch spricht. Selbstheilend — verschluckt der Browser einen Start,
+  // ist es beim nächsten Durchlauf wieder in Ordnung.
+  setInterval(function () {
+    if (!freihand || listening || busy || stimmeLaeuft) return;
+    if (document.hidden) return;
+    hoerenStarten(true);
+  }, 700);
+
+  /* ---------- Auf Klatschen hören ---------- */
+  /* Zweimal klatschen startet den Morgengruß. Das geht nur, solange die App
+     offen und sichtbar ist — im Hintergrund darf kein Browser mithören. */
+
+  async function klatschenSetzen(an) {
+    if (an) {
+      if (!window.Klatschen) return false;
+      if (!klatschHoerer) {
+        klatschHoerer = window.Klatschen.hoerer(function () {
+          if (busy || stimmeLaeuft) return;
+          morgengruss(true);
+        });
+      }
+      var ok = await klatschHoerer.start();
+      if (!ok) {
+        showWarning('Kein Zugriff aufs Mikrofon — auf Klatschen kann Jarvis nicht hören.');
+        store(KEY_KLATSCHEN, '0');
+        if (klatschBox) klatschBox.checked = false;
+        return false;
+      }
+      store(KEY_KLATSCHEN, '1');
+      return true;
+    }
+    if (klatschHoerer) klatschHoerer.stop();
+    store(KEY_KLATSCHEN, '0');
+    return true;
+  }
+
+  // Im Hintergrund braucht niemand ein offenes Mikrofon.
+  document.addEventListener('visibilitychange', function () {
+    if (!klatschHoerer) return;
+    klatschHoerer.pause(document.hidden);
+  });
 
   /* ---------- Zugangscode ---------- */
 
@@ -637,14 +927,17 @@
     store(KEY_PASSCODE, value);
     gateInput.value = '';
     gate.hidden = true;
-    ask();
+    // Steht schon eine Frage an, kommt die dran. Sonst war es der Morgengruß,
+    // der am Code hängengeblieben ist.
+    if (apiMessages().length) ask();
+    else morgengruss(false);
   });
 
   /* ---------- Verbindung ---------- */
 
   window.addEventListener('online', function () {
     warnBar.hidden = true;
-    if (!busy && !speaking) setState('idle');
+    if (!busy && !stimmeLaeuft) setState('idle');
   });
   window.addEventListener('offline', function () {
     showWarning('Keine Verbindung. Der Verlauf bleibt, Antworten brauchen Netz.');
@@ -697,26 +990,271 @@
     store(KEY_INSTALL_HIDDEN, '1');
   });
 
-  /* ---------- Begrüßung und Start ---------- */
+  /* ---------- Wetter ---------- */
+  /* Open-Meteo, ohne Schlüssel und ohne Anmeldung — deshalb darf das
+     ausnahmsweise direkt aus dem Browser gehen. Es gibt nichts zu verraten. */
 
+  var WETTERLAGE = {
+    0: 'klar', 1: 'überwiegend klar', 2: 'teils bewölkt', 3: 'bedeckt',
+    45: 'Nebel', 48: 'gefrierender Nebel',
+    51: 'leichter Nieselregen', 53: 'Nieselregen', 55: 'dichter Nieselregen',
+    56: 'gefrierender Nieselregen', 57: 'gefrierender Nieselregen',
+    61: 'leichter Regen', 63: 'Regen', 65: 'starker Regen',
+    66: 'gefrierender Regen', 67: 'gefrierender Regen',
+    71: 'leichter Schneefall', 73: 'Schneefall', 75: 'starker Schneefall',
+    77: 'Schneegriesel',
+    80: 'Regenschauer', 81: 'Regenschauer', 82: 'kräftige Regenschauer',
+    85: 'Schneeschauer', 86: 'kräftige Schneeschauer',
+    95: 'Gewitter', 96: 'Gewitter mit Hagel', 99: 'schweres Gewitter mit Hagel'
+  };
+
+  async function holeWetter() {
+    var ort = KONFIG.ort;
+    if (!ort || typeof ort.breite !== 'number' || typeof ort.laenge !== 'number') return null;
+    var url = WETTER_URL +
+      '?latitude=' + encodeURIComponent(ort.breite) +
+      '&longitude=' + encodeURIComponent(ort.laenge) +
+      '&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m' +
+      '&timezone=auto';
+    try {
+      // Ohne Zeitlimit wartet ein fetch, bis der Browser aufgibt — im Zug mit
+      // einem Balken Empfang sind das Minuten. Vier Sekunden oder nichts.
+      var antwort = await fetch(url, {
+        signal: AbortSignal.timeout ? AbortSignal.timeout(4000) : undefined
+      });
+      if (!antwort.ok) return null;
+      var jetzt = (await antwort.json()).current;
+      if (!jetzt) return null;
+      return {
+        ort: ort.name || '',
+        grad: Math.round(jetzt.temperature_2m),
+        gefuehlt: Math.round(jetzt.apparent_temperature),
+        lage: WETTERLAGE[jetzt.weather_code] || 'wechselhaft',
+        wind: Math.round(jetzt.wind_speed_10m)
+      };
+    } catch (e) {
+      return null;   // kein Netz, keine Ortsangabe, egal — dann eben ohne
+    }
+  }
+
+  /* ---------- Begrüßung und Morgengruß ---------- */
+
+  var TAGE = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+  var MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli',
+                'August', 'September', 'Oktober', 'November', 'Dezember'];
+
+  function tageszeit(stunde) {
+    return stunde < 11 ? 'Guten Morgen' : stunde < 18 ? 'Guten Tag' : 'Guten Abend';
+  }
+
+  // Die schlichte Begrüßung ohne Modell und ohne Netz. Sie steht sofort da.
   function greet() {
-    var hour = new Date().getHours();
-    var greeting = hour < 12 ? 'Guten Morgen' : hour < 18 ? 'Guten Tag' : 'Guten Abend';
-    var text = greeting + ', Damaso. Ich bin Jarvis – womit kann ich helfen?';
+    var text = tageszeit(new Date().getHours()) + ', Damaso. Ich bin Jarvis – womit kann ich helfen?';
     messages.push({ role: 'assistant', content: text, local: true });
     renderMessage('assistant', text);
     saveMessages();
   }
 
-  if (!loadMessages()) greet();
-  scrollToBottom(true);
-  setState(navigator.onLine ? 'idle' : 'offline');
-  if (!navigator.onLine) showWarning('Keine Verbindung. Der Verlauf bleibt, Antworten brauchen Netz.');
-  setTimeout(maybeOfferInstall, 1200);
+  /* Der gesprochene Morgengruß: Tageszeit plus Wetter, zwei Sätze, vorgelesen.
+     Er läuft auf dem billigen Modell (siehe MODI in server/core.mjs) — er
+     kommt bei jedem Start und darf deshalb nichts kosten. Einmal am Tag von
+     selbst, danach nur noch auf Knopfdruck. */
 
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.addEventListener('voiceschanged', function () { pickVoice(); });
+  function heute() {
+    var d = new Date();
+    return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
   }
+
+  async function morgengruss(vonHand) {
+    if (busy) return;
+    if (!vonHand) {
+      if (!KONFIG.morgen.beim_start_gruessen) return;
+      if (read(KEY_GRUSS) === heute()) return;
+    }
+    store(KEY_GRUSS, heute());
+
+    var jetzt = new Date();
+    var wetter = await holeWetter();
+    // Das Wetter darf bis zu vier Sekunden brauchen. In der Zeit kann Damaso
+    // längst etwas gefragt haben — dann hat seine Frage Vorrang, sonst
+    // schreiben zwei Anfragen gleichzeitig in denselben Abbruchknopf.
+    if (busy) return;
+    var lage = 'Es ist ' + TAGE[jetzt.getDay()] + ', der ' + jetzt.getDate() + '. ' +
+      MONATE[jetzt.getMonth()] + ', ' + jetzt.getHours() + ' Uhr ' +
+      String(jetzt.getMinutes()).padStart(2, '0') + '.';
+    if (wetter) {
+      lage += ' Wetter in ' + wetter.ort + ': ' + wetter.lage + ', ' + wetter.grad +
+        ' Grad, gefühlt ' + wetter.gefuehlt + ', Wind ' + wetter.wind + ' Kilometer pro Stunde.';
+    } else {
+      lage += ' Wetterdaten liegen gerade nicht vor.';
+    }
+
+    controller = new AbortController();
+    setBusy(true);
+    setState('thinking');
+    var text = '';
+
+    try {
+      var headers = { 'Content-Type': 'application/json' };
+      var code = read(KEY_PASSCODE);
+      if (code) headers['X-Jarvis-Passcode'] = code;
+
+      var response = await fetch(API_URL, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: lage }],
+          modus: 'gruss',
+          ton: tonAktuell()
+        }),
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        var detail = '';
+        try { detail = (await response.json()).error || ''; } catch (e) { /* kein JSON */ }
+        if (response.status === 401) {
+          // Der Gruß ist beim Start die erste Anfrage überhaupt. Fehlt der
+          // Zugangscode, muss die Abfrage jetzt kommen — sonst steht Jarvis
+          // stumm da und niemand weiß, warum.
+          drop(KEY_PASSCODE);
+          drop(KEY_GRUSS);
+          openGate(read(KEY_PASSCODE) ? 'Der Code stimmt nicht. Versuch es nochmal.' : null);
+          return;
+        }
+        // Sonst gilt: von selbst ist der Gruß Zugabe und schweigt. Auf
+        // Knopfdruck muss dranstehen, warum nichts passiert ist.
+        if (vonHand) renderError(errorText(response.status, detail), false);
+        return;
+      }
+      serverStimme = response.headers.get('x-jarvis-stimme') === '1';
+
+      var blase = null;
+      await readStream(response.body, function (event, data) {
+        if (event === 'content_block_delta' && data.delta && data.delta.type === 'text_delta') {
+          if (!blase) {
+            blase = renderMessage('assistant', '');
+            blase.classList.add('streaming');
+            setState('speaking');
+          }
+          text += data.delta.text;
+          blase.innerHTML = renderMarkdown(text);
+          scrollToBottom(true);
+        }
+      });
+      if (blase) blase.classList.remove('streaming');
+
+      if (text.trim()) {
+        // local: true — der Gruß gehört nicht in den Verlauf, den der Server
+        // sieht. Sonst begänne die Unterhaltung mit einer Assistenz-Nachricht
+        // und die Messages-API lehnte sie ab.
+        messages.push({ role: 'assistant', content: text, local: true });
+        saveMessages();
+        var vorherAn = voiceOutput;
+        voiceOutput = true;             // der Gruß wird immer gesprochen
+        feedSpeech(text, true);
+        voiceOutput = vorherAn;
+      }
+      if (KONFIG.morgen.lied) spieleLied();
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      console.warn('Morgengruß:', err);
+      if (vonHand) renderError('Der Morgengruß ist nicht durchgegangen.', false);
+    } finally {
+      controller = null;
+      setBusy(false);
+      if (!stimmeLaeuft) setState('idle');
+    }
+  }
+
+  /* Das Morgenlied. Ein Browser darf kein Spotify fernsteuern — er kann den
+     Link nur öffnen. Auf dem Handy übernimmt dann die Spotify-App. */
+  function spieleLied() {
+    var link = KONFIG.morgen.lied;
+    if (!link) return;
+    try {
+      var ziel = new URL(link, location.href);
+      if (ziel.protocol !== 'https:' && ziel.protocol !== 'spotify:') return;
+      window.open(ziel.href, '_blank', 'noopener');
+    } catch (e) { /* kaputter Link in der Konfiguration — dann eben nicht */ }
+  }
+
+  /* ---------- Einstellungen ---------- */
+
+  function sheetOeffnen(auf) {
+    sheet.hidden = !auf;
+    menuBtn.setAttribute('aria-expanded', String(!!auf));
+  }
+
+  menuBtn.addEventListener('click', function () { sheetOeffnen(sheet.hidden); });
+  sheetClose.addEventListener('click', function () { sheetOeffnen(false); });
+  sheet.addEventListener('click', function (e) { if (e.target === sheet) sheetOeffnen(false); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !sheet.hidden) sheetOeffnen(false);
+  });
+
+  // Die Tonlagen stehen in der Konfiguration, nicht im Code — Damaso kann dort
+  // eigene erfinden, ohne eine Zeile JavaScript anzufassen.
+  function toeneAnbieten() {
+    var toene = KONFIG.toene || {};
+    tonWahl.innerHTML = '';
+    Object.keys(toene).forEach(function (id) {
+      var option = document.createElement('option');
+      option.value = id;
+      option.textContent = toene[id].name || id;
+      tonWahl.appendChild(option);
+    });
+    tonWahl.value = tonAktuell();
+  }
+
+  tonWahl.addEventListener('change', function () {
+    store(KEY_TON, tonWahl.value);
+    // Der neue Ton gilt ab der nächsten Antwort — der Verlauf bleibt stehen.
+    renderError('Ton umgestellt auf „' + (tonWahl.options[tonWahl.selectedIndex] || {}).text + '". Gilt ab der nächsten Antwort.', false, 'note');
+  });
+
+  klatschBox.addEventListener('change', function () {
+    klatschenSetzen(klatschBox.checked);
+  });
+
+  grussBtn.addEventListener('click', function () {
+    sheetOeffnen(false);
+    morgengruss(true);
+  });
+
+  /* ---------- Start ---------- */
+
+  (async function start() {
+    await ladeKonfig();
+    toeneAnbieten();
+
+    if (KONFIG.stimme.an === false) {
+      stimmeInfo.textContent = 'Die Stimme ist in der Konfiguration abgeschaltet — Jarvis liest mit der Stimme des Browsers vor.';
+    } else if (KONFIG.stimme.id) {
+      stimmeInfo.textContent = 'Vorgelesen wird über ElevenLabs. Fehlt der Schlüssel auf dem Server oder ist das Kontingent leer, übernimmt die Stimme des Browsers.';
+    } else {
+      stimmeInfo.textContent = 'In jarvis/konfiguration.json fehlt die Stimmen-ID — Jarvis liest mit der Stimme des Browsers vor.';
+    }
+
+    freihandSetzen(read(KEY_FREIHAND) === '1');
+    klatschBox.checked = read(KEY_KLATSCHEN) === '1';
+    if (klatschBox.checked) klatschenSetzen(true);
+
+    var hatteVerlauf = loadMessages();
+    if (!hatteVerlauf) greet();
+    scrollToBottom(true);
+    setState(navigator.onLine ? 'idle' : 'offline');
+    if (!navigator.onLine) showWarning('Keine Verbindung. Der Verlauf bleibt, Antworten brauchen Netz.');
+    setTimeout(maybeOfferInstall, 1200);
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.addEventListener('voiceschanged', function () { pickVoice(); });
+    }
+
+    // Der gesprochene Morgengruß, einmal am Tag. Kurz warten, damit die Seite
+    // erst fertig steht — und damit der erste Fingertipp den Ton freigibt.
+    if (navigator.onLine) setTimeout(function () { morgengruss(false); }, 600);
+  })();
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {

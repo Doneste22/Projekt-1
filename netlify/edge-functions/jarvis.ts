@@ -15,7 +15,7 @@
  */
 
 import type { Config } from "@netlify/edge-functions";
-import { callUpstream, check, describeUpstream, sseHeaders, DEFAULT_MODEL } from "../../server/core.mjs";
+import { callUpstream, check, describeUpstream, sseHeaders, MODI } from "../../server/core.mjs";
 
 function jsonResponse(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -53,7 +53,9 @@ export default async (req: Request) => {
     return jsonResponse(checked.status, { error: checked.error });
   }
 
-  const model = Netlify.env.get("JARVIS_MODEL") || DEFAULT_MODEL;
+  // Die Betriebsart bestimmt das Modell: das Gespräch nimmt das starke, der
+  // gesprochene Morgengruß das billige. JARVIS_MODEL übergeht beides.
+  const model = Netlify.env.get("JARVIS_MODEL") || MODI[checked.modus].model;
 
   let upstream: Response;
   try {
@@ -61,6 +63,8 @@ export default async (req: Request) => {
       apiKey,
       model,
       messages: checked.messages,
+      modus: checked.modus,
+      ton: checked.ton,
       signal: req.signal,
       url: Netlify.env.get("ANTHROPIC_BASE_URL")
     });
@@ -75,7 +79,7 @@ export default async (req: Request) => {
 
   // Unverändert weiterreichen. Kein eigener Code pro Token — das ist der Punkt.
   return new Response(upstream.body, {
-    headers: sseHeaders({ model, unprotected: !passcode })
+    headers: sseHeaders({ model, unprotected: !passcode, stimme: Boolean(Netlify.env.get("ELEVENLABS_API_KEY")) })
   });
 };
 

@@ -51,8 +51,8 @@ async function* ereignisse(koerper) {
  * Eine Runde: fragen, den Text sofort weiterreichen, die Blöcke der Antwort
  * einsammeln. Gibt zurück, womit das Modell aufgehört hat.
  */
-async function eineRunde({ apiKey, model, messages, werkzeuge, signal, url, sende }) {
-  const antwort = await callUpstream({ apiKey, model, messages, signal, url, werkzeuge });
+async function eineRunde({ apiKey, model, messages, werkzeuge, signal, url, sende, modus, ton }) {
+  const antwort = await callUpstream({ apiKey, model, messages, signal, url, werkzeuge, modus, ton });
 
   if (!antwort.ok || !antwort.body) {
     const text = await antwort.text().catch(() => "");
@@ -125,12 +125,14 @@ async function eineRunde({ apiKey, model, messages, werkzeuge, signal, url, send
  * Führt das Gespräch, bis das Modell fertig ist. `sende(ereignis, daten)` geht
  * an den Browser.
  */
-export async function fuehren({ apiKey, model, messages, signal, url, sende }) {
-  const werkzeuge = wurzeln().length ? WERKZEUGE : undefined;
+export async function fuehren({ apiKey, model, messages, signal, url, sende, modus, ton }) {
+  // Der Morgengruß bekommt keine Werkzeuge: er ist zwei Sätze lang, läuft auf
+  // dem billigen Modell und hat am Dateisystem nichts zu suchen.
+  const werkzeuge = modus !== "gruss" && wurzeln().length ? WERKZEUGE : undefined;
   const verlauf = [...messages];
 
   for (let runde = 1; runde <= MAX_RUNDEN; runde++) {
-    const { stopGrund, inhalt } = await eineRunde({ apiKey, model, messages: verlauf, werkzeuge, signal, url, sende });
+    const { stopGrund, inhalt } = await eineRunde({ apiKey, model, messages: verlauf, werkzeuge, signal, url, sende, modus, ton });
 
     if (stopGrund !== "tool_use") {
       sende("message_delta", { type: "message_delta", delta: { stop_reason: stopGrund || "end_turn" } });

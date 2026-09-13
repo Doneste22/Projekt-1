@@ -177,6 +177,27 @@ body{
   opacity:0;
 }
 
+/* Der Ring ums Gesicht. Er zeigt aus zwei Metern Entfernung, was Jarvis
+   gerade tut — im Ruhezustand nur eine feine gestrichelte Linie. */
+.face__ring{
+  fill:none;
+  stroke:var(--linie);
+  stroke-width:1.4;
+  stroke-dasharray:3 7;
+  stroke-linecap:round;
+  opacity:.9;
+}
+.face__puls{
+  fill:none;
+  stroke:var(--akzent);
+  stroke-width:1.6;
+  opacity:0;
+}
+.face__ring,.face__puls{
+  transform-box:view-box;
+  transform-origin:32px 32px;
+}
+
 .face__head,.face__eyes,.face__mouth,.face__bubble,.face__halo{
   transform-box:view-box;
   transform-origin:32px 32px;
@@ -200,6 +221,8 @@ body{
 /* Hört zu */
 [data-state="listening"] .face__eyes{animation:blink 6.5s infinite;transform:scale(1.12);}
 [data-state="listening"] .face__halo{animation:halo 1.4s ease-out infinite;}
+[data-state="listening"] .face__ring{stroke:var(--akzent-tief);animation:kreisen 6s linear infinite;}
+[data-state="listening"] .face__puls{animation:puls 1.4s ease-out infinite;}
 @keyframes halo{
   0%{opacity:.6;transform:scale(1);}
   100%{opacity:0;transform:scale(1.18);}
@@ -210,6 +233,7 @@ body{
 [data-state="thinking"] .face__head{animation:tilt 2.6s ease-in-out infinite;}
 [data-state="thinking"] .face__bubble{animation:sweep 1.5s ease-in-out infinite alternate;}
 [data-state="thinking"] .face__eyes{animation:blink 6.5s infinite;transform:translateY(-1.5px);}
+[data-state="thinking"] .face__ring{stroke:var(--akzent);animation:kreisen 2.2s linear infinite;}
 @keyframes tilt{
   0%,100%{transform:rotate(-2.5deg);}
   50%{transform:rotate(2.5deg);}
@@ -223,6 +247,8 @@ body{
 [data-state="speaking"] .face{animation:atmen 1.6s ease-in-out infinite;}
 [data-state="speaking"] .face__mouth{animation:talk .26s ease-in-out infinite alternate;}
 [data-state="speaking"] .face__bubble{animation:jitter .3s ease-in-out infinite alternate;}
+[data-state="speaking"] .face__ring{stroke:var(--akzent-tief);animation:kreisen 9s linear infinite;}
+[data-state="speaking"] .face__puls{animation:puls 1.1s ease-out infinite;}
 @keyframes talk{
   from{transform:scaleY(.86);}
   to{transform:scaleY(1.5);}
@@ -235,6 +261,14 @@ body{
   0%,100%{filter:drop-shadow(0 0 12px rgba(255,122,47,.2));}
   50%{filter:drop-shadow(0 0 22px rgba(255,122,47,.42));}
 }
+@keyframes kreisen{
+  from{transform:rotate(0deg);}
+  to{transform:rotate(360deg);}
+}
+@keyframes puls{
+  0%{opacity:.45;transform:scale(.94);}
+  100%{opacity:0;transform:scale(1.12);}
+}
 
 /* Offline: alles steht still, das Licht ist aus */
 [data-state="offline"] .face{filter:none;opacity:.62;}
@@ -242,6 +276,7 @@ body{
 [data-state="offline"] .face__bubble,
 [data-state="offline"] .face__head{animation:none;}
 [data-state="offline"] .face__bubble{transform:translateX(10px);fill:var(--text-still);}
+[data-state="offline"] .face__ring{stroke:var(--linie-fein);}
 
 @media (prefers-reduced-motion: reduce){
   .face,.face *{animation:none !important;}
@@ -507,6 +542,109 @@ body{
 .composer .send.stop .send__icon{display:none;}
 
 /* ---------- Zugangscode ---------- */
+
+/* ---------- Einstellungsblatt ---------- */
+
+.sheet{
+  position:absolute;
+  inset:0;
+  background:rgba(4,7,12,.8);
+  -webkit-backdrop-filter:blur(10px);
+          backdrop-filter:blur(10px);
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  z-index:9;
+}
+.sheet[hidden]{display:none;}
+.sheet__card{
+  background:var(--flaeche);
+  border:1px solid var(--linie);
+  border-radius:var(--rand) var(--rand) 0 0;
+  border-bottom:none;
+  padding:20px 20px calc(20px + env(safe-area-inset-bottom));
+  width:100%;
+  max-width:480px;
+  max-height:82%;
+  overflow-y:auto;
+  box-shadow:0 -20px 60px rgba(0,0,0,.55);
+  animation:hochschieben .22s ease-out;
+}
+@keyframes hochschieben{
+  from{transform:translateY(14px);opacity:.4;}
+  to{transform:translateY(0);opacity:1;}
+}
+.sheet__kopf{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;}
+.sheet__kopf h2{
+  margin:0;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--akzent);
+}
+.sheet__close{
+  background:none;
+  border:none;
+  color:var(--text-still);
+  font-size:24px;
+  line-height:1;
+  padding:2px 6px;
+  cursor:pointer;
+  border-radius:8px;
+}
+.sheet__close:hover{color:var(--text);}
+.sheet__close:focus-visible{outline:none;color:var(--text);box-shadow:0 0 0 2px var(--akzent-tief);}
+
+.feld{display:block;margin-bottom:18px;}
+.feld--zeile{display:flex;align-items:flex-start;gap:12px;cursor:pointer;}
+.feld--zeile input{
+  margin:2px 0 0;
+  width:20px;height:20px;
+  flex-shrink:0;
+  accent-color:var(--akzent-tief);
+}
+.feld__name{display:block;font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:5px;}
+.feld__hilfe{display:block;font-size:12.5px;color:var(--text-leise);line-height:1.5;}
+.feld__hilfe code{
+  font-family:var(--mono);
+  font-size:11.5px;
+  background:rgba(255,255,255,.05);
+  border-radius:5px;
+  padding:1px 5px;
+}
+.feld select{
+  width:100%;
+  border:1px solid var(--linie);
+  background:var(--grund);
+  color:var(--text);
+  border-radius:12px;
+  padding:11px 13px;
+  font:inherit;
+  font-size:16px;          /* darunter zoomt iOS beim Antippen hinein */
+  margin-bottom:8px;
+}
+.feld select:focus{outline:none;border-color:var(--akzent-tief);box-shadow:0 0 0 3px var(--akzent-schimmer);}
+
+.sheet__aktion{
+  width:100%;
+  border:1px solid var(--akzent-tief);
+  background:var(--akzent-schimmer);
+  color:var(--text);
+  border-radius:12px;
+  padding:12px 14px;
+  font:inherit;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  margin-bottom:8px;
+}
+.sheet__aktion:hover{background:rgba(255,122,47,.24);}
+.sheet__aktion:focus-visible{outline:none;box-shadow:0 0 0 3px var(--akzent-schimmer);}
+
+@media (prefers-reduced-motion: reduce){
+  .sheet__card{animation:none;}
+}
 
 .gate{
   position:absolute;
