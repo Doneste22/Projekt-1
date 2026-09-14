@@ -85,11 +85,36 @@ export const AUDIO_HEADERS = {
   "x-accel-buffering": "no"
 };
 
-/** Fehler von ElevenLabs in etwas übersetzen, das in der Oberfläche stehen darf. */
+/**
+ * Holt die Klartextmeldung aus ElevenLabs' Antwort. Die steckt je nach Fehler
+ * in detail.message, in detail (als Text) oder in message.
+ */
+function klartext(bodyText) {
+  try {
+    const daten = JSON.parse(bodyText);
+    const d = daten.detail;
+    const text = (d && typeof d === "object" ? d.message || d.status : d) || daten.message;
+    return typeof text === "string" && text.trim() ? text.trim().slice(0, 200) : "";
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Fehler von ElevenLabs in etwas übersetzen, das in der Oberfläche stehen darf.
+ *
+ * Bei „falsch eingerichtet"-Fehlern (401, 422) wird ElevenLabs' eigene Meldung
+ * angehängt. Das hat hier Zeit gespart: „Der Schlüssel wird abgelehnt" allein
+ * lässt offen, ob er falsch, abgelaufen oder nur ohne die nötige Berechtigung
+ * ist — die Klartextmeldung sagt es. Der Endpunkt steht hinter dem
+ * Zugangscode, wer die Meldung sieht, ist also ohnehin eingelassen.
+ */
 export function describeStimme(status, bodyText) {
-  if (status === 401) return "Der ElevenLabs-Schlüssel wird abgelehnt. Prüf ELEVENLABS_API_KEY.";
-  if (status === 404) return "Diese Stimmen-ID gibt es nicht. Prüf „stimme.id“ in jarvis/konfiguration.json.";
-  if (status === 422) return "ElevenLabs mag den Text oder die Einstellungen nicht.";
+  const dazu = klartext(bodyText);
+  const anhang = dazu ? ` ElevenLabs sagt: „${dazu}“` : "";
+  if (status === 401) return "Der ElevenLabs-Schlüssel wird abgelehnt. Prüf ELEVENLABS_API_KEY." + anhang;
+  if (status === 404) return "Diese Stimmen-ID gibt es nicht. Prüf „stimme.id“ in jarvis/konfiguration.json." + anhang;
+  if (status === 422) return "ElevenLabs mag den Text oder die Einstellungen nicht." + anhang;
   if (status === 429) return "Das ElevenLabs-Kontingent ist aufgebraucht oder wurde zu schnell abgefragt.";
   if (status >= 500) return "ElevenLabs antwortet gerade nicht.";
   console.error("stimme: unerwartete Antwort", status, (bodyText || "").slice(0, 500));
