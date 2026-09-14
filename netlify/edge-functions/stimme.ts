@@ -22,10 +22,21 @@ export default async (req: Request) => {
     return jsonResponse(405, { error: "Nur POST." });
   }
 
+  // Zwei Fälle, die gleich aussehen und verschiedene Ursachen haben — das hat
+  // hier einen Nachmittag gekostet. Ist die Variable gar nicht angelegt,
+  // liefert env.get undefined. Ist sie angelegt, aber für diesen
+  // Deploy-Kontext ohne Wert (etwa weil bei „Different value for each deploy
+  // context" nur ein Feld gefüllt wurde), liefert sie einen leeren Text.
+  // Die Meldung muss das auseinanderhalten, sonst sucht man am falschen Ende.
   const apiKey = Netlify.env.get("ELEVENLABS_API_KEY");
-  if (!apiKey) {
+  if (apiKey === undefined) {
     return jsonResponse(503, {
-      error: "Auf dem Server fehlt ELEVENLABS_API_KEY. In den Netlify-Variablen eintragen und neu veröffentlichen."
+      error: "Auf dem Server ist ELEVENLABS_API_KEY gar nicht angelegt. In den Netlify-Variablen eintragen und neu veröffentlichen."
+    });
+  }
+  if (!apiKey.trim()) {
+    return jsonResponse(503, {
+      error: "ELEVENLABS_API_KEY ist angelegt, aber für diese Veröffentlichung leer. In Netlify auf „Same value for all deploy contexts\" stellen und den Schlüssel noch einmal einfügen."
     });
   }
   if (!STIMME.id) {
