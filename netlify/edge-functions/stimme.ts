@@ -74,7 +74,7 @@ export default async (req: Request) => {
 
   if (!upstream.ok || !upstream.body) {
     const text = await upstream.text().catch(() => "");
-    return jsonResponse(upstream.status, { error: describeStimme(upstream.status, text) });
+    return jsonResponse(upstream.status, { error: describeStimme(upstream.status, text, apiKey) });
   }
 
   // Unverändert weiterreichen. Kein eigener Code pro Byte — das ist der Punkt.

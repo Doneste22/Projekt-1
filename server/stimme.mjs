@@ -101,6 +101,19 @@ function klartext(bodyText) {
 }
 
 /**
+ * Beschreibt die Form des hinterlegten Schlüssels, ohne ihn preiszugeben:
+ * Länge und die ersten drei Zeichen. Ein Schlüssel von ElevenLabs beginnt mit
+ * „sk_" und ist rund fünfzig Zeichen lang. Steht dort etwas anderes, wurde das
+ * Falsche eingefügt; ist er deutlich kürzer, ist beim Einfügen etwas
+ * abgeschnitten worden. Beides sieht in der Fehlermeldung sonst gleich aus.
+ */
+export function schluesselForm(apiKey) {
+  const key = String(apiKey || "").trim();
+  if (!key) return "";
+  return ` Hinterlegt ist ein Wert mit ${key.length} Zeichen, der mit „${key.slice(0, 3)}…“ beginnt (erwartet: rund 50 Zeichen, beginnend mit „sk_“).`;
+}
+
+/**
  * Fehler von ElevenLabs in etwas übersetzen, das in der Oberfläche stehen darf.
  *
  * Bei „falsch eingerichtet"-Fehlern (401, 422) wird ElevenLabs' eigene Meldung
@@ -109,10 +122,12 @@ function klartext(bodyText) {
  * ist — die Klartextmeldung sagt es. Der Endpunkt steht hinter dem
  * Zugangscode, wer die Meldung sieht, ist also ohnehin eingelassen.
  */
-export function describeStimme(status, bodyText) {
+export function describeStimme(status, bodyText, apiKey) {
   const dazu = klartext(bodyText);
   const anhang = dazu ? ` ElevenLabs sagt: „${dazu}“` : "";
-  if (status === 401) return "Der ElevenLabs-Schlüssel wird abgelehnt. Prüf ELEVENLABS_API_KEY." + anhang;
+  if (status === 401) {
+    return "Der ElevenLabs-Schlüssel wird abgelehnt. Prüf ELEVENLABS_API_KEY." + anhang + schluesselForm(apiKey);
+  }
   if (status === 404) return "Diese Stimmen-ID gibt es nicht. Prüf „stimme.id“ in jarvis/konfiguration.json." + anhang;
   if (status === 422) return "ElevenLabs mag den Text oder die Einstellungen nicht." + anhang;
   if (status === 429) return "Das ElevenLabs-Kontingent ist aufgebraucht oder wurde zu schnell abgefragt.";

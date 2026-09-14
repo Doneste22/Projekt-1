@@ -160,7 +160,7 @@ async function handleStimme(req, res) {
 
   if (!antwort.ok || !antwort.body) {
     const text = await antwort.text().catch(() => "");
-    return sendJson(res, antwort.status, { error: describeStimme(antwort.status, text) });
+    return sendJson(res, antwort.status, { error: describeStimme(antwort.status, text, STIMME_KEY) });
   }
 
   res.writeHead(200, AUDIO_HEADERS);
