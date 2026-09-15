@@ -26,6 +26,14 @@
     "_freikontingent": "10.000 Zeichen pro Monat sind bei ElevenLabs kostenlos. Das reicht für rund 100 kurze Antworten. Danach kostet es oder die Stimme fällt auf die eingebaute Browserstimme zurück."
   },
 
+  "gedaechtnis": {
+    "an": true,
+    "automatisch": true,
+    "_an": "Ob Jarvis sich Dinge über Gespräche hinweg merkt. Die Notizen liegen im Browser dieses Geräts (localStorage), nicht auf einem Server — wer die App-Daten löscht, löscht sie mit.",
+    "_automatisch": "Ob nach jeder Antwort das billige Modell kurz nachsieht, was behaltenswert war. Aus heißt: Jarvis merkt sich nur, was du ihm ausdrücklich sagst („merk dir …“). Ein Nachsehen kostet rund ein Zehntausendstel Franken.",
+    "_wo": "Nachsehen und Löschen: in der App unter Einstellungen → Gedächtnis."
+  },
+
   "ton": "sir",
 
   "_toene": "„weckantwort“ ist, was Jarvis sagt, wenn nur sein Name gerufen wurde — die kostet nichts, das Modell wird dafür nicht gefragt.",

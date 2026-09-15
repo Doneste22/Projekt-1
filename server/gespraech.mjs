@@ -16,6 +16,7 @@
  */
 
 import { callUpstream, describeUpstream } from "./core.mjs";
+import { werkzeugeFuer } from "./abteilungen.mjs";
 import { WERKZEUGE, ausfuehren, wurzeln } from "./werkzeuge.mjs";
 
 const MAX_RUNDEN = 6;        // Schutz gegen ein Modell, das sich im Kreis dreht
@@ -51,8 +52,8 @@ async function* ereignisse(koerper) {
  * Eine Runde: fragen, den Text sofort weiterreichen, die Blöcke der Antwort
  * einsammeln. Gibt zurück, womit das Modell aufgehört hat.
  */
-async function eineRunde({ apiKey, model, messages, werkzeuge, signal, url, sende, modus, ton }) {
-  const antwort = await callUpstream({ apiKey, model, messages, signal, url, werkzeuge, modus, ton });
+async function eineRunde({ apiKey, model, messages, werkzeuge, signal, url, sende, modus, ton, abteilung, erinnerungen }) {
+  const antwort = await callUpstream({ apiKey, model, messages, signal, url, werkzeuge, modus, ton, abteilung, erinnerungen });
 
   if (!antwort.ok || !antwort.body) {
     const text = await antwort.text().catch(() => "");
@@ -125,14 +126,15 @@ async function eineRunde({ apiKey, model, messages, werkzeuge, signal, url, send
  * Führt das Gespräch, bis das Modell fertig ist. `sende(ereignis, daten)` geht
  * an den Browser.
  */
-export async function fuehren({ apiKey, model, messages, signal, url, sende, modus, ton }) {
-  // Der Morgengruß bekommt keine Werkzeuge: er ist zwei Sätze lang, läuft auf
-  // dem billigen Modell und hat am Dateisystem nichts zu suchen.
-  const werkzeuge = modus !== "gruss" && wurzeln().length ? WERKZEUGE : undefined;
+export async function fuehren({ apiKey, model, messages, signal, url, sende, modus, ton, abteilung, erinnerungen }) {
+  // Werkzeuge gibt es nur im Gespräch, und dort nur die der Abteilung. Der
+  // Morgengruß, die Weiche und das Gedächtnis laufen alle auf dem billigen
+  // Modell, sind zwei Zeilen lang und haben am Dateisystem nichts zu suchen.
+  const werkzeuge = modus === "chat" && wurzeln().length ? werkzeugeFuer(abteilung, WERKZEUGE) : undefined;
   const verlauf = [...messages];
 
   for (let runde = 1; runde <= MAX_RUNDEN; runde++) {
-    const { stopGrund, inhalt } = await eineRunde({ apiKey, model, messages: verlauf, werkzeuge, signal, url, sende, modus, ton });
+    const { stopGrund, inhalt } = await eineRunde({ apiKey, model, messages: verlauf, werkzeuge, signal, url, sende, modus, ton, abteilung, erinnerungen });
 
     if (stopGrund !== "tool_use") {
       sende("message_delta", { type: "message_delta", delta: { stop_reason: stopGrund || "end_turn" } });

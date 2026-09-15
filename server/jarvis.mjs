@@ -17,6 +17,7 @@ import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { check, sseHeaders, MODI } from "./core.mjs";
+import { abteilungenListe } from "./abteilungen.mjs";
 import { AUDIO_HEADERS, callStimme, describeStimme, pruefeText, STIMME } from "./stimme.mjs";
 import { fuehren } from "./gespraech.mjs";
 import { wurzeln } from "./werkzeuge.mjs";
@@ -98,6 +99,8 @@ async function handleChat(req, res) {
       messages: checked.messages,
       modus: checked.modus,
       ton: checked.ton,
+      abteilung: checked.abteilung,
+      erinnerungen: checked.erinnerungen,
       signal: controller.signal,
       // Gateway-Adresse, falls eine gesetzt ist; JARVIS_API_URL zum Prüfen gegen den Mock
       url: process.env.JARVIS_API_URL || process.env.ANTHROPIC_BASE_URL,
@@ -227,7 +230,9 @@ http.createServer((req, res) => {
   console.log("Jarvis läuft.");
   console.log(`  http://localhost:${PORT}/jarvis/   (auf diesem Gerät)`);
   addresses.forEach((line) => console.log(line));
-  console.log(`Modell: ${MODEL || `${MODI.chat.model} (Gespräch), ${MODI.gruss.model} (Morgengruß)`}`);
+  console.log(`Modell: ${MODEL || `${MODI.chat.model} (Gespräch), ${MODI.gruss.model} (Morgengruß, Weiche, Gedächtnis)`}`);
+  const abteilungen = abteilungenListe();
+  console.log(`Abteilungen: ${abteilungen.map((a) => a.name).join(", ")} — Jarvis leitet jede Frage selbst dorthin.`);
   const ordner = wurzeln();
   if (ordner.length) {
     console.log(`Werkzeuge an — Jarvis darf ansehen und aufräumen: ${ordner.join(", ")}`);

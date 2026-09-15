@@ -44,7 +44,10 @@
 
     <div class="brand">
       <span class="brand__name">Jarvis</span>
-      <span class="brand__state" id="stateLabel">bereit</span>
+      <span class="brand__zeile">
+        <span class="brand__state" id="stateLabel">bereit</span>
+        <button class="brand__abteilung" id="abteilungBtn" type="button" title="Abteilung wählen" aria-label="Abteilung wählen">Alltag</button>
+      </span>
     </div>
 
     <div class="header__actions">
@@ -101,6 +104,12 @@
         <span class="feld__hilfe">Wie Jarvis mit dir redet. Steht in <code>jarvis/konfiguration.json</code> — dort lassen sich eigene Tonlagen eintragen.</span>
       </label>
 
+      <label class="feld" for="abteilungWahl">
+        <span class="feld__name">Abteilung</span>
+        <select id="abteilungWahl"></select>
+        <span class="feld__hilfe" id="abteilungHilfe">Jarvis sucht sich zu jeder Frage selbst den passenden Arbeitsplatz. Hier lässt er sich festhalten, wenn du länger an einer Sache bleibst.</span>
+      </label>
+
       <div class="feld">
         <span class="feld__name">Stimme</span>
         <span class="feld__hilfe" id="stimmeInfo"></span>
@@ -113,6 +122,35 @@
           <span class="feld__hilfe">Zweimal klatschen startet den Morgengruß. Braucht das Mikrofon und geht nur, solange diese Seite offen und sichtbar ist.</span>
         </span>
       </label>
+
+      <div class="feld">
+        <span class="feld__name">Gedächtnis</span>
+        <span class="feld__hilfe" id="gedaechtnisInfo"></span>
+        <ul class="notizen" id="notizenListe"></ul>
+        <div class="notizen__knoepfe">
+          <button type="button" class="sheet__aktion sheet__aktion--klein" id="notizNeuBtn">Etwas merken</button>
+          <button type="button" class="sheet__aktion sheet__aktion--klein" id="notizenLeerenBtn">Alles vergessen</button>
+        </div>
+      </div>
+
+      <label class="feld feld--zeile" for="merkBox">
+        <input type="checkbox" id="merkBox">
+        <span>
+          <span class="feld__name">Von selbst merken</span>
+          <span class="feld__hilfe">Nach jeder Antwort sieht das billige Modell kurz nach, ob etwas Bleibendes gefallen ist. Aus heißt: Jarvis merkt sich nur, was du ihm ausdrücklich sagst.</span>
+        </span>
+      </label>
+
+      <div class="feld">
+        <span class="feld__name">Aufbau</span>
+        <ol class="aufbau" id="aufbau">
+          <li><span class="aufbau__nr">01</span><span class="aufbau__was">Sprechen</span><span class="aufbau__wie" id="aufbauSprechen">—</span></li>
+          <li><span class="aufbau__nr">02</span><span class="aufbau__was">Leiten</span><span class="aufbau__wie" id="aufbauLeiten">—</span></li>
+          <li><span class="aufbau__nr">03</span><span class="aufbau__was">Merken</span><span class="aufbau__wie" id="aufbauMerken">—</span></li>
+          <li><span class="aufbau__nr">04</span><span class="aufbau__was">Arbeiten</span><span class="aufbau__wie" id="aufbauArbeiten">—</span></li>
+        </ol>
+        <span class="feld__hilfe">Vier Schichten, eine über der anderen: du sprichst, Jarvis leitet die Frage an die richtige Abteilung, merkt sich, was bleibt, und arbeitet mit dem, was diese Abteilung darf.</span>
+      </div>
 
       <button type="button" class="sheet__aktion" id="grussBtn">Morgengruß jetzt</button>
       <p class="feld__hilfe">Tageszeit und Wetter, zwei Sätze, vorgelesen. Läuft auf dem billigen Modell.</p>
@@ -131,6 +169,8 @@
 
 </div>
 <script src="klatschen.js"></script>
+<script src="abteilungen.js"></script>
+<script src="gedaechtnis.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

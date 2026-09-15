@@ -65,6 +65,8 @@ export default async (req: Request) => {
       messages: checked.messages,
       modus: checked.modus,
       ton: checked.ton,
+      abteilung: checked.abteilung,
+      erinnerungen: checked.erinnerungen,
       signal: req.signal,
       url: Netlify.env.get("ANTHROPIC_BASE_URL")
     });

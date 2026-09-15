@@ -22,6 +22,7 @@ partnerlinks.html             Interne Arbeitsliste für die Affiliate-Links
 robots.txt, sitemap.xml       Für Suchmaschinen — Domain ist noch Platzhalter
 jarvis/                       Jarvis: eigenständige Assistenz-App (installierbar)
 server/core.mjs               Kern von Jarvis: Systemprompt, Prüfung, Modellaufruf
+server/abteilungen.mjs        Kontext und Werkzeuge je Abteilung — serverseitig, nicht zu fälschen
 server/gespraech.mjs          Werkzeug-Schleife — nur lokal
 server/werkzeuge.mjs          Was Jarvis am Gerät darf: ansehen, suchen, aufräumen
 server/dateien.mjs            Dateilogik: doppelt, Müll, Papierkorb
@@ -36,6 +37,7 @@ assets/js/partnerlinks.js     Alle Partnerlink-Ziele an einer Stelle
 scripts/fonts-holen.sh        Frischt die Schriften auf und schreibt fonts.css neu
 scripts/aufraeumen.mjs        Findet doppelte Dateien und Müll im Handyspeicher
 scripts/termux-einrichten.sh  Richtet Jarvis auf dem Handy ein (ein Befehl)
+scripts/pruefe-aufbau.mjs     Prüft Weiche und Gedächtnis — ohne Browser, ohne Kosten
 MONETARISIERUNG.md            Wie aus der Seite Einnahmen werden — Wege, Zahlen, Reihenfolge
 ```
 
@@ -163,13 +165,89 @@ jarvis/index.html             Gerüst
 jarvis/style.css              Gestaltung und die Animationen des Gesichts
 jarvis/app.js                 Verlauf, Streaming, Sprache, Installation
 jarvis/klatschen.js           Erkennt zweimaliges Klatschen (Morgengruß)
-jarvis/konfiguration.json     Ort, Stimme, Ton, Morgenlied — ohne Schlüssel
+jarvis/abteilungen.js         Die Weiche: welche Abteilung bearbeitet die Frage?
+jarvis/gedaechtnis.js         Was Jarvis über Gespräche hinweg behält
+jarvis/konfiguration.json     Ort, Stimme, Ton, Gedächtnis, Morgenlied — ohne Schlüssel
+jarvis/abteilungen.json       Die Abteilungen: Weckworte, Kontext, erlaubte Werkzeuge
 jarvis/sw.js                  Service Worker: App startet auch ohne Netz
 jarvis/manifest.webmanifest   Name, Farben, Icons für den Startbildschirm
 jarvis/icons/                 App-Icons (192, 512, maskierbar, Apple)
 android/                      Bauplan für die Android-App (TWA, APK)
 jarvis-android/               Jarvis als eigenständige Kotlin-App
 assetlinks.json               Verknüpft die App mit der Domain
+```
+
+### Die vier Schichten
+
+Jarvis ist nicht ein Eingabefeld vor einem Modell, sondern vier Schichten
+übereinander. Zu sehen sind sie in der App unter *Einstellungen → Aufbau*, mit
+dem, was gerade wirklich an ist.
+
+| | Schicht | Was da passiert |
+| --- | --- | --- |
+| 01 | **Sprechen** | Mikrofon, Weckwort „Jarvis“, Klatschen, Vorlesen. |
+| 02 | **Leiten** | Welche Abteilung bearbeitet die Frage? |
+| 03 | **Merken** | Was aus dem Austausch ist in Wochen noch wahr? |
+| 04 | **Arbeiten** | Antworten — mit dem Kontext und den Werkzeugen dieser Abteilung. |
+
+**Leiten.** Jede Frage landet in einer von fünf Abteilungen: *Baustelle*
+(Trockenbau, Verputz, Akustik), *Angebot* (Offerten, Preise, Kunden), *Büro*
+(Ablage, Papierkram, Speicher), *Galicien* (Umzug, Spanien, Sprache) und
+*Alltag* für alles Übrige. Jede bringt ihren eigenen Kontext mit — in der
+Baustelle wird niemandem mehr erklärt, was eine Vorsatzschale ist; im Angebot
+werden Preise nie erfunden, sondern erfragt.
+
+Entschieden wird in zwei Stufen: erst über Weckworte im Browser
+(`jarvis/abteilungen.js`) — das kostet nichts und dauert nichts —, und nur wenn
+die nichts Eindeutiges ergeben, entscheidet ein Satz an das billige Modell.
+Über der Antwort steht dann, wohin geleitet wurde. Wer länger an einer Sache
+bleibt, hält die Abteilung im Kopf der App fest; dann ruht die Weiche.
+
+Die Weckworte und die Kontexte stehen in `jarvis/abteilungen.json`. Neue
+Abteilung heißt: einen Eintrag anlegen, Weckworte dazu, Kontext in normalem
+Deutsch. Kein Code.
+
+**Merken.** Nach jeder Antwort sieht das billige Modell kurz nach, ob etwas
+gefallen ist, das in Wochen noch stimmt — der Stundenansatz, ein Kundenname,
+eine Gewohnheit — und schreibt es als Satz mit Marken auf (`#preis`,
+`#material`). Vor der nächsten Frage gehen die passenden Notizen wieder mit:
+gesucht wird über gemeinsame Wörter, gleiche Marken und dieselbe Abteilung. Und
+was über eine Marke an einem Treffer hängt, kommt mit — so taucht zur Frage nach
+dem Preis auch der Kunde auf, in dessen Notiz das Wort „Preis“ gar nicht steht.
+
+Die Notizen liegen im Browser dieses Geräts, nicht auf einem Server. Das ist
+der Punkt, und es ist auch die Grenze: kein Konto, kein Dienst, kein weiterer
+Schlüssel, keine Kosten — dafür hängt das Gedächtnis an diesem einen Gerät und
+an diesem einen Browser. Wer die App-Daten löscht, löscht es mit.
+Nachsehen, einzelne Sätze wegwerfen, alles vergessen: *Einstellungen →
+Gedächtnis*.
+
+Zwei Dinge sind bewusst so gebaut:
+
+- **Notizen sind Gedächtnis, keine Anweisungen.** Sie stehen im Systemprompt
+  ausdrücklich als solche eingerahmt, und was Damaso jetzt sagt, schlägt immer,
+  was einmal aufgeschrieben wurde. Sonst genügte eine Notiz mit „Ab jetzt …“
+  darin, um Jarvis dauerhaft umzustellen.
+- **Der Server glaubt dem Browser nur den Namen.** Mitgeschickt werden die
+  Abteilung als Wort und die Notizen als Text. Was eine Abteilung bedeutet und
+  welche Werkzeuge sie anfassen darf, steht auf dem Server
+  (`server/abteilungen.mjs`). Wer die Adresse des Endpunkts kennt, kann sich
+  damit keinen eigenen Prompt und keine eigenen Werkzeuge bestellen.
+
+**Was hier absichtlich nicht drinsteckt.** Die Vorlage für diesen Aufbau
+(Videobilder aus dem Netz) nennt für dieselben Schichten eine Vektordatenbank
+(Supabase), einen Wissensgraphen (Obsidian), eine Werkzeugvermittlung
+(Composio) und eine Auswertung (PostHog). Jedes davon heißt: ein Konto, ein
+weiterer Schlüssel, eine monatliche Rechnung und ein Dienst, der ausfallen
+kann. Bei ein paar hundert Notizen gewinnt eine Vektorsuche gegenüber der
+Suche über Wörter und Marken nichts — sie kostet nur. Kommt das Gedächtnis
+einmal in die Tausende, ist der Zeitpunkt da, noch einmal hinzusehen; die
+Suche steckt an einer Stelle (`passende()` in `jarvis/gedaechtnis.js`).
+
+Prüfen lässt sich beides ohne Browser und ohne einen Rappen:
+
+```bash
+node scripts/pruefe-aufbau.mjs
 ```
 
 ### Das Gesicht
@@ -234,7 +312,7 @@ serverseitig ab.
 | `ANTHROPIC_BASE_URL` | nur mit Gateway | Setzt Netlify selbst, wenn das AI-Gateway aktiv ist. Der Server benutzt die Adresse, sobald sie da ist; wer sie ignoriert, bekommt ein 401 und sucht den Fehler beim Schlüssel. |
 | `JARVIS_PASSCODE` | empfohlen | Zugangscode. Ist er gesetzt, fragt die App ihn einmal ab und merkt ihn sich. Ohne ihn kann jeder, der die Adresse kennt, auf deine Rechnung Fragen stellen — die App warnt dann sichtbar. |
 | `ELEVENLABS_API_KEY` | nein | Schlüssel von elevenlabs.io. Damit spricht Jarvis mit einer echten Stimme. Fehlt er, liest der Browser mit seiner eigenen vor — es geht also auch ohne. |
-| `JARVIS_MODEL` | nein | Erzwingt ein Modell für alles. Ohne die Variable nimmt das Gespräch `claude-opus-5` und der Morgengruß `claude-haiku-4-5`. |
+| `JARVIS_MODEL` | nein | Erzwingt ein Modell für alles. Ohne die Variable nimmt das Gespräch `claude-opus-5`, alles Übrige `claude-haiku-4-5`. |
 
 Eingestellt sind `effort: "medium"` und maximal 4000 Tokens pro Antwort — ein
 Kompromiss aus Tempo, Kosten und Ausführlichkeit; beides steht oben in
@@ -243,9 +321,22 @@ ebenfalls dort und nicht im Browser, damit er von außen nicht zu ändern ist.
 Nur der *Ton* kommt aus `jarvis/konfiguration.json`, und auch der wird
 serverseitig geprüft: Was nicht in der Konfiguration steht, wird nicht genommen.
 
-**Zwei Modelle, aus Kostengründen.** Der gesprochene Morgengruß läuft bei jedem
-Start und darf deshalb nichts kosten — er nimmt Haiku. Das Gespräch nimmt Opus.
-Die Weiche steht in `MODI` in `server/core.mjs`. Eine Falle steckt darin, die
+**Zwei Modelle, aus Kostengründen.** Das Gespräch nimmt Opus. Alles andere
+läuft bei jeder Frage mit und darf deshalb fast nichts kosten — das nimmt
+Haiku. Welche Betriebsart was nimmt, steht in `MODI` in `server/core.mjs`:
+
+| Betriebsart | Modell | Wofür |
+| --- | --- | --- |
+| `chat` | Opus | das Gespräch, mit Abteilungskontext, Gedächtnis und Werkzeugen |
+| `gruss` | Haiku | der gesprochene Morgengruß, zwei Sätze |
+| `leiten` | Haiku | die Weiche: ein Wort Antwort, nur wenn die Weckworte nichts hergeben |
+| `merken` | Haiku | das Gedächtnis: was bleibt aus dem letzten Austausch? |
+
+Weiche und Gedächtnis bekommen den Jarvis-Prompt gar nicht erst zu sehen — sie
+sollen nicht Jarvis sein, sondern eine einzige Frage beantworten. Und beide
+dürfen scheitern, ohne dass das Gespräch etwas davon mitbekommt: eine Weiche,
+die nicht antwortet, nimmt die Standardabteilung; ein Gedächtnis, das nicht
+antwortet, merkt sich diesmal eben nichts. Eine Falle steckt darin, die
 sonst ein 400 gibt: Haiku kennt weder `thinking: {type:"adaptive"}` noch
 `output_config.effort`. Beides wird für Haiku weggelassen, `upstreamRequest`
 entscheidet das anhand des Modellnamens.
@@ -348,6 +439,8 @@ Besucher kann sie lesen. Schlüssel stehen in den Umgebungsvariablen.
 | `morgen.beim_start_gruessen` | ob der Morgengruß von selbst kommt |
 | `morgen.lied` | Spotify-Link, der beim Morgengruß aufgeht |
 | `stimme` | Stimmen-ID, Sprachmodell, Stabilität, Tempo |
+| `gedaechtnis.an` | ob Jarvis sich über Gespräche hinweg etwas merkt |
+| `gedaechtnis.automatisch` | ob er nach jeder Antwort selbst nachsieht, was bleibt |
 | `ton` | welche Tonlage voreingestellt ist |
 | `toene` | die Tonlagen selbst: Name, Weckantwort, Anweisung ans Modell |
 | `modelle` | welches Modell fürs Gespräch, welches für den Gruß |

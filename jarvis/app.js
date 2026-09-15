@@ -16,6 +16,7 @@
   var KEY_FREIHAND = 'jarvis.freihand.v1';
   var KEY_KLATSCHEN = 'jarvis.klatschen.v1';
   var KEY_GRUSS = 'jarvis.gruss.v1';
+  var KEY_MERKEN = 'jarvis.merken.v1';
   var MAX_STORED = 200;
   var MAX_CONTEXT = 24;
 
@@ -26,6 +27,7 @@
     ort: null,
     morgen: { beim_start_gruessen: false, lied: '' },
     stimme: { an: true },
+    gedaechtnis: { an: true, automatisch: true },
     ton: 'sachlich',
     toene: { sachlich: { name: 'Sachlich' } }
   };
@@ -53,6 +55,14 @@
   var klatschBox = document.getElementById('klatschBox');
   var grussBtn = document.getElementById('grussBtn');
   var stimmeInfo = document.getElementById('stimmeInfo');
+  var abteilungBtn = document.getElementById('abteilungBtn');
+  var abteilungWahl = document.getElementById('abteilungWahl');
+  var notizenListe = document.getElementById('notizenListe');
+  var gedaechtnisInfo = document.getElementById('gedaechtnisInfo');
+  var notizNeuBtn = document.getElementById('notizNeuBtn');
+  var notizenLeerenBtn = document.getElementById('notizenLeerenBtn');
+  var merkBox = document.getElementById('merkBox');
+  var aufbau = document.getElementById('aufbau');
   var gate = document.getElementById('gate');
   var gateForm = document.getElementById('gateForm');
   var gateInput = document.getElementById('gateInput');
@@ -67,8 +77,13 @@
   var deferredInstall = null;
   var freihand = false;     // hört dauerhaft auf das Weckwort „Jarvis"
   var serverStimme = false; // hat der Server einen ElevenLabs-Schlüssel?
+  var serverLokal = false;  // läuft der Server auf Damasos Gerät (dann gibt es Werkzeuge)?
   var stimmeDefekt = false; // in dieser Sitzung schon einmal fehlgeschlagen
   var klatschHoerer = null;
+  var abteilungJetzt = '';      // welche Abteilung die laufende Frage bearbeitet
+  var abteilungGezeigt = '';    // welche zuletzt im Verlauf angeschrieben wurde
+  var erinnerungenJetzt = [];   // die Notizen, die mit dieser Frage mitgehen
+  var leitet = false;           // die Weiche läuft gerade
 
   /* ---------- kleiner, sicherer Speicher ---------- */
 
@@ -115,8 +130,22 @@
       KONFIG = Object.assign(KONFIG, gelesen);
       KONFIG.morgen = Object.assign({}, KONFIG.morgen, gelesen.morgen);
       KONFIG.stimme = Object.assign({}, KONFIG.stimme, gelesen.stimme);
+      KONFIG.gedaechtnis = Object.assign({}, KONFIG.gedaechtnis, gelesen.gedaechtnis);
     } catch (e) {
       // Ohne Konfiguration läuft Jarvis weiter, nur schlichter.
+    }
+  }
+
+  /* Die Abteilungen stehen in einer eigenen Datei — jede bringt Weckworte,
+     einen Kontext und ihre Werkzeuge mit. Fehlt die Datei, arbeitet Jarvis
+     wie vorher: eine Abteilung, keine Weiche. */
+  async function ladeAbteilungen() {
+    try {
+      var antwort = await fetch('abteilungen.json', { cache: 'no-cache' });
+      if (!antwort.ok) return;
+      window.Abteilungen.laden(await antwort.json());
+    } catch (e) {
+      // Ohne Abteilungen läuft Jarvis weiter, nur ungeteilt.
     }
   }
 
@@ -445,6 +474,112 @@
     }
   }
 
+  /* ---------- Weiche und Gedächtnis ---------- */
+  /* Die beiden Schichten zwischen „Damaso tippt" und „Jarvis antwortet":
+
+       leiten   Welche Abteilung bearbeitet das? Erst die Weckworte (kostet
+                nichts), und nur wenn die nichts Eindeutiges ergeben, ein
+                kurzer Griff zum billigen Modell.
+       merken   Was aus dem Austausch ist in Wochen noch wahr? Läuft danach,
+                im Hintergrund, ebenfalls auf dem billigen Modell.
+
+     Beide dürfen scheitern, ohne dass das Gespräch davon etwas mitbekommt:
+     eine Weiche, die nicht antwortet, nimmt die Standardabteilung, und ein
+     Gedächtnis, das nicht antwortet, merkt sich diesmal eben nichts. */
+
+  /* Eine einzelne kurze Frage ans billige Modell. Sammelt den Text ein und
+     gibt ihn zurück — kein Einfluss auf die Oberfläche, kein Vorlesen. */
+  function kurzfrage(modus, text, frist) {
+    var abbruch = new AbortController();
+    var wecker = setTimeout(function () { abbruch.abort(); }, frist || 6000);
+    var headers = { 'Content-Type': 'application/json' };
+    var code = read(KEY_PASSCODE);
+    if (code) headers['X-Jarvis-Passcode'] = code;
+
+    return fetch(API_URL, {
+      method: 'POST',
+      headers: headers,
+      signal: abbruch.signal,
+      body: JSON.stringify({ messages: [{ role: 'user', content: text }], modus: modus })
+    }).then(function (antwort) {
+      if (!antwort.ok || !antwort.body) throw new Error('Kurzfrage abgelehnt: ' + antwort.status);
+      var gesammelt = '';
+      return readStream(antwort.body, function (ereignis, daten) {
+        if (ereignis === 'content_block_delta' && daten.delta && daten.delta.type === 'text_delta') {
+          gesammelt += daten.delta.text;
+        }
+      }).then(function () { return gesammelt; });
+    }).then(function (ergebnis) {
+      clearTimeout(wecker);
+      return ergebnis;
+    }, function (fehler) {
+      clearTimeout(wecker);
+      throw fehler;
+    });
+  }
+
+  function abteilungAnzeigen() {
+    var fest = window.Abteilungen.fest();
+    abteilungBtn.textContent = window.Abteilungen.name(abteilungJetzt || fest || window.Abteilungen.standard());
+    abteilungBtn.dataset.fest = fest ? '1' : '0';
+    abteilungBtn.title = fest
+      ? 'Abteilung „' + window.Abteilungen.name(fest) + '" ist festgehalten'
+      : 'Abteilung — Jarvis wählt selbst';
+  }
+
+  /* Welche Abteilung bearbeitet diese Frage? */
+  function leiten(text) {
+    var fest = window.Abteilungen.fest();
+    if (fest) return Promise.resolve(fest);
+
+    var geraten = window.Abteilungen.weiche(text);
+    if (geraten.sicher || !window.Abteilungen.mitModell() || !navigator.onLine) {
+      return Promise.resolve(geraten.abteilung);
+    }
+    return kurzfrage('leiten', text, 5000).then(function (antwort) {
+      return antwort ? window.Abteilungen.lesen(antwort) : geraten.abteilung;
+    }, function () {
+      return geraten.abteilung;      // Weiche klemmt: dann eben die Standardabteilung
+    });
+  }
+
+  /* Vor dem Senden: Abteilung bestimmen, passende Notizen heraussuchen. */
+  function vorbereiten(text) {
+    return leiten(text).then(function (abteilung) {
+      abteilungJetzt = abteilung;
+      abteilungAnzeigen();
+      erinnerungenJetzt = gedaechtnisAn() ? window.Gedaechtnis.passende(text, abteilung) : [];
+    });
+  }
+
+  function gedaechtnisAn() {
+    return KONFIG.gedaechtnis.an !== false;
+  }
+
+  function merkenAn() {
+    if (!gedaechtnisAn()) return false;
+    var gespeichert = read(KEY_MERKEN);
+    if (gespeichert === '0') return false;
+    if (gespeichert === '1') return true;
+    return KONFIG.gedaechtnis.automatisch !== false;
+  }
+
+  /* Nach der Antwort: das billige Modell einmal nachsehen lassen, was bleibt.
+     `zeigen` schreibt das Ergebnis in die Blase, zu der es gehört. */
+  function merkenLassen(frage, antwort, abteilung, zeigen) {
+    if (!merkenAn() || !navigator.onLine || !frage || !antwort) return;
+
+    var austausch = ('Damaso: ' + frage + '\n\nJarvis: ' + antwort).slice(0, 6000);
+    kurzfrage('merken', austausch, 20000).then(function (text) {
+      var neu = window.Gedaechtnis.aufnehmen(text, abteilung);
+      if (!neu.length) return;
+      gedaechtnisAnzeigen();
+      if (zeigen) zeigen(neu);
+    }, function () {
+      // Das Gedächtnis darf schweigen. Es ist kein Fehler, den Damaso sehen muss.
+    });
+  }
+
   /* ---------- Anfrage ans Modell ---------- */
 
   function apiMessages() {
@@ -491,6 +626,10 @@
     var payload = apiMessages();
     if (!payload.length) return;
 
+    var frage = payload[payload.length - 1].content;
+    var mitgegeben = erinnerungenJetzt;      // für diese Antwort festgehalten
+    var abteilung = abteilungJetzt || window.Abteilungen.standard();
+
     controller = new AbortController();
     setBusy(true);
     setState('thinking');
@@ -515,6 +654,28 @@
       textTeil.className = 'msg__text';
       bubble.appendChild(werkzeugTeil);
       bubble.appendChild(textTeil);
+
+      // Wechselt die Abteilung, steht das über der Antwort. Bleibt sie
+      // dieselbe, wäre die Zeile bei jeder Antwort nur Lärm.
+      if (abteilung !== abteilungGezeigt) {
+        var zeile = document.createElement('div');
+        zeile.className = 'werkzeug abteilung';
+        zeile.textContent = 'Abteilung ' + window.Abteilungen.name(abteilung);
+        werkzeugTeil.appendChild(zeile);
+        abteilungGezeigt = abteilung;
+      }
+    }
+
+    // Was Jarvis sich aus dieser Antwort gemerkt hat — leise, in derselben
+    // Zeile wie die Werkzeuge.
+    function gemerktZeigen(neu) {
+      if (!bubble || !bubble.isConnected || !werkzeugTeil) return;
+      var stick = isNearBottom();
+      var zeile = document.createElement('div');
+      zeile.className = 'werkzeug fertig';
+      zeile.textContent = neu.length === 1 ? 'gemerkt: ' + neu[0].text : 'gemerkt: ' + neu.length + ' Notizen';
+      werkzeugTeil.appendChild(zeile);
+      scrollToBottom(stick);
     }
 
     function append(text) {
@@ -562,7 +723,13 @@
       var response = await fetch(API_URL, {
         method: 'POST',
         headers: headers,
-        body: JSON.stringify({ messages: payload, ton: tonAktuell() }),
+        body: JSON.stringify({
+          messages: payload,
+          ton: tonAktuell(),
+          abteilung: abteilung,
+          // Nur der Text geht mit; Marken und Zählerstand bleiben hier.
+          erinnerungen: mitgegeben.map(function (n) { return n.text; })
+        }),
         signal: controller.signal
       });
 
@@ -579,8 +746,11 @@
         throw Object.assign(new Error(detail), { status: response.status });
       }
 
-      // Der Server sagt in der Kopfzeile, ob er eine echte Stimme hat.
+      // Der Server sagt in der Kopfzeile, ob er eine echte Stimme hat — und ob
+      // er auf Damasos eigenem Gerät läuft. Nur dort gibt es Werkzeuge.
       serverStimme = response.headers.get('x-jarvis-stimme') === '1';
+      serverLokal = response.headers.get('x-jarvis-lokal') === '1';
+      aufbauAnzeigen();
 
       if (response.headers.get('x-jarvis-unprotected') === '1') {
         showWarning(response.headers.get('x-jarvis-lokal') === '1'
@@ -611,6 +781,10 @@
         messages.push({ role: 'assistant', content: answer });
         saveMessages();
         feedSpeech('', true);
+        // Welche Notizen dabei waren, zählt für später: was oft hilft, bleibt
+        // im Gedächtnis stehen, wenn es einmal eng wird.
+        window.Gedaechtnis.benutzt(mitgegeben);
+        merkenLassen(frage, answer, abteilung, gemerktZeigen);
         if (!finished) {
           // Ohne message_stop ist die Verbindung unterwegs abgerissen. Das Stück
           // bleibt stehen, aber es muss dranstehen — sonst liest sich eine halbe
@@ -697,6 +871,7 @@
       stopSpeech();
       return;
     }
+    if (leitet) return;          // die Weiche läuft schon, zweimal senden hilft nicht
     var text = inputEl.value.trim();
     if (!text) return;
 
@@ -708,7 +883,19 @@
     renderMessage('user', text);
     saveMessages();
     scrollToBottom(true);
-    ask();
+
+    /* Zwischen Absenden und Frage liegt die Weiche. Meistens dauert das gar
+       nichts (Weckworte); muss das billige Modell ran, sind es ein paar
+       Zehntelsekunden — deshalb steht das Gesicht schon auf „denkt". */
+    leitet = true;
+    setState('thinking');
+    vorbereiten(text).then(function () {
+      leitet = false;
+      ask();
+    }, function () {
+      leitet = false;
+      ask();
+    });
   }
 
   sendBtn.addEventListener('click', send);
@@ -745,6 +932,7 @@
       // iOS gibt die Stimmen erst nach einer Nutzeraktion frei.
       try { window.speechSynthesis.getVoices(); } catch (e) { /* egal */ }
     }
+    aufbauAnzeigen();
   });
 
   /* ---------- Verlauf löschen ---------- */
@@ -1206,6 +1394,13 @@
   function sheetOeffnen(auf) {
     sheet.hidden = !auf;
     menuBtn.setAttribute('aria-expanded', String(!!auf));
+    // Beim Öffnen frisch nachsehen — im Gedächtnis kann seit dem letzten Mal
+    // einiges dazugekommen sein.
+    if (auf) {
+      abteilungenAnbieten();
+      gedaechtnisAnzeigen();
+      aufbauAnzeigen();
+    }
   }
 
   menuBtn.addEventListener('click', function () { sheetOeffnen(sheet.hidden); });
@@ -1235,6 +1430,146 @@
     renderError('Ton umgestellt auf „' + (tonWahl.options[tonWahl.selectedIndex] || {}).text + '". Gilt ab der nächsten Antwort.', false, 'note');
   });
 
+  /* ---------- Abteilungen in den Einstellungen ---------- */
+
+  function abteilungenAnbieten() {
+    var fest = window.Abteilungen.fest();
+    abteilungWahl.innerHTML = '';
+
+    var auto = document.createElement('option');
+    auto.value = '';
+    auto.textContent = 'Automatisch';
+    abteilungWahl.appendChild(auto);
+
+    window.Abteilungen.liste().forEach(function (a) {
+      var option = document.createElement('option');
+      option.value = a.id;
+      option.textContent = a.kurz ? a.name + ' — ' + a.kurz : a.name;
+      abteilungWahl.appendChild(option);
+    });
+    abteilungWahl.value = fest || '';
+  }
+
+  abteilungWahl.addEventListener('change', function () {
+    var gewaehlt = abteilungWahl.value;
+    window.Abteilungen.fest(gewaehlt || null);
+    if (gewaehlt) abteilungJetzt = gewaehlt;
+    abteilungAnzeigen();
+    aufbauAnzeigen();
+  });
+
+  abteilungBtn.addEventListener('click', function () {
+    sheetOeffnen(true);
+    abteilungWahl.focus();
+  });
+
+  /* ---------- Gedächtnis in den Einstellungen ---------- */
+  /* Damaso muss hineinsehen und einzelne Sätze wegwerfen können. Ein
+     Gedächtnis, das man weder liest noch korrigiert, wird irgendwann zur
+     Quelle von Antworten, die niemand erklären kann. */
+
+  function gedaechtnisAnzeigen() {
+    notizenListe.innerHTML = '';
+
+    if (!gedaechtnisAn()) {
+      gedaechtnisInfo.textContent = 'In jarvis/konfiguration.json abgeschaltet. Jarvis fängt bei jeder Frage von vorn an.';
+      notizNeuBtn.disabled = true;
+      notizenLeerenBtn.disabled = true;
+      return;
+    }
+    notizNeuBtn.disabled = false;
+    notizenLeerenBtn.disabled = false;
+
+    var notizen = window.Gedaechtnis.alle().sort(function (a, b) { return (b.zeit || 0) - (a.zeit || 0); });
+    gedaechtnisInfo.textContent = notizen.length
+      ? notizen.length + (notizen.length === 1 ? ' Notiz' : ' Notizen') + ' — auf diesem Gerät, nicht auf einem Server. '
+        + 'Zu jeder Frage gehen höchstens ' + window.Gedaechtnis.MITGEBEN + ' davon mit, die passenden.'
+      : 'Noch nichts gemerkt. Jarvis schreibt sich auf, was in Wochen noch stimmt — oder sag ihm einfach „merk dir …“.';
+
+    notizen.slice(0, 60).forEach(function (notiz) {
+      var zeile = document.createElement('li');
+
+      var text = document.createElement('span');
+      text.className = 'notiz__text';
+      text.textContent = notiz.text;
+      if (notiz.marken && notiz.marken.length) {
+        var marken = document.createElement('span');
+        marken.className = 'notiz__marken';
+        marken.textContent = notiz.marken.map(function (m) { return '#' + m; }).join(' ');
+        text.appendChild(marken);
+      }
+
+      var weg = document.createElement('button');
+      weg.type = 'button';
+      weg.className = 'notiz__weg';
+      weg.setAttribute('aria-label', 'Diese Notiz vergessen');
+      weg.textContent = '\u00d7';
+      weg.addEventListener('click', function () {
+        window.Gedaechtnis.loeschen(notiz.id);
+        gedaechtnisAnzeigen();
+      });
+
+      zeile.appendChild(text);
+      zeile.appendChild(weg);
+      notizenListe.appendChild(zeile);
+    });
+  }
+
+  notizNeuBtn.addEventListener('click', function () {
+    var text = window.prompt('Was soll Jarvis sich merken? Ein Satz.');
+    if (!text) return;
+    window.Gedaechtnis.merken(text, { abteilung: window.Abteilungen.fest() || '' });
+    gedaechtnisAnzeigen();
+  });
+
+  notizenLeerenBtn.addEventListener('click', function () {
+    var anzahl = window.Gedaechtnis.alle().length;
+    if (!anzahl) return;
+    if (!window.confirm(anzahl + ' Notizen löschen? Das lässt sich nicht rückgängig machen.')) return;
+    window.Gedaechtnis.leeren();
+    gedaechtnisAnzeigen();
+  });
+
+  merkBox.addEventListener('change', function () {
+    store(KEY_MERKEN, merkBox.checked ? '1' : '0');
+    aufbauAnzeigen();
+  });
+
+  /* ---------- Aufbau ---------- */
+  /* Die vier Schichten mit dem, was gerade wirklich an ist. Kein Schaubild,
+     das etwas verspricht, was nicht läuft. */
+
+  function schicht(id, an, text) {
+    var wert = document.getElementById(id);
+    if (!wert) return;
+    wert.textContent = text;
+    if (wert.parentNode) wert.parentNode.setAttribute('data-an', an ? '1' : '0');
+  }
+
+  function aufbauAnzeigen() {
+    if (!aufbau) return;
+
+    var hoert = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+    schicht('aufbauSprechen', hoert || voiceOutput,
+      (hoert ? 'Mikrofon, Weckwort, Klatschen' : 'kein Mikrofon in diesem Browser')
+      + (voiceOutput ? ' · liest vor' : ' · liest nicht vor'));
+
+    var fest = window.Abteilungen.fest();
+    var anzahl = window.Abteilungen.liste().length;
+    schicht('aufbauLeiten', true, fest
+      ? 'festgehalten auf ' + window.Abteilungen.name(fest)
+      : anzahl + ' Abteilungen, Jarvis wählt selbst');
+
+    var notizen = gedaechtnisAn() ? window.Gedaechtnis.alle().length : 0;
+    schicht('aufbauMerken', gedaechtnisAn(), gedaechtnisAn()
+      ? notizen + (notizen === 1 ? ' Notiz' : ' Notizen') + (merkenAn() ? ', merkt von selbst' : ', nur auf Ansage')
+      : 'abgeschaltet');
+
+    schicht('aufbauArbeiten', serverLokal, serverLokal
+      ? 'auf deinem Gerät — Jarvis darf den Speicher ansehen und aufräumen'
+      : 'im Netz — Antworten ja, Zugriff auf deine Dateien nein');
+  }
+
   klatschBox.addEventListener('change', function () {
     klatschenSetzen(klatschBox.checked);
   });
@@ -1248,7 +1583,15 @@
 
   (async function start() {
     await ladeKonfig();
+    await ladeAbteilungen();
     toeneAnbieten();
+    abteilungenAnbieten();
+    merkBox.checked = merkenAn();
+    merkBox.disabled = !gedaechtnisAn();
+    abteilungJetzt = window.Abteilungen.fest() || window.Abteilungen.standard();
+    abteilungAnzeigen();
+    gedaechtnisAnzeigen();
+    aufbauAnzeigen();
 
     if (KONFIG.stimme.an === false) {
       stimmeInfo.textContent = 'Die Stimme ist in der Konfiguration abgeschaltet — Jarvis liest mit der Stimme des Browsers vor.';

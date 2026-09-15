@@ -135,6 +135,34 @@ body{
 [data-state="listening"] .brand__state{color:var(--text-leise);}
 [data-state="offline"] .brand__state::before{background:var(--text-still);box-shadow:none;}
 
+.brand__zeile{display:flex;align-items:center;gap:8px;min-width:0;}
+.brand__abteilung{
+  flex-shrink:1;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  border:1px solid var(--linie);
+  border-radius:999px;
+  padding:1px 8px 2px;
+  background:transparent;
+  font:inherit;
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--text-still);
+  cursor:pointer;
+}
+.brand__abteilung:hover{color:var(--text-leise);border-color:var(--linie);}
+.brand__abteilung:focus-visible{outline:none;box-shadow:0 0 0 2px var(--akzent-schimmer);}
+/* Festgehalten: Damaso hat die Abteilung von Hand gewählt, die Weiche ruht. */
+.brand__abteilung[data-fest="1"]{
+  color:var(--akzent);
+  border-color:var(--akzent-tief);
+  background:var(--akzent-schimmer);
+}
+
 .header__actions{display:flex;align-items:center;gap:4px;flex-shrink:0;}
 
 .icon-btn{
@@ -392,6 +420,19 @@ body{
   transform:translateY(-2px);
   background:var(--text-still);
 }
+/* Keine Tätigkeit, sondern eine Weichenstellung — deshalb ein Pfeil statt
+   eines Punkts und kein Farbton, der nach „fertig" aussieht. */
+.werkzeug.abteilung{color:var(--text-still);}
+.werkzeug.abteilung::before{
+  content:"\2192";
+  width:auto;height:auto;
+  border-radius:0;
+  background:none;
+  transform:none;
+  color:var(--akzent-tief);
+  font-size:12px;
+  line-height:1;
+}
 .werkzeug.laeuft{color:var(--text-leise);}
 .werkzeug.laeuft::before{background:var(--akzent);box-shadow:0 0 8px var(--akzent);animation:pochen 1.1s ease-in-out infinite;}
 .werkzeug.fertig::before{background:var(--gut);box-shadow:0 0 6px rgba(91,214,164,.5);}
@@ -644,6 +685,13 @@ body{
   cursor:pointer;
   margin-bottom:8px;
 }
+.sheet__aktion--klein{
+  width:auto;
+  flex:1;
+  padding:8px 12px;
+  font-size:12.5px;
+  letter-spacing:.02em;
+}
 .sheet__aktion:hover{background:rgba(255,122,47,.24);}
 .sheet__aktion:focus-visible{outline:none;box-shadow:0 0 0 3px var(--akzent-schimmer);}
 
@@ -718,3 +766,100 @@ body{
   white-space:nowrap;
   border:0;
 }
+
+
+/* ---------- Gedächtnis ---------- */
+/* Die Notizen, die Jarvis über Gespräche hinweg behält. Sie müssen lesbar und
+   einzeln wegwerfbar sein — ein Gedächtnis, in das man nicht hineinsieht und
+   aus dem man nichts herausnehmen kann, ist keins. */
+
+.notizen{
+  list-style:none;
+  margin:10px 0 0;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  max-height:220px;
+  overflow-y:auto;
+}
+.notizen:empty{display:none;}
+.notizen li{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  padding:8px 10px;
+  border:1px solid var(--linie-fein);
+  border-radius:10px;
+  background:var(--flaeche);
+  font-size:12.5px;
+  line-height:1.45;
+  color:var(--text-leise);
+}
+.notiz__text{flex:1;min-width:0;}
+.notiz__marken{
+  display:block;
+  margin-top:3px;
+  font-family:var(--mono);
+  font-size:10.5px;
+  letter-spacing:.02em;
+  color:var(--text-still);
+}
+.notiz__weg{
+  flex-shrink:0;
+  border:none;
+  background:none;
+  padding:0 2px;
+  font:inherit;
+  font-size:16px;
+  line-height:1;
+  color:var(--text-still);
+  cursor:pointer;
+}
+.notiz__weg:hover{color:var(--warn);}
+.notiz__weg:focus-visible{outline:none;color:var(--warn);box-shadow:0 0 0 2px var(--akzent-schimmer);border-radius:4px;}
+.notizen__knoepfe{display:flex;gap:8px;margin-top:10px;}
+
+/* ---------- Aufbau ---------- */
+/* Die vier Schichten, aus denen Jarvis besteht — mit dem, was gerade wirklich
+   an ist. Ein Schaubild, das lügt, wäre schlimmer als keins. */
+
+.aufbau{
+  list-style:none;
+  margin:10px 0 10px;
+  padding:0;
+  border:1px solid var(--linie-fein);
+  border-radius:12px;
+  overflow:hidden;
+}
+.aufbau li{
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+  padding:9px 12px;
+  background:var(--flaeche);
+  border-bottom:1px solid var(--linie-fein);
+}
+.aufbau li:last-child{border-bottom:none;}
+.aufbau__nr{
+  font-family:var(--mono);
+  font-size:10.5px;
+  color:var(--akzent-tief);
+  flex-shrink:0;
+}
+.aufbau__was{
+  font-size:12.5px;
+  font-weight:600;
+  color:var(--text);
+  width:74px;
+  flex-shrink:0;
+}
+.aufbau__wie{
+  flex:1;
+  min-width:0;
+  font-size:12px;
+  color:var(--text-leise);
+  line-height:1.4;
+}
+.aufbau li[data-an="0"] .aufbau__was{color:var(--text-still);font-weight:500;}
+.aufbau li[data-an="0"] .aufbau__nr{color:var(--text-still);}
