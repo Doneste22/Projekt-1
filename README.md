@@ -42,6 +42,7 @@ assets/js/partnerlinks.js     Alle Partnerlink-Ziele an einer Stelle
 scripts/fonts-holen.sh        Frischt die Schriften auf und schreibt fonts.css neu
 scripts/aufraeumen.mjs        Findet doppelte Dateien und Müll im Handyspeicher
 scripts/termux-einrichten.sh  Richtet Jarvis auf dem Handy ein (ein Befehl)
+scripts/mark-einrichten.py    Holt Mark LIV, den fremden Jarvis aus dem Video, auf den PC
 scripts/pruefe-aufbau.mjs     Prüft Weiche und Gedächtnis — ohne Browser, ohne Kosten
 MONETARISIERUNG.md            Wie aus der Seite Einnahmen werden — Wege, Zahlen, Reihenfolge
 ```
@@ -773,6 +774,47 @@ Nachbauten steht im Protokoll, welches Modell, welche Parameter und welcher
 Text tatsächlich gesendet wurden. Für die Fehlerwege: `MOCK_STATUS=429` beim
 Stimmen-Nachbau spielt „Kontingent leer" nach, `MOCK_STATUS=401` einen falschen
 Schlüssel.
+
+## Mark LIV — der fremde Jarvis aus dem Video
+
+Nicht zu verwechseln mit dem Jarvis oben: **Mark LIV** ist fremde Software von
+FatihMakes ([github.com/FatihMakes/Mark-LIV](https://github.com/FatihMakes/Mark-LIV)),
+ein Sprachassistent zum Selberinstallieren auf dem PC. Er gehört nicht zu diesem
+Projekt und wird auch nicht mitgeliefert — hier liegt nur das Skript, das ihn
+holt und einrichtet:
+
+```bash
+python scripts/mark-einrichten.py
+```
+
+Das Skript prüft die Python-Version, lädt den Code, entpackt ihn, lässt dessen
+`setup.py` laufen und legt eine Startdatei an. Danach genügt ein Doppelklick.
+Es braucht nur Python selbst, läuft auf Windows, macOS und Linux und
+überschreibt keinen vorhandenen Ordner ungefragt.
+
+**Was du selbst noch brauchst:**
+
+| | |
+| --- | --- |
+| Python | 3.11, 3.12 oder 3.13. Beim Installieren unter Windows den Haken bei **„Add python.exe to PATH"** setzen — ohne ihn findet Windows Python später nicht. |
+| Gemini-Schlüssel | Kostenlos auf [aistudio.google.com](https://aistudio.google.com/app/apikey). Wird beim ersten Start abgefragt. |
+| Mikrofon, Lautsprecher | Ohne die beiden ist es nur ein Chatfenster. |
+
+**Drei Dinge, die vorher klar sein sollten:**
+
+- **Die Lizenz erlaubt nur den privaten Gebrauch** (CC BY-NC 4.0,
+  „NonCommercial"). Offerten schreiben, Kundenmails, Baustellenkram — das ist
+  gewerblich und von dieser Lizenz nicht gedeckt. Fürs Geschäftliche bleibt
+  Jarvis oben zuständig.
+- **Der Schlüssel liegt danach im Klartext** in `config/api_keys.json`. Wer an
+  den Rechner kommt, liest ihn und fragt auf deine Rechnung.
+- **Was du sagst, geht an Google.** Der Assistent streamt das Mikrofon an die
+  Gemini-Live-Schnittstelle, solange eine Sitzung offen ist.
+
+Mark LIV kann eines, was Jarvis hier nicht kann: den PC wirklich bedienen —
+Programme starten, Lautstärke und Helligkeit stellen, Dateien verschieben.
+Alles Übrige aus der Werbeliste — Weckwort, Gedächtnis, Sprache — hat Jarvis
+längst, und zwar auch auf dem Handy.
 
 ## Prompt-Werkstatt
 
