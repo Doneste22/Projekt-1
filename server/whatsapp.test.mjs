@@ -1,5 +1,6 @@
 /**
- * Prüfung für Jarvis über WhatsApp.
+ * Prüfung für Jarvis über WhatsApp — und für das Twilio-Handwerk in
+ * twilio.mjs, das inzwischen auch Anfragen und Anrufe benutzen.
  *
  *   node --test server/whatsapp.test.mjs
  *
@@ -15,19 +16,15 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import { createHmac } from "node:crypto";
 
+import { nummer, sendeNachricht, signaturStimmt, teile, MAX_ZEICHEN } from "./twilio.mjs";
 import {
   antwortHolen,
   darfFragen,
   ladeVerlauf,
-  nummer,
-  sendeNachricht,
   sichereVerlauf,
-  signaturStimmt,
-  teile,
   verlaufSchluessel,
   KANAL_ZUSATZ,
-  MAX_VERLAUF,
-  MAX_ZEICHEN
+  MAX_VERLAUF
 } from "./whatsapp.mjs";
 
 /* -------------------------------------------------------------- Werkzeug */

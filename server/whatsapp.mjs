@@ -8,28 +8,20 @@
  * Twilio selbst kommt: eine Antwort darf nicht im Webhook stehen, weil Twilio
  * dort nur wenige Sekunden wartet (höchstens 15). Stattdessen bestätigt der
  * Server die Zustellung sofort mit einem leeren `204` und schickt die fertige
- * Antwort danach über die REST-API hinterher. Twilio nennt das ausdrücklich
- * als den richtigen Weg für alles, was länger dauert als ein Wimpernschlag.
+ * Antwort danach über die REST-API hinterher.
  *
- * Systemprompt und Modellaufruf kommen aus `core.mjs` — ein Prompt an zwei
- * Stellen driftet garantiert auseinander.
- *
- * Hier steht nur Logik ohne Netlify und ohne Twilio-Bibliothek, damit sich
- * alles mit `node --test server/whatsapp.test.mjs` prüfen lässt.
+ * Systemprompt und Modellaufruf kommen aus `core.mjs`, das Twilio-Handwerk aus
+ * `twilio.mjs`. Hier steht nur, was diesen Kanal ausmacht.
  */
 
 import { API_VERSION, DEFAULT_MODEL, SYSTEM_PROMPT, messagesUrl, isOauthToken, sanitize } from "./core.mjs";
+import { nummer, nummernListe } from "./twilio.mjs";
 
-/** Twilios Grenze für eine Nachricht. Mehr nimmt die API nicht an. */
-export const MAX_ZEICHEN = 1600;
-/** Mehr als drei Nachrichten am Stück ist Spam an sich selbst. */
-export const MAX_TEILE = 3;
 /** So viele Nachrichten Gedächtnis. Jede kostet bei jeder Frage wieder. */
 export const MAX_VERLAUF = 12;
 /** Kurzer Kanal, kurze Antworten — und ein Deckel gegen Ausreißer. */
 export const MAX_TOKENS = 1000;
 
-const TWILIO_API = "https://api.twilio.com";
 const FALLBACK_BETA = "server-side-fallback-2026-07-01";
 
 /**
@@ -44,13 +36,6 @@ export const KANAL_ZUSATZ = [
   "Braucht eine Frage wirklich viel Text, sag das in einem Satz und nenn das Wichtigste zuerst."
 ].join("\n");
 
-/* ------------------------------------------------------------- Absender */
-
-/** Twilio hängt `whatsapp:` vor die Nummer. Zum Vergleichen wollen wir die nackte. */
-export function nummer(adresse) {
-  return String(adresse || "").trim().replace(/^whatsapp:/i, "").replace(/[\s()\/-]/g, "");
-}
-
 /**
  * Wer fragen darf. **Eine leere Liste heißt: niemand.**
  *
@@ -61,52 +46,9 @@ export function nummer(adresse) {
  * dass hier überhaupt etwas läuft.
  */
 export function darfFragen(absender, freigabe) {
-  const liste = String(freigabe || "")
-    .split(",")
-    .map((n) => nummer(n))
-    .filter(Boolean);
+  const liste = nummernListe(freigabe);
   if (!liste.length) return false;
   return liste.includes(nummer(absender));
-}
-
-/* ----------------------------------------------------------- Unterschrift */
-
-/**
- * Twilio unterschreibt jede Anfrage: HMAC-SHA1 über die aufgerufene Adresse
- * plus alle Formularfelder, alphabetisch sortiert und aneinandergehängt,
- * mit dem Auth-Token als Schlüssel; das Ergebnis steht in `X-Twilio-Signature`.
- *
- * Ohne diese Prüfung könnte jeder, der die Adresse kennt, so tun, als wäre er
- * Twilio — und Damasos Nummer als Absender behaupten. Die Freigabeliste allein
- * reicht also nicht.
- *
- * Die Adresse muss **exakt** die sein, die Twilio aufgerufen hat. Steht ein
- * Proxy davor, der Schema oder Host umschreibt, stimmt die Unterschrift nicht
- * mehr — dafür gibt es die Umgebungsvariable JARVIS_WHATSAPP_URL.
- */
-export async function signaturStimmt({ authToken, url, felder, signatur }) {
-  if (!authToken || !signatur) return false;
-  let daten = String(url);
-  for (const name of Object.keys(felder).sort()) daten += name + felder[name];
-
-  const schluessel = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(authToken),
-    { name: "HMAC", hash: "SHA-1" },
-    false,
-    ["sign"]
-  );
-  const roh = await crypto.subtle.sign("HMAC", schluessel, new TextEncoder().encode(daten));
-  const eigen = btoa(String.fromCharCode(...new Uint8Array(roh)));
-  return gleichOhneVerrat(eigen, String(signatur));
-}
-
-/** Vergleich ohne frühen Abbruch — sonst verrät die Laufzeit die Unterschrift. */
-function gleichOhneVerrat(a, b) {
-  if (a.length !== b.length) return false;
-  let unterschied = 0;
-  for (let i = 0; i < a.length; i++) unterschied |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return unterschied === 0;
 }
 
 /* --------------------------------------------------------------- Verlauf */
@@ -225,71 +167,4 @@ export async function antwortHolen({ apiKey, baseUrl, model, verlauf, signal }) 
   }
 
   return { text, abgeschnitten: daten?.stop_reason === "max_tokens" };
-}
-
-/* ---------------------------------------------------------------- Senden */
-
-/**
- * Zerlegt eine Antwort in versandfertige Stücke. Getrennt wird an Absätzen,
- * sonst an Satzenden, sonst an Leerzeichen — mitten im Wort zu schneiden liest
- * sich wie ein Fehler. Was nach `MAX_TEILE` noch übrig ist, fällt weg; dafür
- * steht am Ende ein Hinweis statt einer stillen Lücke.
- */
-export function teile(text, max = MAX_ZEICHEN, hoechstens = MAX_TEILE) {
-  const ganz = String(text || "").trim();
-  if (!ganz) return [];
-  if (ganz.length <= max) return [ganz];
-
-  const stuecke = [];
-  let rest = ganz;
-  while (rest.length > max && stuecke.length < hoechstens) {
-    const fenster = rest.slice(0, max);
-    let schnitt = fenster.lastIndexOf("\n\n");
-    if (schnitt < max * 0.5) schnitt = Math.max(fenster.lastIndexOf(". "), fenster.lastIndexOf("! "), fenster.lastIndexOf("? "));
-    if (schnitt > 0 && ".!?".includes(fenster[schnitt])) schnitt += 1;   // hinter dem Punkt trennen
-    if (schnitt < max * 0.5) schnitt = fenster.lastIndexOf(" ");
-    if (schnitt <= 0) schnitt = max;
-    stuecke.push(rest.slice(0, schnitt).trim());
-    rest = rest.slice(schnitt).trim();
-  }
-  if (rest) {
-    stuecke.push(
-      stuecke.length >= hoechstens
-        ? "… der Rest ist zu lang für eine Nachricht. Frag gezielt nach."
-        : rest
-    );
-  }
-  return stuecke.slice(0, hoechstens + 1);
-}
-
-/**
- * Schickt eine Nachricht über Twilio. `von` ist die Nummer, bei der die Frage
- * ankam — damit läuft dasselbe Stück Code für WhatsApp und für SMS, ohne dass
- * irgendwo eine zweite Nummer gepflegt werden muss.
- */
-export async function sendeNachricht({ accountSid, authToken, von, an, text, basis = TWILIO_API }) {
-  const formular = new URLSearchParams({ From: von, To: an, Body: text });
-  const antwort = await fetch(`${basis}/2010-04-01/Accounts/${accountSid}/Messages.json`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-      authorization: "Basic " + btoa(`${accountSid}:${authToken}`)
-    },
-    body: formular.toString()
-  });
-  if (!antwort.ok) {
-    const meldung = await antwort.text().catch(() => "");
-    console.error("jarvis-whatsapp: Twilio nimmt die Nachricht nicht —", antwort.status, meldung.slice(0, 300));
-    return false;
-  }
-  return true;
-}
-
-/** Alle Stücke nacheinander, in der richtigen Reihenfolge. */
-export async function sendeAntwort(einstellungen, text) {
-  for (const stueck of teile(text)) {
-    const ok = await sendeNachricht({ ...einstellungen, text: stueck });
-    if (!ok) return false;
-  }
-  return true;
 }

@@ -619,3 +619,13 @@ form.signup button:hover{background:var(--ziegel-dunkel);border-color:var(--zieg
 .aufbau-interaktiv > *,
 .hero .wrap > *,
 #experte .wrap > *{min-width:0;}
+
+/* Honigtopf im Anfrageformular: für Menschen weg, für Skripte da.
+   Nicht display:none — manche Skripte überspringen, was so versteckt ist. */
+.falle{
+  position:absolute;
+  left:-9999px;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+}

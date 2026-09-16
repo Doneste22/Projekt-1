@@ -258,8 +258,9 @@
   <div class="wrap wrap--schmal">
     <div class="section-head">
       <h2>Anfrage stellen</h2>
-      <p>Das Formular öffnet Ihr E-Mail-Programm mit einer fertig ausgefüllten Nachricht —
-         es werden keine Daten an diese Website übermittelt und nichts gespeichert.</p>
+      <p>Die Anfrage geht direkt an mich aufs Handy, damit ich mich schnell melden kann.
+         Gespeichert wird sie hier nicht; wenn gerade nichts durchgeht, öffnet sich
+         stattdessen Ihr E-Mail-Programm mit einer fertig ausgefüllten Nachricht.</p>
     </div>
 
     <form class="anfrage-form" id="anfrage-form" novalidate>
@@ -281,12 +282,25 @@
         <label for="af-ort">Ort und Kanton</label>
         <input id="af-ort" name="ort" type="text" autocomplete="address-level2" placeholder="z. B. Winterthur ZH">
       </div>
+      <div class="feld">
+        <label for="af-kontakt">Telefon oder E-Mail</label>
+        <input id="af-kontakt" name="kontakt" type="text" autocomplete="tel" placeholder="damit ich zurückkommen kann" required>
+      </div>
+      <!-- Für Menschen unsichtbar. Skripte füllen alles aus, was sie finden —
+           steht hier etwas drin, wird die Anfrage stillschweigend verworfen.
+           Bewusst „Betreff" und nicht „Firma": ein Feld, das nach Firma oder
+           Adresse klingt, füllt der Browser womöglich selbst aus, und dann
+           verschwände die Anfrage eines echten Kunden. -->
+      <div class="falle" aria-hidden="true">
+        <label for="af-betreff">Betreff</label>
+        <input id="af-betreff" name="betreff" type="text" tabindex="-1" autocomplete="off">
+      </div>
       <div class="feld feld--breit">
         <label for="af-vorhaben">Das Vorhaben</label>
         <textarea id="af-vorhaben" name="vorhaben" rows="6" placeholder="Was soll gebaut werden, wie hoch ist der Raum, wie wird er genutzt, wann soll es losgehen?"></textarea>
       </div>
       <div class="feld feld--breit">
-        <button class="btn primary" type="submit">E-Mail vorbereiten</button>
+        <button class="btn primary" type="submit">Anfrage senden</button>
         <p class="form-hinweis" id="anfrage-adresse">
           Ohne E-Mail-Programm: Schreiben Sie direkt an
           <a href="mailto:kontakt@wandfuerwand.ch"><span class="platzhalter">kontakt@wandfuerwand.ch</span></a>.

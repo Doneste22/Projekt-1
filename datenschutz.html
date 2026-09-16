@@ -147,13 +147,38 @@
       <section id="kontakt">
         <h2>Kontaktaufnahme und Anfrageformular</h2>
 
-        <p>Das Formular auf der Seite <a href="angebot.html">Beratung</a> sendet nichts an diese Website.
-        Es setzt aus Ihren Eingaben eine E-Mail zusammen und öffnet damit Ihr eigenes E-Mail-Programm —
-        abgeschickt wird sie erst, wenn Sie das tun. Bis dahin bleiben die Eingaben in Ihrem Browser; auf dem
-        Server dieser Website kommen sie nie an.</p>
-        <p>Schreiben Sie eine E-Mail, werden Ihre Angaben zur Bearbeitung der Anfrage verwendet und im
-        Postfach aufbewahrt, solange dies für die Korrespondenz nötig ist. Eine Weitergabe an Dritte findet
-        nicht statt.</p>
+        <p>Wenn Sie das Formular auf der Seite <a href="angebot.html">Beratung</a> abschicken, werden Ihre
+        Angaben — Leistung, Name, Ort, Telefon oder E-Mail und die Beschreibung des Vorhabens — an den
+        Server dieser Website übermittelt und von dort unmittelbar als SMS an den Betreiber weitergeleitet.
+        Zweck ist einzig, Ihre Anfrage zu beantworten; Grundlage ist Ihr Ersuchen um Kontaktaufnahme.
+        Auf dem Server der Website werden die Angaben nicht gespeichert.</p>
+        <p>Für den Versand der SMS wird <strong>Twilio</strong> eingesetzt (Twilio Inc., USA, bzw. Twilio
+        Ireland Limited). Twilio verarbeitet dabei die übermittelten Angaben als Auftragsbearbeiter; dabei
+        kann eine Bekanntgabe ins Ausland, namentlich in die USA, erfolgen. Twilio bewahrt den Inhalt
+        versandter Nachrichten gemäss seinen eigenen Fristen auf.</p>
+        <p>Zum Schutz vor missbräuchlichem Massenversand wird beim Absenden festgehalten, von welcher
+        IP-Adresse wie viele Anfragen in der letzten Stunde kamen. Gespeichert wird dafür nur ein Zähler
+        mit Zeitstempeln, keine Inhalte; er verfällt nach 24 Stunden.</p>
+        <p>Geht die Übermittlung nicht durch, öffnet das Formular ersatzweise Ihr eigenes E-Mail-Programm
+        mit einer fertigen Nachricht. Abgeschickt wird sie erst, wenn Sie das tun.</p>
+        <p>Ihre Angaben werden anschliessend zur Bearbeitung der Anfrage verwendet und im Postfach
+        beziehungsweise auf dem Mobiltelefon aufbewahrt, solange dies für die Korrespondenz nötig ist.
+        Eine weitergehende Weitergabe an Dritte findet nicht statt.</p>
+      </section>
+
+      <section id="anrufe">
+        <h2>Anrufe und Anrufbeantworter</h2>
+
+        <p>Rufen Sie die angegebene Nummer an, wird der Anruf zunächst auf das Mobiltelefon des Betreibers
+        weitergeleitet. Wird nicht abgenommen, hören Sie eine Ansage und können eine Nachricht hinterlassen.
+        Diese Aufnahme wird über <strong>Twilio</strong> (siehe oben) entgegengenommen und dort gespeichert.
+        Übermittelt werden dabei auch Ihre Rufnummer, Zeitpunkt und Dauer.</p>
+        <p>Damit der Betreiber die Nachricht lesen statt abhören kann, wird die Aufnahme zur Verschriftlichung
+        an <strong>ElevenLabs</strong> (ElevenLabs Inc., USA) übermittelt und dort verarbeitet. Auch hier kann
+        eine Bekanntgabe ins Ausland erfolgen. Der entstandene Text wird per SMS an den Betreiber geschickt.</p>
+        <p>Das laufende Gespräch selbst wird nicht aufgezeichnet — aufgenommen wird nur, was Sie nach der
+        Ansage bewusst auf den Anrufbeantworter sprechen. Möchten Sie das nicht, legen Sie bitte auf und
+        schreiben Sie stattdessen eine E-Mail.</p>
       </section>
 
       <section id="beratung">

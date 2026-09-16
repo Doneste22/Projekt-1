@@ -23,7 +23,10 @@ robots.txt, sitemap.xml       Für Suchmaschinen — Domain ist noch Platzhalter
 jarvis/                       Jarvis: eigenständige Assistenz-App (installierbar)
 server/core.mjs               Kern von Jarvis: Systemprompt, Prüfung, Modellaufruf
 server/abteilungen.mjs        Kontext und Werkzeuge je Abteilung — serverseitig, nicht zu fälschen
-server/whatsapp.mjs           Jarvis über WhatsApp und SMS (Twilio)
+server/twilio.mjs             Twilio-Handwerk: Unterschrift prüfen, Nachricht senden
+server/whatsapp.mjs           Jarvis über WhatsApp und SMS
+server/anfrage.mjs            Anfragen vom Angebotsformular als SMS
+server/anruf.mjs              Anrufbeantworter mit Mitschrift
 server/gespraech.mjs          Werkzeug-Schleife — nur lokal
 server/werkzeuge.mjs          Was Jarvis am Gerät darf: ansehen, suchen, aufräumen
 server/dateien.mjs            Dateilogik: doppelt, Müll, Papierkorb
@@ -614,6 +617,77 @@ Fährt die ganze Kette gegen einen Nachbau der Messages-API und von Twilios
 Messages-Schnittstelle: was gesendet wird, wer durchgelassen wird, ob eine
 gefälschte Unterschrift abprallt, wie lange Antworten geteilt werden. Ohne
 Netz, ohne Konto, ohne Kosten.
+
+### Anfragen vom Formular als SMS
+
+Das Angebotsformular auf `angebot.html` bereitete früher nur eine E-Mail vor.
+Wer danach nicht auf „Senden" drückte — und das sind viele —, war weg, ohne
+dass es jemand mitbekam. Jetzt geht die Anfrage an `/api/anfrage` und landet
+als SMS auf dem Handy, während der Mensch noch auf der Seite steht.
+
+Der mailto-Weg bleibt als Netz darunter: geht die Anfrage nicht durch, öffnet
+sich wie früher das Mailprogramm. Neu ist ein Pflichtfeld **Telefon oder
+E-Mail** — ohne Rückweg nützt die schnellste Meldung nichts.
+
+**Das Formular steht offen im Netz, und jede SMS kostet.** Deshalb drei
+Sperren, alle in `server/anfrage.mjs`:
+
+- Ein unsichtbares Feld („Honigtopf"). Menschen füllen es nie aus, Skripte
+  füllen alles aus. Steht etwas drin, wird still verworfen — und der Seite
+  Erfolg gemeldet, damit das Skript nicht merkt, dass es aufgeflogen ist.
+- Wer das Formular in unter zwei Sekunden ausfüllt, ist keiner.
+- Höchstens drei Anfragen pro Absender und Stunde, höchstens dreißig von allen
+  zusammen pro Tag.
+
+### Anrufbeantworter, der mitschreibt
+
+Ruft jemand die Twilio-Nummer an, klingelt zuerst das Handy. Nimmt niemand ab,
+kommt eine Ansage, der Anrufer spricht — und kurz darauf steht der **Text** auf
+dem Handy. Nichts zum Abhören, etwas zum Lesen.
+
+```
+netlify/edge-functions/anruf.ts             Was beim Anruf passiert (TwiML)
+netlify/edge-functions/anruf-mitschrift.ts  Aufnahme fertig → Text → SMS
+server/anruf.mjs                            Beides inhaltlich, ohne Netlify
+```
+
+**Twilios eingebaute Mitschrift wird bewusst nicht benutzt.** Sie kann laut
+Twilios eigener Dokumentation nur amerikanisches Englisch — für Anrufer aus der
+Schweiz wertlos, und bezahlt würde sie trotzdem. Stattdessen geht die Aufnahme
+an ElevenLabs (Scribe v2), dessen Schlüssel für Jarvis' Stimme ohnehin schon im
+Projekt liegt.
+
+Klappt die Mitschrift nicht, kommt trotzdem eine SMS — mit dem Link zum
+Anhören. Ein verpasster Anruf, von dem man nichts erfährt, ist das eigentliche
+Problem; die Mitschrift ist die Bequemlichkeit obendrauf.
+
+### Twilio einrichten — alles auf einmal
+
+```
+node scripts/twilio-einrichten.mjs
+```
+
+Fragt die vier Angaben aus der Twilio-Console ab, trägt die Netlify-Variablen
+ein, prüft nach, ob sie wirklich angekommen sind, veröffentlicht neu und
+schreibt zum Schluss auf, welche Adressen bei Twilio einzutragen sind.
+
+Die Variablen, die dabei gesetzt werden:
+
+| Variable | Was hinein gehört |
+| --- | --- |
+| `TWILIO_ACCOUNT_SID` | Account SID, beginnt mit `AC…` |
+| `TWILIO_AUTH_TOKEN` | Auth Token. Geheim. |
+| `JARVIS_SMS_ABSENDER` | Die Twilio-Nummer, von der SMS ausgehen |
+| `JARVIS_MEINE_NUMMERN` | Wo Meldungen landen, mit Komma getrennt |
+| `JARVIS_ANRUF_WEITER` | Wohin ein Anruf zuerst durchgestellt wird |
+
+Optional: `JARVIS_ANRUF_ANSAGE` (eigener Ansagetext), `JARVIS_ANRUF_STIMME`
+(Standard `Polly.Vicki-Neural`), `JARVIS_MITSCHRIFT_MODELL`, und die
+`*_URL`-Variablen, falls die Unterschriftsprüfung an einem Proxy scheitert.
+
+`JARVIS_MEINE_NUMMERN` gilt für alle drei Sachen: wer mit Jarvis schreiben
+darf, wohin Anfragen gehen, wohin Mitschriften gehen. Die ältere
+`JARVIS_WHATSAPP_NUMMERN` funktioniert weiter.
 
 ### Ohne Netz-Server: Termux auf dem Handy
 

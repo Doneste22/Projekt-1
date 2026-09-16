@@ -18,14 +18,12 @@
 
 import type { Config, Context } from "@netlify/edge-functions";
 import { getStore } from "@netlify/blobs";
+import { nummer, sendeAntwort, signaturStimmt } from "../../server/twilio.mjs";
 import {
   antwortHolen,
   darfFragen,
   ladeVerlauf,
-  nummer,
-  sendeAntwort,
   sichereVerlauf,
-  signaturStimmt,
   verlaufSchluessel,
   MAX_VERLAUF
 } from "../../server/whatsapp.mjs";

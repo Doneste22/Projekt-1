@@ -97,14 +97,19 @@
     });
   }
 
-  /* ---------- Anfrageformular: baut eine fertige E-Mail ----------
-     Kein Backend, kein Formulardienst: der Browser öffnet das Mailprogramm
-     des Besuchers. Damit verlässt kein Datensatz die Seite und die
-     Datenschutzerklärung bleibt kurz. Die Zieladresse steht genau einmal
-     im HTML — im Ausweichlink unter dem Knopf. */
+  /* ---------- Anfrageformular ----------
+     Die Anfrage geht an /api/anfrage und landet als SMS auf Damasos Handy —
+     während der Mensch noch auf der Seite steht. Vorher öffnete sich nur das
+     Mailprogramm; wer dort nicht auf „Senden" drückte, war weg, ohne dass es
+     jemand mitbekam.
+
+     Der mailto-Weg bleibt als Netz darunter: geht die Anfrage nicht durch
+     (kein Netz, Endpunkt aus), öffnet sich wie früher das Mailprogramm. Die
+     Zieladresse steht weiterhin genau einmal im HTML, im Ausweichlink. */
   var anfrage = document.getElementById('anfrage-form');
   if (anfrage) {
     var leistungsfeld = document.getElementById('af-leistung');
+    var geladen = Date.now();
 
     /* Die Knöpfe auf den Leistungskarten wählen die passende Zeile vor. */
     document.querySelectorAll('[data-leistung]').forEach(function (knopf) {
@@ -116,41 +121,90 @@
       });
     });
 
-    /* Die Zieladresse einmal beim Laden merken. Sie steht im Ausweichlink und
-       muss dort unangetastet bleiben — Meldungen bekommen eine eigene Zeile. */
     var ausweich = document.querySelector('#anfrage-adresse a[href^="mailto:"]');
     var adresse = ausweich ? ausweich.getAttribute('href').replace('mailto:', '') : '';
 
-    anfrage.addEventListener('submit', function (e) {
-      e.preventDefault();
+    function wert(id) {
+      var feld = document.getElementById(id);
+      return feld ? feld.value.trim() : '';
+    }
+
+    function melde(text, farbe) {
       var hinweis = document.getElementById('anfrage-status');
-      var name = document.getElementById('af-name');
+      hinweis.textContent = text;
+      hinweis.style.color = farbe;
+    }
 
-      if (!name.value.trim()) {
-        name.focus();
-        hinweis.textContent = 'Bitte tragen Sie noch einen Namen ein.';
-        hinweis.style.color = '#A6472A';
-        return;
-      }
-
-      var leistung = leistungsfeld.value;
+    function perMail(daten) {
       var text = [
-        'Leistung: ' + leistung,
-        'Name: ' + name.value.trim(),
-        'Ort: ' + document.getElementById('af-ort').value.trim(),
+        'Leistung: ' + daten.leistung,
+        'Name: ' + daten.name,
+        'Ort: ' + daten.ort,
+        'Kontakt: ' + daten.kontakt,
         '',
         'Vorhaben:',
-        document.getElementById('af-vorhaben').value.trim(),
+        daten.vorhaben,
         ''
       ].join('\n');
-
       window.location.href = 'mailto:' + adresse +
-        '?subject=' + encodeURIComponent('Anfrage: ' + leistung) +
+        '?subject=' + encodeURIComponent('Anfrage: ' + daten.leistung) +
         '&body=' + encodeURIComponent(text);
+      melde('Ihr E-Mail-Programm sollte sich jetzt öffnen. Passiert nichts, ' +
+        'schreiben Sie bitte direkt an ' + adresse + '.', '#C89B6A');
+    }
 
-      hinweis.textContent = 'Ihr E-Mail-Programm sollte sich jetzt öffnen. Passiert nichts, ' +
-        'schreiben Sie bitte direkt an ' + adresse + '.';
-      hinweis.style.color = '#C89B6A';
+    anfrage.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      var pflicht = [['af-name', 'einen Namen'], ['af-kontakt', 'Telefon oder E-Mail']];
+      for (var i = 0; i < pflicht.length; i++) {
+        if (!wert(pflicht[i][0])) {
+          document.getElementById(pflicht[i][0]).focus();
+          melde('Bitte tragen Sie noch ' + pflicht[i][1] + ' ein.', '#A6472A');
+          return;
+        }
+      }
+
+      var daten = {
+        leistung: leistungsfeld.value,
+        name: wert('af-name'),
+        ort: wert('af-ort'),
+        kontakt: wert('af-kontakt'),
+        vorhaben: wert('af-vorhaben'),
+        betreff: wert('af-betreff'),
+        dauer: Date.now() - geladen
+      };
+
+      var knopf = anfrage.querySelector('button[type="submit"]');
+      knopf.disabled = true;
+      melde('Wird abgeschickt …', '#C89B6A');
+
+      fetch('/api/anfrage', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(daten)
+      }).then(function (antwort) {
+        return antwort.json().catch(function () { return {}; }).then(function (koerper) {
+          return { ok: antwort.ok, koerper: koerper };
+        });
+      }).then(function (ergebnis) {
+        knopf.disabled = false;
+        if (ergebnis.ok && ergebnis.koerper.ok) {
+          anfrage.reset();
+          melde('Angekommen. Ich melde mich bei Ihnen.', '#4F7A4A');
+          return;
+        }
+        /* Eine klare Absage der Seite zeigen wir an; alles andere geht
+           den alten Weg über das Mailprogramm. */
+        if (ergebnis.koerper.error && String(ergebnis.koerper.error).length < 200) {
+          melde(ergebnis.koerper.error, '#A6472A');
+          return;
+        }
+        perMail(daten);
+      }).catch(function () {
+        knopf.disabled = false;
+        perMail(daten);
+      });
     });
   }
 })();
