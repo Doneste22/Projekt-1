@@ -47,6 +47,7 @@ hier ohne Netz und ohne Geld geht: unten unter *Prüfen*.
 index.html, ratgeber/, impressum.html …   Ratgeber-Auftritt „Wand für Wand"
 assets/css/site.css                       Tokens und Komponenten der Seite
 jarvis/                                   Jarvis: installierbare Assistenz-App
+prompts/                                  Prompt-Werkstatt: KI-Aufträge zum Kopieren
 server/core.mjs                           Kern von Jarvis (Prompt, Modellaufruf)
 server/jarvis.mjs                         Jarvis lokal starten (PC, Termux)
 netlify/edge-functions/                   dasselbe im Netz

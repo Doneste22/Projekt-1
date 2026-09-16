@@ -1,0 +1,363 @@
+/* Prompt-Werkstatt — eigenständige Seite.
+ *
+ * Eigenes CSS, bewusst nichts geteilt mit dem Ratgeber: eine Änderung dort
+ * soll diese Seite nicht zerlegen.
+ *
+ * Bild dahinter: Werkstattpapier, Bleistift, die orange Blase der
+ * Wasserwaage als einziger Akzent. Keine externen Schriften — die Seite muss
+ * offline und ohne Mitleser laufen. Alles Sichtbare ist auf Deutsch.
+ */
+
+:root{
+  color-scheme: light;
+
+  --papier:#F3EEE1;        /* Grundfläche — Papier, nicht Weiß */
+  --karte:#FFFDF8;
+  --tinte:#16283D;
+  --tinte-leise:#4A5C70;
+  --tinte-still:#78899B;
+  --linie:#DCD4BE;
+  --linie-fein:#E8E1CF;
+  --akzent:#D9631F;        /* die Libellenblase. Sparsam. */
+  --akzent-weich:#F3DAC4;
+  --gut:#2F6B4F;
+
+  --sans:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;
+  --mono:ui-monospace,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace;
+
+  --rand:14px;
+  --bahn:780px;
+}
+
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0;
+  background:var(--papier);
+  color:var(--tinte);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.6;
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* Feines Raster wie Millimeterpapier, nach unten auslaufend. */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(22,40,61,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(22,40,61,.05) 1px, transparent 1px);
+  background-size:26px 26px;
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.25) 50%,transparent 85%);
+          mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.25) 50%,transparent 85%);
+}
+
+.bahn{max-width:var(--bahn);margin:0 auto;padding:0 20px;}
+
+h1,h2{line-height:1.25;letter-spacing:-.01em;margin:0;}
+
+/* ---------- Kopf ---------- */
+
+.kopf{
+  padding:calc(34px + env(safe-area-inset-top)) 0 30px;
+  border-bottom:1px solid var(--linie);
+  background:linear-gradient(180deg, rgba(217,99,31,.07), transparent 70%);
+}
+.kopf__ueber{
+  margin:0 0 8px;
+  font-size:11.5px;
+  font-weight:600;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--akzent);
+}
+.kopf h1{font-size:clamp(1.8rem,6vw,2.5rem);}
+.kopf__lead{
+  margin:14px 0 0;
+  max-width:52ch;
+  color:var(--tinte-leise);
+  font-size:15.5px;
+}
+
+main{padding:28px 20px 10px;}
+
+/* ---------- Angaben ---------- */
+
+.angaben{
+  background:var(--karte);
+  border:1px solid var(--linie);
+  border-radius:var(--rand);
+  padding:20px;
+  margin-bottom:30px;
+}
+.angaben h2{font-size:1.15rem;}
+.hinweis{
+  margin:8px 0 18px;
+  font-size:13.5px;
+  color:var(--tinte-leise);
+  max-width:56ch;
+}
+
+.felder{display:grid;gap:14px;grid-template-columns:1fr;}
+@media (min-width:620px){
+  .felder{grid-template-columns:1fr 1fr;}
+  .feld--breit{grid-column:1 / -1;}
+}
+.felder label{display:flex;flex-direction:column;gap:6px;}
+.felder span{
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--tinte-leise);
+}
+/* Nie unter 16 px: iOS zoomt sonst beim Antippen in die Seite hinein. */
+.felder input{
+  font:inherit;
+  font-size:16px;
+  color:var(--tinte);
+  background:var(--papier);
+  border:1px solid var(--linie);
+  border-radius:9px;
+  padding:11px 12px;
+  width:100%;
+  transition:border-color .15s, box-shadow .15s;
+}
+.felder input::placeholder{color:var(--tinte-still);}
+.felder input:focus{
+  outline:none;
+  border-color:var(--akzent);
+  box-shadow:0 0 0 3px rgba(217,99,31,.18);
+}
+
+.angaben__fuss{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:18px;
+}
+.fortschritt{font-size:13px;color:var(--tinte-leise);}
+
+/* ---------- Karten ---------- */
+
+.karte{
+  background:var(--karte);
+  border:1px solid var(--linie);
+  border-radius:var(--rand);
+  padding:20px;
+  margin-bottom:22px;
+}
+.karte--regeln{border-left:4px solid var(--akzent);}
+.karte[data-erledigt="ja"]{background:#FBF8EF;border-color:var(--linie-fein);}
+.karte[data-erledigt="ja"] .karte__nr{background:var(--gut);}
+
+.karte__kopf{display:flex;gap:14px;align-items:flex-start;margin-bottom:16px;}
+.karte__nr{
+  flex:0 0 auto;
+  width:30px;height:30px;
+  display:grid;place-items:center;
+  border-radius:50%;
+  background:var(--tinte);
+  color:var(--karte);
+  font-size:14px;
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+  transition:background .2s;
+}
+.karte__kopf h2{font-size:1.2rem;}
+.karte__zweck{
+  margin:6px 0 0;
+  font-size:14px;
+  color:var(--tinte-leise);
+  max-width:54ch;
+}
+
+/* Der Auftragstext. Umbruch bleibt erhalten, lange Zeilen brechen trotzdem. */
+.auftrag{
+  margin:0;
+  padding:16px;
+  background:var(--papier);
+  border:1px solid var(--linie-fein);
+  border-radius:10px;
+  font-family:var(--mono);
+  font-size:13.5px;
+  line-height:1.62;
+  white-space:pre-wrap;
+  overflow-wrap:break-word;
+}
+@media (min-width:620px){.auftrag{font-size:14px;}}
+
+/* Lange Aufträge werden gekürzt, sonst ist die Seite auf dem Handy acht
+   Bildschirme lang. Bewusst kein eigenes Scrollfeld im Text: darin bleibt der
+   Daumen beim Wischen hängen. Das Kürzen setzt erst das Skript; ohne Skript
+   steht jeder Auftrag vollständig da. */
+.karte[data-gekuerzt="ja"] .auftrag{
+  max-height:17em;
+  overflow:hidden;
+  -webkit-mask-image:linear-gradient(180deg,#000 72%,transparent 100%);
+          mask-image:linear-gradient(180deg,#000 72%,transparent 100%);
+}
+.mehr{
+  font:inherit;
+  font-size:13.5px;
+  font-weight:600;
+  color:var(--akzent);
+  background:none;
+  border:none;
+  padding:8px 0 0;
+  cursor:pointer;
+  text-decoration:underline;
+  text-underline-offset:3px;
+}
+.mehr:focus-visible{outline:3px solid rgba(217,99,31,.5);outline-offset:2px;border-radius:4px;}
+
+/* Eingesetzte Angaben sichtbar machen — man soll sehen, was von einem selbst
+   kommt und was noch offen ist. */
+.ph{
+  background:var(--akzent-weich);
+  border-radius:4px;
+  padding:0 3px;
+  box-decoration-break:clone;
+  -webkit-box-decoration-break:clone;
+}
+.ph[data-gefuellt="ja"]{
+  background:transparent;
+  color:var(--akzent);
+  font-weight:600;
+  padding:0;
+}
+
+.karte__fuss{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+
+.knopf{
+  font:inherit;
+  font-size:14.5px;
+  font-weight:600;
+  color:var(--karte);
+  background:var(--tinte);
+  border:1px solid var(--tinte);
+  border-radius:9px;
+  padding:9px 18px;
+  cursor:pointer;
+  transition:background .15s, color .15s, border-color .15s;
+}
+.knopf:hover{background:var(--akzent);border-color:var(--akzent);color:var(--karte);}
+.knopf:focus-visible{outline:3px solid rgba(217,99,31,.5);outline-offset:2px;}
+.knopf[data-zustand="fertig"]{
+  background:var(--gut);
+  border-color:var(--gut);
+  color:var(--karte);
+}
+.knopf[data-zustand="fehler"]{
+  background:var(--karte);
+  border-color:var(--akzent);
+  color:var(--akzent);
+}
+.knopf--leer{
+  background:transparent;
+  color:var(--tinte-leise);
+  border-color:var(--linie);
+  font-weight:500;
+}
+.knopf--leer:hover{background:var(--tinte);border-color:var(--tinte);color:var(--karte);}
+
+.erledigt{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  font-size:14px;
+  color:var(--tinte-leise);
+  cursor:pointer;
+  user-select:none;
+}
+.erledigt input{
+  width:18px;height:18px;
+  accent-color:var(--gut);
+  cursor:pointer;
+}
+
+.warum{
+  margin:14px 0 0;
+  padding-top:13px;
+  border-top:1px dashed var(--linie);
+  font-size:13.5px;
+  color:var(--tinte-leise);
+}
+.warum strong{color:var(--tinte);}
+
+.karte--alles{border-style:dashed;}
+
+/* ---------- Fußnote und Fuß ---------- */
+
+.fussnote{
+  margin:34px 0 10px;
+  padding:20px;
+  border:1px solid var(--linie);
+  border-radius:var(--rand);
+  background:rgba(255,253,248,.55);
+}
+.fussnote h2{font-size:1rem;}
+.fussnote p{margin:10px 0 0;font-size:13.5px;color:var(--tinte-leise);max-width:60ch;}
+.mono{font-family:var(--mono);font-size:.94em;}
+
+.fuss{
+  margin-top:34px;
+  padding:20px 0 calc(24px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--linie);
+  font-size:12.5px;
+  color:var(--tinte-still);
+}
+.fuss p{margin:0;}
+
+/* ---------- Meldung ---------- */
+
+.meldung{
+  position:fixed;
+  left:50%;
+  bottom:calc(20px + env(safe-area-inset-bottom));
+  transform:translate(-50%, 16px);
+  background:var(--tinte);
+  color:var(--karte);
+  font-size:14px;
+  padding:10px 18px;
+  border-radius:999px;
+  box-shadow:0 10px 30px -12px rgba(22,40,61,.6);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .2s, transform .2s;
+  z-index:10;
+  max-width:calc(100vw - 40px);
+  text-align:center;
+}
+.meldung[data-sichtbar="ja"]{opacity:1;transform:translate(-50%,0);}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition:none !important;animation:none !important;}
+}
+
+/* Auf Papier: Knöpfe und Raster weg, Aufträge vollständig. */
+@media print{
+  body::before,.knopf,.erledigt,.meldung,.fuss,.angaben__fuss,.mehr{display:none;}
+  body{background:#fff;font-size:11pt;}
+  .karte,.angaben,.fussnote{break-inside:avoid;border-color:#bbb;}
+  /* Auf Papier wird nichts gekürzt — sonst fehlt der halbe Auftrag im Ausdruck. */
+  .auftrag,.karte[data-gekuerzt="ja"] .auftrag{
+    max-height:none;
+    overflow:visible;
+    background:#fff;
+    -webkit-mask-image:none;
+            mask-image:none;
+  }
+}

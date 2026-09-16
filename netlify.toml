@@ -13,6 +13,13 @@
     X-Robots-Tag = "noindex, nofollow"
     Referrer-Policy = "no-referrer"
 
+# Die Prompt-Werkstatt ist ein Werkzeug für Damaso, keine Seite für Besucher.
+[[headers]]
+  for = "/prompts/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Referrer-Policy = "no-referrer"
+
 [[headers]]
   for = "/jarvis/sw.js"
   [headers.values]

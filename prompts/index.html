@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Prompt-Werkstatt — YouTube-Kanal</title>
+<meta name="description" content="Sieben Aufträge an eine KI, mit denen ein YouTube-Kanal von null bis zur Monetarisierung geplant wird.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#F3EEE1">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2316283D'/%3E%3Crect x='5' y='12' width='22' height='8' rx='4' fill='none' stroke='%23F3EEE1' stroke-width='1.6'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%23D9631F'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="kopf">
+  <div class="bahn">
+    <p class="kopf__ueber">Werkzeugkasten</p>
+    <h1>Prompt-Werkstatt</h1>
+    <p class="kopf__lead">
+      Sieben Aufträge an eine KI, in der Reihenfolge, in der man sie braucht:
+      vom leeren Kanal bis zu den ersten Einnahmen. Angaben oben einmal
+      ausfüllen, dann steht jeder Auftrag fertig zum Kopieren da.
+    </p>
+  </div>
+</header>
+
+<main class="bahn">
+
+  <!-- ---------- Angaben ---------- -->
+  <section class="angaben" aria-labelledby="angaben-titel">
+    <h2 id="angaben-titel">Deine Angaben</h2>
+    <p class="hinweis">
+      Was du hier einträgst, wird unten in jeden Auftrag eingesetzt. Es bleibt
+      auf diesem Gerät — nichts wird verschickt, nichts gespeichert außer im
+      Browser.
+    </p>
+
+    <div class="felder">
+      <label>
+        <span>Thema des Kanals</span>
+        <input type="text" id="f-nische" data-ph="nische" placeholder="z. B. Werkzeugtests für Handwerker" autocomplete="off">
+      </label>
+      <label>
+        <span>Zielgruppe</span>
+        <input type="text" id="f-zielgruppe" data-ph="zielgruppe" placeholder="z. B. Lehrlinge im ersten Jahr" autocomplete="off">
+      </label>
+      <label>
+        <span>Zeit pro Woche</span>
+        <input type="text" id="f-zeit" data-ph="zeit" placeholder="z. B. 6 Stunden, meist am Samstag" autocomplete="off">
+      </label>
+      <label>
+        <span>Ausrüstung</span>
+        <input type="text" id="f-ausruestung" data-ph="ausruestung" placeholder="z. B. Handy, Ansteckmikrofon, Laptop" autocomplete="off">
+      </label>
+      <label class="feld--breit">
+        <span>Ziel in zwölf Monaten</span>
+        <input type="text" id="f-ziel" data-ph="ziel" placeholder="z. B. 500 Franken im Monat nebenher" autocomplete="off">
+      </label>
+    </div>
+
+    <div class="angaben__fuss">
+      <button type="button" class="knopf knopf--leer" id="leeren">Angaben löschen</button>
+      <span class="fortschritt" id="fortschritt" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <!-- ---------- Grundregeln ---------- -->
+  <section class="karte karte--regeln" aria-labelledby="k0-titel">
+    <div class="karte__kopf">
+      <span class="karte__nr" aria-hidden="true">0</span>
+      <div>
+        <h2 id="k0-titel">Die Grundregeln</h2>
+        <p class="karte__zweck">Stell das vor jeden der sieben Aufträge. Es ist der Unterschied zwischen einer Antwort, die gut klingt, und einer, die stimmt.</p>
+      </div>
+    </div>
+
+<pre class="auftrag" id="p0">Arbeite nach diesen Regeln:
+
+1. Fehlen dir Angaben, die das Ergebnis deutlich verändern, stelle mir
+   höchstens fünf kurze Fragen und warte auf meine Antwort, bevor du lieferst.
+2. Erfinde keine Zahlen. Wo du schätzt, schreibe dazu, worauf die Schätzung
+   beruht und wie sicher sie ist.
+3. Regeln von Plattformen ändern sich. Markiere jede Aussage, die veralten
+   kann, mit "Stand prüfen".
+4. Antworte auf Deutsch, in kurzen Sätzen, ohne Werbesprache.
+5. Nenne am Ende die drei nächsten Schritte für diese Woche — konkret, mit
+   Zeitaufwand in Stunden.</pre>
+
+    <div class="karte__fuss">
+      <button type="button" class="knopf" data-kopieren="p0">Kopieren</button>
+    </div>
+  </section>
+
+  <!-- ---------- 1 ---------- -->
+  <section class="karte" aria-labelledby="k1-titel">
+    <div class="karte__kopf">
+      <span class="karte__nr" aria-hidden="true">1</span>
+      <div>
+        <h2 id="k1-titel">Der ganze Kanal auf einen Plan</h2>
+        <p class="karte__zweck">Einmal am Anfang. Danach weißt du, was du zwölf Wochen lang tust.</p>
+      </div>
+    </div>
+
+<pre class="auftrag" id="p1">Du bist Stratege für YouTube-Kanäle und berätst zur Monetarisierung.
+Baue mir einen vollständigen Fahrplan von null bis zu den Bedingungen für
+die Monetarisierung.
+
+Ausgangslage:
+- Thema: <span class="ph" data-ph="nische">[Thema des Kanals]</span>
+- Zielgruppe: <span class="ph" data-ph="zielgruppe">[Zielgruppe]</span>
+- Zeit pro Woche: <span class="ph" data-ph="zeit">[Zeit pro Woche]</span>
+- Ausrüstung: <span class="ph" data-ph="ausruestung">[Ausrüstung]</span>
+- Ziel in zwölf Monaten: <span class="ph" data-ph="ziel">[Ziel in zwölf Monaten]</span>
+
+Liefere in dieser Reihenfolge:
+1. Die Positionierung in einem Satz: für wen, was, und warum ausgerechnet
+   dieser Kanal.
+2. Drei bis vier Inhaltssäulen, jede mit ihrem Zweck: Reichweite, Vertrauen
+   oder Umsatz.
+3. Veröffentlichungsplan für zwölf Wochen: Anzahl, Format, Länge, Wochentag.
+4. Welche Videoformate zu meiner Zeit und meiner Ausrüstung passen — und
+   welche ich mir sparen soll.
+5. Wachstumssystem: woher die ersten 100, die ersten 1 000 und die ersten
+   10 000 Aufrufe kommen sollen.
+6. Rahmen für die Zuschauerbindung: wie die ersten 30 Sekunden aufgebaut sind.
+7. Monetarisierungsplan: welche Einnahmequelle ab welcher Kanalgröße dazukommt.
+8. Wochenablauf: was ich an welchem Tag tue, in Stunden.
+
+Format: Tabellen, wo es Tabellen sind. Keine Einleitung, keine Zusammenfassung
+vorweg. Nenne zum Schluss die drei Annahmen, bei denen du am unsichersten bist.</pre>
+
+    <div class="karte__fuss">
+      <button type="button" class="knopf" data-kopieren="p1">Kopieren</button>
+      <label class="erledigt"><input type="checkbox" data-erledigt="1"> erledigt</label>
+    </div>
+    <p class="warum"><strong>Warum so:</strong> Der Plan nennt die Ausrüstung und die Zeit, die du wirklich hast. Sonst bekommst du einen Plan für jemanden mit Studio und freiem Mittwoch.</p>
+  </section>
+
+  <!-- ---------- 2 ---------- -->
+  <section class="karte" aria-labelledby="k2-titel">
+    <div class="karte__kopf">
+      <span class="karte__nr" aria-hidden="true">2</span>
+      <div>
+        <h2 id="k2-titel">Die Nische wählen</h2>
+        <p class="karte__zweck">Bevor du filmst. Die falsche Nische merkst du sonst erst nach dreißig Videos.</p>
+      </div>
+    </div>
+
+<pre class="auftrag" id="p2">Du bist Marktforscher und Kanalstratege.
+Hilf mir, die tragfähigste Nische zu finden und mich darin zu positionieren.
+
+Ausgangslage:
+- Womit ich mich auskenne: <span class="ph" data-ph="nische">[Thema des Kanals]</span>
+- An wen ich denke: <span class="ph" data-ph="zielgruppe">[Zielgruppe]</span>
+- Zeit pro Woche: <span class="ph" data-ph="zeit">[Zeit pro Woche]</span>
+- Ziel in zwölf Monaten: <span class="ph" data-ph="ziel">[Ziel in zwölf Monaten]</span>
+
+Schlage fünf Nischen vor, die zu meiner Erfahrung passen, und prüfe jede nach:
+- Nachfrage: wonach wird gesucht, wie regelmäßig
+- Wettbewerb: wer ist da, wie gut, wie lange schon
+- Haltbarkeit: bleiben die Videos ein Jahr später noch gültig
+- Geld: was bleibt pro 1 000 Aufrufen, und welche Wege gibt es außer Werbung
+- mein Vorsprung: was kann ich, was die anderen nicht können
+
+Bewerte in einer Tabelle von 1 bis 5 je Kriterium, empfiehl eine Nische und
+begründe, warum die anderen vier ausscheiden.
+
+Dann für die empfohlene Nische:
+1. Kanalidentität in einem Satz
+2. Profil des Zuschauers: Alter, Anlass, Problem, was er vorher vergeblich
+   versucht hat
+3. Inhaltskategorien
+4. 100 Videoideen, sortiert nach Wachstumschance, jede mit einem Titelvorschlag
+
+Format: erst die Tabelle, dann die Empfehlung, dann die Ideen als nummerierte
+Liste.</pre>
+
+    <div class="karte__fuss">
+      <button type="button" class="knopf" data-kopieren="p2">Kopieren</button>
+      <label class="erledigt"><input type="checkbox" data-erledigt="2"> erledigt</label>
+    </div>
+    <p class="warum"><strong>Warum so:</strong> Fünf Vorschläge gegeneinander antreten zu lassen, zwingt zu einer Begründung. Nach einem einzelnen Vorschlag klingt jede Nische gut.</p>
+  </section>
+
+  <!-- ---------- 3 ---------- -->
+  <section class="karte" aria-labelledby="k3-titel">
+    <div class="karte__kopf">
+      <span class="karte__nr" aria-hidden="true">3</span>
+      <div>
+        <h2 id="k3-titel">Titel, Haken, Miniaturbild, Skript</h2>
+        <p class="karte__zweck">Vor jedem Videoblock. Das ist der Auftrag, den du am häufigsten brauchst.</p>
+      </div>
+    </div>
+
+<pre class="auftrag" id="p3">Du bist Content-Stratege und Produzent von Videos, die weit laufen.
+Baue mir ein System für Videos mit hoher Klickrate und starker Bindung.
+
+Thema: <span class="ph" data-ph="nische">[Thema des Kanals]</span>
+Zielgruppe: <span class="ph" data-ph="zielgruppe">[Zielgruppe]</span>
+
+Liefere zehn Videoideen, jede mit:
+1. Titel in drei Varianten: Nutzen, Neugier, Widerspruch
+2. Miniaturbild: Bildaufbau in einem Satz, höchstens drei Wörter Text,
+   welcher Farbkontrast trägt
+3. Haken für die ersten fünf Sekunden, wörtlich zum Vorlesen
+4. Aufbau der ersten 30 Sekunden: Versprechen, Beleg, Ausblick
+5. Gliederung des Hauptteils mit Zeitmarken
+6. zwei Bindungstechniken und an welcher Stelle sie sitzen
+7. eine Handlungsaufforderung, die nicht bettelt
+8. einen Satz dazu, warum jemand klickt — und einen, warum er bleibt
+
+Schreibe danach das vollständige Skript zu der Idee mit der größten Chance:
+gesprochene Sprache, kurze Sätze, keine Füllwörter, Regieanweisungen in
+eckigen Klammern.</pre>
+
+    <div class="karte__fuss">
+      <button type="button" class="knopf" data-kopieren="p3">Kopieren</button>
+      <label class="erledigt"><input type="checkbox" data-erledigt="3"> erledigt</label>
+    </div>
+    <p class="warum"><strong>Warum so:</strong> Titel und Miniaturbild entscheiden, ob geklickt wird; die ersten 30 Sekunden, ob jemand bleibt. Deshalb stehen sie im Auftrag vor dem Skript, nicht danach.</p>
+  </section>
+
+  <!-- ---------- 4 ---------- -->
+  <section class="karte" aria-labelledby="k4-titel">
+    <div class="karte__kopf">
+      <span class="karte__nr" aria-hidden="true">4</span>
+      <div>
+        <h2 id="k4-titel">Wachstum und Algorithmus verstehen</h2>
+        <p class="karte__zweck">Wenn die ersten fünf Videos draußen sind und du wissen willst, woran es liegt.</p>
+      </div>
+    </div>
+
+<pre class="auftrag" id="p4">Du bist Fachmann für das Empfehlungssystem von YouTube.
+Erkläre mir, woran mein Kanal wächst, und mach daraus eine Strategie.
+
+Teil 1 — Erklärung. Je höchstens fünf Sätze, mit einem Richtwert, an dem ich
+mich messen kann: Impressionen, Klickrate, Wiedergabezeit, Zuschauerbindung,
+wiederkehrende Zuschauer, vorgeschlagene Videos, Suchverkehr, Startseite.
+Schreibe bei jedem Richtwert dazu: Stand prüfen.
+
+Teil 2 — Strategie für <span class="ph" data-ph="nische">[Thema des Kanals]</span>:
+1. Welche Veröffentlichungsfrequenz ich mit <span class="ph" data-ph="zeit">[Zeit pro Woche]</span> ein Jahr lang
+   durchhalte — nicht die, die im ersten Monat beeindruckt.
+2. Was ich teste, in welcher Reihenfolge, und wie lange ein Test laufen muss,
+   bevor die Zahlen etwas bedeuten.
+3. Die drei häufigsten Gründe, warum ein Video nicht läuft — und woran ich im
+   Nachhinein erkenne, welcher es war.
+4. Wie aus Zuschauern Abonnenten werden.
+5. Was ich bewusst NICHT tue, obwohl es überall empfohlen wird.</pre>
+
+    <div class="karte__fuss">
+      <button type="button" class="knopf" data-kopieren="p4">Kopieren</button>
+      <label class="erledigt"><input type="checkbox" data-erledigt="4"> erledigt</label>
+    </div>
+    <p class="warum"><strong>Warum so:</strong> Nach dem „Stand prüfen" siehst du, welche Zahlen die KI aus dem Gedächtnis hat. Die können ein Jahr alt sein.</p>
+  </section>
+
+  <!-- ---------- 5 ---------- -->
+  <section class="karte" aria-labelledby="k5-titel">
+    <div class="karte__kopf">
+      <span class="karte__nr" aria-hidden="true">5</span>
+      <div>
+        <h2 id="k5-titel">Schneller produzieren</h2>
+        <p class="karte__zweck">Sobald du merkst, dass ein Video den ganzen Samstag frisst.</p>
+      </div>
+    </div>
+
+<pre class="auftrag" id="p5">Du bist Produktionsleiter.
+Entwirf einen Arbeitsablauf, mit dem ich in <span class="ph" data-ph="zeit">[Zeit pro Woche]</span> gleichbleibend
+gute Videos schaffe.
+
+Ausrüstung: <span class="ph" data-ph="ausruestung">[Ausrüstung]</span>
+Thema: <span class="ph" data-ph="nische">[Thema des Kanals]</span>
+
+Liefere:
+1. Den Ablauf in Schritten — Themenfindung, Recherche, Skript, Sprechen,
+   Aufnahme, Schnitt, Miniaturbild, Veröffentlichen, Auswertung — jeder mit
+   einem Zeitbudget in Minuten.
+2. Was sich stapeln lässt (mehrere Videos in einem Durchgang) und was nicht.
+3. Vorlagen zum Übernehmen: Skriptgerüst, Schnittliste, Beschreibungstext,
+   Prüfliste vor dem Hochladen.
+4. Wo Werkzeuge wirklich Zeit sparen und wo sie welche kosten. Nenne die Art
+   des Werkzeugs und ein Beispiel, nicht nur einen Produktnamen.
+5. Zweitverwertung: wie aus einem Video Kurzvideos für Shorts, TikTok und
+   Reels werden, ohne dass es nach Resteverwertung aussieht.
+6. Die Qualitätsgrenze: woran ich erkenne, dass ein Video gut genug ist,
+   statt es endlos zu polieren.</pre>
+
+    <div class="karte__fuss">
+      <button type="button" class="knopf" data-kopieren="p5">Kopieren</button>
+      <label class="erledigt"><input type="checkbox" data-erledigt="5"> erledigt</label>
+    </div>
+    <p class="warum"><strong>Warum so:</strong> Zeitbudget pro Schritt. Ohne Zahl dahinter ist jede Ablaufbeschreibung nur eine Liste von guten Absichten.</p>
+  </section>
+
+  <!-- ---------- 6 ---------- -->
+  <section class="karte" aria-labelledby="k6-titel">
+    <div class="karte__kopf">
+      <span class="karte__nr" aria-hidden="true">6</span>
+      <div>
+        <h2 id="k6-titel">Der Monetarisierungsplan</h2>
+        <p class="karte__zweck">Früh lesen, spät umsetzen. Manches muss ab dem ersten Video vorbereitet sein.</p>
+      </div>
+    </div>
+
+<pre class="auftrag" id="p6">Du bist Geschäftsstratege für Kanalbetreiber.
+Baue ein Einnahmesystem für meinen Kanal.
+
+Thema: <span class="ph" data-ph="nische">[Thema des Kanals]</span>
+Zielgruppe: <span class="ph" data-ph="zielgruppe">[Zielgruppe]</span>
+Ziel in zwölf Monaten: <span class="ph" data-ph="ziel">[Ziel in zwölf Monaten]</span>
+
+1. Die Bedingungen des YouTube-Partnerprogramms und was ich bis dahin
+   vorbereiten muss. Markiere sie mit "Stand prüfen" — die Schwellen ändern
+   sich.
+2. Werbeeinnahmen: was in dieser Nische pro 1 000 Aufrufen realistisch übrig
+   bleibt. Gib eine Spanne an, keine einzelne Zahl, und sag, woher sie kommt.
+3. Die weiteren Wege — Empfehlungslinks, Werbepartner, digitale Produkte,
+   Kurse, Mitgliedschaften, Newsletter, eigene Dienstleistung — jeder mit:
+   Aufwand, Zeit bis zum ersten Franken, Risiko, ab welcher Kanalgröße sinnvoll.
+4. Die Reihenfolge als Stufenplan: bei 0, 1 000, 10 000 und 100 000
+   Abonnenten.
+5. Was ich schon ab dem ersten Video tue, damit die späteren Einnahmen
+   überhaupt möglich sind.
+6. Die drei Wege, die in dieser Nische erfahrungsgemäß enttäuschen, und warum.
+
+Rechne zum Schluss mein Ziel durch: welche Aufrufzahl und welche Mischung
+nötig wären, damit es aufgeht.</pre>
+
+    <div class="karte__fuss">
+      <button type="button" class="knopf" data-kopieren="p6">Kopieren</button>
+      <label class="erledigt"><input type="checkbox" data-erledigt="6"> erledigt</label>
+    </div>
+    <p class="warum"><strong>Warum so:</strong> „Eine Spanne, keine einzelne Zahl" — bei Geld erfindet eine KI sonst die schönste. Und die Beispielrechnung zeigt, ob dein Ziel überhaupt aufgeht.</p>
+  </section>
+
+  <!-- ---------- 7 ---------- -->
+  <section class="karte" aria-labelledby="k7-titel">
+    <div class="karte__kopf">
+      <span class="karte__nr" aria-hidden="true">7</span>
+      <div>
+        <h2 id="k7-titel">Die Zahlen lesen</h2>
+        <p class="karte__zweck">Jede Woche zehn Minuten, jeden Monat eine Stunde.</p>
+      </div>
+    </div>
+
+<pre class="auftrag" id="p7">Du bist Datenanalyst für YouTube-Kanäle.
+Baue mir ein System, mit dem ich aus den Zahlen meines Kanals Entscheidungen
+ableite statt Bauchgefühl.
+
+1. Welche Kennzahlen zählen und welche Frage jede beantwortet: Impressionen,
+   Klickrate, durchschnittliche Wiedergabedauer, Bindungskurve,
+   Abonnentenzuwachs pro Video, Verkehrsquellen, Interaktion, Einnahmen.
+2. Wie ich eine Bindungskurve lese: was ein Absturz in den ersten 30 Sekunden
+   bedeutet, was ein Knick in der Mitte, was ein Anstieg.
+3. Entscheidungsregeln in der Form "wenn Klickrate niedrig und Bindung hoch,
+   dann ..." — für alle vier Kombinationen aus hoch und niedrig.
+4. Wochenrückblick: fünf Fragen, zehn Minuten.
+5. Monatsrückblick: was ich vergleiche, welche Muster ich suche, und woran ich
+   erkenne, dass ein Format eingestellt gehört.
+6. Was ich mit einem schwachen Video mache — und wann Nachbessern an Titel und
+   Miniaturbild mehr bringt als ein neues Video.
+
+Frag mich danach nach meinen letzten zehn Videos mit ihren Zahlen und werte
+sie nach genau diesen Regeln aus.</pre>
+
+    <div class="karte__fuss">
+      <button type="button" class="knopf" data-kopieren="p7">Kopieren</button>
+      <label class="erledigt"><input type="checkbox" data-erledigt="7"> erledigt</label>
+    </div>
+    <p class="warum"><strong>Warum so:</strong> Die Entscheidungsregeln für alle vier Fälle sind der Kern. Klickrate niedrig, Bindung hoch heißt: das Video ist gut, die Verpackung nicht.</p>
+  </section>
+
+  <!-- ---------- Alles ---------- -->
+  <section class="karte karte--alles" aria-labelledby="alles-titel">
+    <h2 id="alles-titel">Alles auf einmal</h2>
+    <p class="karte__zweck">
+      Grundregeln und alle sieben Aufträge hintereinander — zum Ablegen in eine
+      Notiz, damit du diese Seite nicht suchen musst.
+    </p>
+    <div class="karte__fuss">
+      <button type="button" class="knopf" id="allesKopieren">Alle acht kopieren</button>
+    </div>
+  </section>
+
+  <aside class="fussnote">
+    <h2>Zwei Sätze zur Ehrlichkeit</h2>
+    <p>
+      Diese Aufträge machen die Antwort besser, nicht wahr. Was eine KI über
+      Schwellen, Auszahlungen und Regeln von YouTube sagt, kann veraltet sein —
+      deshalb steht in den Aufträgen „Stand prüfen“. Prüfen musst du selbst,
+      bei YouTube.
+    </p>
+    <p>
+      Die Vorlage dazu stammt aus einer Bilderfolge auf TikTok
+      (<span class="mono">MASTERS PROMPT</span>, spanisch). Die Aufträge hier
+      sind auf Deutsch neu geschrieben: mit Ausgangslage, Ausgabeformat und der
+      Pflicht zur Unsicherheitsangabe.
+    </p>
+  </aside>
+
+</main>
+
+<footer class="fuss">
+  <p class="bahn">Prompt-Werkstatt · gehört zu Wand für Wand · liegt nur hier, nicht in Suchmaschinen</p>
+</footer>
+
+<div class="meldung" id="meldung" role="status" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

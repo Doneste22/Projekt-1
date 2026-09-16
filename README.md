@@ -21,6 +21,7 @@ datenschutz.html              Datenschutzerklärung nach DSG — Entwurf mit Pla
 partnerlinks.html             Interne Arbeitsliste für die Affiliate-Links
 robots.txt, sitemap.xml       Für Suchmaschinen — Domain ist noch Platzhalter
 jarvis/                       Jarvis: eigenständige Assistenz-App (installierbar)
+prompts/                      Prompt-Werkstatt: sieben KI-Aufträge für einen YouTube-Kanal
 server/core.mjs               Kern von Jarvis: Systemprompt, Prüfung, Modellaufruf
 server/abteilungen.mjs        Kontext und Werkzeuge je Abteilung — serverseitig, nicht zu fälschen
 server/twilio.mjs             Twilio-Handwerk: Unterschrift prüfen, Nachricht senden
@@ -772,6 +773,34 @@ Nachbauten steht im Protokoll, welches Modell, welche Parameter und welcher
 Text tatsächlich gesendet wurden. Für die Fehlerwege: `MOCK_STATUS=429` beim
 Stimmen-Nachbau spielt „Kontingent leer" nach, `MOCK_STATUS=401` einen falschen
 Schlüssel.
+
+## Prompt-Werkstatt
+
+`prompts/index.html` ist eine eigenständige Seite: sieben Aufträge an eine KI,
+mit denen sich ein YouTube-Kanal von null bis zur Monetarisierung planen lässt —
+Kanalplan, Nische, Skripte und Miniaturbilder, Wachstum, Produktion,
+Einnahmen, Auswertung. Dazu ein nullter Auftrag mit den Grundregeln, der vor
+jeden anderen gehört.
+
+Oben trägt man fünf Angaben ein — Thema, Zielgruppe, Zeit pro Woche,
+Ausrüstung, Ziel. Sie werden in jeden Auftrag eingesetzt und stehen dort orange
+im Text, damit man sieht, was von einem selbst kommt und was noch offen ist.
+Ein Knopf pro Auftrag legt ihn in die Zwischenablage, ein weiterer alle acht am
+Stück.
+
+Die Vorlage stammt aus einer spanischen Bilderfolge auf TikTok. Die Aufträge
+hier sind auf Deutsch neu geschrieben, und zwar mit dem, was dort fehlte: einer
+Ausgangslage, einem verlangten Ausgabeformat, der Pflicht zurückzufragen statt
+zu raten, und der Pflicht, veraltbare Angaben als solche zu kennzeichnen. Was
+eine KI über die Schwellen des Partnerprogramms sagt, kann alt sein — deshalb
+steht in mehreren Aufträgen „Stand prüfen".
+
+Technisch: eine HTML-Datei, ein Stylesheet, ein Skript, keine Abhängigkeit,
+keine externe Schrift, kein Netzzugriff. Die Angaben und die Haken bleiben im
+`localStorage` des Geräts. Ohne JavaScript steht jeder Auftrag vollständig da,
+nur eben mit den eckigen Platzhaltern — dann markiert man ihn von Hand. Die
+Seite ist auf `noindex` gestellt und in `netlify.toml` zusätzlich per Kopfzeile
+gesperrt; sie ist ein Werkzeug, keine Seite für Besucher.
 
 ## Handy aufräumen
 
