@@ -9,5 +9,11 @@
   },
   "devDependencies": {
     "@netlify/edge-functions": "^2.12.0"
+  },
+  "scripts": {
+    "test": "node --test server/*.test.mjs"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^11.1.0"
   }
 }

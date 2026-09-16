@@ -22,6 +22,7 @@ partnerlinks.html             Interne Arbeitsliste für die Affiliate-Links
 robots.txt, sitemap.xml       Für Suchmaschinen — Domain ist noch Platzhalter
 jarvis/                       Jarvis: eigenständige Assistenz-App (installierbar)
 server/core.mjs               Kern von Jarvis: Systemprompt, Prüfung, Modellaufruf
+server/whatsapp.mjs           Jarvis über WhatsApp und SMS (Twilio)
 server/gespraech.mjs          Werkzeug-Schleife — nur lokal
 server/werkzeuge.mjs          Was Jarvis am Gerät darf: ansehen, suchen, aufräumen
 server/dateien.mjs            Dateilogik: doppelt, Müll, Papierkorb
@@ -319,6 +320,82 @@ Installieren lässt sich die TWA-Fassung auch aus Termux heraus — Android
 ```
 termux-open ~/storage/downloads/jarvis.apk
 ```
+
+### Über WhatsApp und SMS
+
+Jarvis hört auch auf eine Telefonnummer: schreiben, Antwort bekommen — ohne
+App, ohne Zugangscode, von jedem Gerät. Nützlich, wenn das Telefon neu ist,
+der Akku des anderen leer oder man gerade sowieso in WhatsApp steckt.
+
+```
+netlify/edge-functions/jarvis-whatsapp.ts   Der Webhook, den Twilio aufruft
+server/whatsapp.mjs                         Alles Inhaltliche, ohne Netlify
+server/whatsapp.test.mjs                    Prüfung: npm test
+```
+
+**Warum nicht sofort geantwortet wird.** Twilio wartet auf eine Antwort des
+Webhooks nur wenige Sekunden (höchstens 15). Eine durchdachte Antwort dauert
+länger. Deshalb bestätigt der Server den Eingang sofort mit einem leeren `204`
+und schickt die Antwort danach über Twilios REST-API hinterher — genau der Weg,
+den Twilio selbst dafür vorsieht. Möglich macht das `context.waitUntil`:
+Netlify lässt die Edge-Function nach der Antwort weiterlaufen.
+
+#### Einrichten
+
+1. Konto bei [twilio.com](https://www.twilio.com) anlegen. Zum Ausprobieren
+   reicht die **WhatsApp-Sandbox** (Console → Messaging → Try it out): man
+   schickt einmal ein Codewort an Twilios Testnummer und ist für 72 Stunden
+   verbunden — ohne gekaufte Nummer, ohne Freischaltung. Für den Dauerbetrieb
+   später eine eigene Nummer oder einen echten WhatsApp-Absender.
+2. In Netlify unter **Site configuration → Environment variables** eintragen:
+
+   | Variable | Was hinein gehört |
+   | --- | --- |
+   | `TWILIO_AUTH_TOKEN` | Auth Token aus der Twilio-Console. Geheim. |
+   | `JARVIS_WHATSAPP_NUMMERN` | Die eigenen Nummern, mit Komma getrennt: `+41791234567` |
+   | `TWILIO_ACCOUNT_SID` | Optional — sonst aus der Anfrage genommen |
+   | `JARVIS_WHATSAPP_URL` | Optional — nur nötig, wenn die Unterschrift nicht stimmt |
+
+   `ANTHROPIC_API_KEY` ist schon da, die Nachricht braucht ihn mit.
+3. **Neu veröffentlichen.** Variablen wirken erst nach einem Deploy.
+4. In Twilio bei der Nummer (oder in der Sandbox) unter *When a message comes
+   in* eintragen: `https://<deine-adresse>/api/jarvis-whatsapp`, Methode POST.
+
+#### Was ihn schützt
+
+Ein offener Endpunkt bedeutet hier nicht nur fremden Zugriff, sondern eine
+fremde Rechnung — jede Frage kostet bei Anthropic, jede Antwort zusätzlich bei
+Twilio. Deshalb zwei Sperren, beide im Code und nicht im Prompt:
+
+- **Twilios Unterschrift** wird geprüft (HMAC-SHA1 über Adresse und alle
+  Felder). Ohne sie könnte jeder, der die Adresse kennt, sich als Twilio
+  ausgeben und eine fremde Absendernummer behaupten.
+- **Die Freigabeliste** entscheidet, wer fragen darf. Ist
+  `JARVIS_WHATSAPP_NUMMERN` leer, darf **niemand** — das ist Absicht, nicht
+  ein vergessener Standardwert. Wer nicht darauf steht, bekommt gar nichts
+  zurück, nicht einmal eine Fehlermeldung.
+
+#### Im Betrieb
+
+- Jarvis merkt sich die letzten zwölf Nachrichten pro Nummer (Netlify Blobs).
+  **„neu"** schreiben wirft den Verlauf weg.
+- Antworten sind absichtlich kurz: der Kanal rechnet pro Nachricht ab. Was
+  über 1600 Zeichen hinausgeht, wird an Satzenden geteilt, höchstens drei
+  Stücke; danach steht ein Hinweis statt einer stillen Lücke.
+- Bilder und Sprachnachrichten kann Jarvis hier nicht ansehen — er sagt das.
+- Läuft etwas schief (Schlüssel abgelehnt, Modell ausgelastet), kommt ein
+  Satz zurück, der sagt was. Schweigen gibt es nur bei einer fremden Nummer.
+
+#### Prüfen
+
+```
+npm test
+```
+
+Fährt die ganze Kette gegen einen Nachbau der Messages-API und von Twilios
+Messages-Schnittstelle: was gesendet wird, wer durchgelassen wird, ob eine
+gefälschte Unterschrift abprallt, wie lange Antworten geteilt werden. Ohne
+Netz, ohne Konto, ohne Kosten.
 
 ### Ohne Netz-Server: Termux auf dem Handy
 
