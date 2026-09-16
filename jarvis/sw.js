@@ -2,12 +2,17 @@
    Zweck: die App startet auch ohne Netz. Antworten des Modells werden nie
    zwischengespeichert — /api/ geht immer ans Netz. */
 
-var CACHE = 'jarvis-v3';
+var CACHE = 'jarvis-v6';
 var SHELL = [
   './',
   'index.html',
   'style.css',
   'app.js',
+  'klatschen.js',
+  'abteilungen.js',
+  'gedaechtnis.js',
+  'konfiguration.json',
+  'abteilungen.json',
   'manifest.webmanifest',
   'icons/icon-192.png',
   'icons/icon-512.png',
@@ -61,7 +66,31 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  // Dateien: aus dem Cache ausliefern und im Hintergrund erneuern.
+  // Eigener Code und Konfiguration: erst das Netz, dann der Cache.
+  //
+  // Vorher lief das andersherum — Cache zuerst, Erneuerung im Hintergrund.
+  // Das hat einmal Zeit gekostet: nach einer Veröffentlichung kam die neue
+  // index.html (die holt sich der Browser schon immer erst aus dem Netz),
+  // aber noch das alte app.js dazu. Die Seite sah dann aus wie vorher, und
+  // niemand konnte sagen warum. Die paar Dateien sind zusammen keine 60 KB;
+  // das Netz zuerst zu fragen kostet nichts und spart genau diese Sucherei.
+  if (/\.(?:js|css|json|webmanifest)$/.test(url.pathname)) {
+    event.respondWith(
+      fetch(request).then(function (response) {
+        if (response && response.ok) {
+          var copy = response.clone();
+          caches.open(CACHE).then(function (cache) { cache.put(request, copy); });
+        }
+        return response;
+      }).catch(function () {
+        return caches.match(request);      // kein Netz: dann eben die letzte Fassung
+      })
+    );
+    return;
+  }
+
+  // Alles andere (Icons, Bilder): aus dem Cache, im Hintergrund erneuern.
+  // Die ändern sich praktisch nie, da wäre jede Netzanfrage verschenkt.
   event.respondWith(
     caches.match(request).then(function (hit) {
       var network = fetch(request).then(function (response) {

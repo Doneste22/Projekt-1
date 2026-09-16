@@ -18,6 +18,21 @@
   [headers.values]
     Cache-Control = "no-cache"
 
+# Netlify liefert .webmanifest sonst als application/octet-stream aus. Chrome
+# verzeiht das meistens, andere Handy-Browser nicht — und dann fehlt der
+# Punkt „Zum Startbildschirm hinzufügen" ohne jede Fehlermeldung.
+[[headers]]
+  for = "/jarvis/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json; charset=utf-8"
+
+# Die Konfiguration darf nicht im Cache hängenbleiben — sonst hört Jarvis nach
+# einer Änderung noch tagelang auf die alte Stimme.
+[[headers]]
+  for = "/jarvis/konfiguration.json"
+  [headers.values]
+    Cache-Control = "no-cache"
+
 # Android sucht die Verknüpfung zur App unter /.well-known/. Punkt-Ordner
 # liefert Netlify nicht aus, deshalb liegt die Datei ohne Punkt im Repo und
 # wird hierher umgeschrieben (200, keine Weiterleitung — Android folgt keiner).

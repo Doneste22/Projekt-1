@@ -1,0 +1,64 @@
+{
+  "_hinweis": "Hier stehen KEINE Schlüssel. Diese Datei wird an den Browser ausgeliefert, jeder Besucher kann sie lesen. API-Schlüssel gehören in die Netlify-Variablen bzw. beim lokalen Server in die Umgebung: ANTHROPIC_API_KEY, ELEVENLABS_API_KEY, JARVIS_PASSCODE.",
+
+  "ort": {
+    "name": "Zürich",
+    "breite": 47.3769,
+    "laenge": 8.5417
+  },
+
+  "morgen": {
+    "beim_start_gruessen": true,
+    "lied": "",
+    "_lied": "Spotify-Link für den Morgensong, z. B. https://open.spotify.com/track/… . Leer lassen heißt: kein Lied."
+  },
+
+  "stimme": {
+    "an": true,
+    "id": "JBFqnCBsd6RMkjVDRZzb",
+    "modell": "eleven_multilingual_v2",
+    "stabilitaet": 0.4,
+    "aehnlichkeit": 0.75,
+    "tempo": 1.0,
+    "_id": "Stimmen-ID von elevenlabs.io. Voreingestellt ist „George“ — die einzige britische Männerstimme unter den Standardstimmen, warm und reif. Andere Standardstimmen mit Ruhe: „Brian“ nPczCjzI2devNBz1zQrb (tief, tröstlich) und „Eric“ cjVigY5qzO86Huf0OWal (glatt, für Assistenten gemacht).",
+    "_tarif": "Achtung: die deutschen Stimmen aus der Bibliothek (Voice Library) verlangen den Creator-Tarif. Auf dem Gratis-Tarif gehen nur die Standardstimmen (premade) — die sprechen mit eleven_multilingual_v2 auch Deutsch, mit leichtem Akzent. Für einen britischen Butler ist das eher ein Vorteil.",
+    "_modell": "eleven_multilingual_v2 klingt am besten und kann Deutsch. eleven_flash_v2_5 ist schneller und billiger, aber flacher.",
+    "_freikontingent": "10.000 Zeichen pro Monat sind bei ElevenLabs kostenlos. Das reicht für rund 100 kurze Antworten. Danach kostet es oder die Stimme fällt auf die eingebaute Browserstimme zurück."
+  },
+
+  "gedaechtnis": {
+    "an": true,
+    "automatisch": true,
+    "_an": "Ob Jarvis sich Dinge über Gespräche hinweg merkt. Die Notizen liegen im Browser dieses Geräts (localStorage), nicht auf einem Server — wer die App-Daten löscht, löscht sie mit.",
+    "_automatisch": "Ob nach jeder Antwort das billige Modell kurz nachsieht, was behaltenswert war. Aus heißt: Jarvis merkt sich nur, was du ihm ausdrücklich sagst („merk dir …“). Ein Nachsehen kostet rund ein Zehntausendstel Franken.",
+    "_wo": "Nachsehen und Löschen: in der App unter Einstellungen → Gedächtnis."
+  },
+
+  "ton": "sir",
+
+  "_toene": "„weckantwort“ ist, was Jarvis sagt, wenn nur sein Name gerufen wurde — die kostet nichts, das Modell wird dafür nicht gefragt.",
+
+  "toene": {
+    "sachlich": {
+      "name": "Sachlich",
+      "weckantwort": "Ja?",
+      "text": "Sprich Damaso mit Vornamen an und duze ihn. Antworte nüchtern und ohne Ausschmückung."
+    },
+    "sir": {
+      "name": "Sir",
+      "weckantwort": "Sir?",
+      "text": "Sieze Damaso und sprich ihn mit „Sir“ an. Dein Ton ist der eines ruhigen britischen Butlers: höflich, trocken, mit gelegentlichem Sarkasmus, den man erst beim zweiten Hinhören merkt. Nie albern, nie kumpelhaft, nie mehr als ein Seitenhieb pro Antwort."
+    },
+    "coach": {
+      "name": "Coach",
+      "weckantwort": "Sag an.",
+      "text": "Duze Damaso. Du bist sein Antreiber: kurz, direkt, fordernd. Du sagst ihm, was als Nächstes dran ist, statt Optionen aufzuzählen. Kein Lob ohne Grund."
+    }
+  },
+
+  "modelle": {
+    "chat": "claude-opus-5",
+    "schnell": "claude-haiku-4-5",
+    "_hinweis": "chat denkt nach und kostet, schnell antwortet sofort und kostet fast nichts. Der Morgengruß nimmt immer „schnell“."
+  }
+}

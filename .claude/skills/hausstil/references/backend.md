@@ -105,6 +105,7 @@ kosten:
 ```
 x-jarvis-model         welches Modell geantwortet hat
 x-jarvis-unprotected   "1", wenn kein Zugangscode gesetzt ist
+x-jarvis-stimme        "1", wenn der Server eine echte Stimme anbieten kann
 ```
 
 Fehler *vor* dem Strom (kein Schlüssel, falscher Code, abgelehnte Anfrage) sind
@@ -151,6 +152,38 @@ Prüfen lässt sich die ganze Schleife ohne Modell: `scripts/mock-anthropic.mjs`
 spielt eine Werkzeug-Runde nach, wenn die Anfrage `tools` mitschickt
 (`MOCK_WERKZEUG` und `MOCK_EINGABE` bestimmen, was aufgerufen wird). Damit
 lassen sich auch die Abweisungen testen — etwa ein Werkzeugaufruf auf `/etc`.
+
+## Eine Stimme davorschalten
+
+Dasselbe Muster nochmal, für ElevenLabs: `server/stimme.mjs` als Kern,
+`netlify/edge-functions/stimme.ts` und eine Route im lokalen Server als Hüllen.
+Auch hier gilt Punkt 2 von oben — `upstream.body` unverändert zurückgeben. Ein
+MP3 Byte für Byte durch eigenen Code zu schieben, ist nach dem ersten Kilobyte
+über den 50 Millisekunden.
+
+Zwei Dinge, die hier zählen:
+
+- **Das Freikontingent ist klein** (10.000 Zeichen im Monat). Also eine
+  Obergrenze pro Anfrage im Server, und zwar mit Schnitt an der Satzgrenze —
+  mitten im Wort abgeschnittene Sprache klingt nach Defekt.
+- **Stumm ist keine Lösung.** Fehlt der Schlüssel, stimmt die Stimmen-ID nicht
+  oder ist das Kontingent leer, muss die Oberfläche einmal sagen, was los ist,
+  und danach auf `speechSynthesis` des Browsers umschalten. Die klingt
+  schlechter und ist immer da.
+
+## Zwei Modelle, und die Falle dabei
+
+Was oft läuft und wenig können muss (ein gesprochener Zweizeiler beim Start),
+gehört auf das billige Modell, das Gespräch auf das starke. Die Weiche steht im
+Kern bei den Parametern, nicht beim Aufrufer.
+
+**Haiku nimmt weder `thinking: {type: "adaptive"}` noch `output_config.effort`
+noch `fallbacks` entgegen** — jedes davon ist ein 400. Wer die Parameter
+pauschal setzt, weil sie beim großen Modell richtig sind, bekommt eine
+Fehlermeldung, die nach einem kaputten Schlüssel aussieht. Also: die Parameter
+am Modellnamen entscheiden, und den Aufruf einmal ohne Modell prüfen
+(`upstreamRequest` bauen, `JSON.parse(init.body)` ausgeben) — das kostet nichts
+und zeigt sofort, was wirklich rausgeht.
 
 ## Schutz
 

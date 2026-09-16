@@ -115,6 +115,19 @@ if [ -z "$KEY" ]; then
   exit 1
 fi
 
+ALT_STIMME=""
+[ -f "$ENV_DATEI" ] && ALT_STIMME="$(grep -o 'ELEVENLABS_API_KEY=.*' "$ENV_DATEI" | cut -d= -f2- | tr -d '"')"
+
+if [ -n "$ALT_STIMME" ]; then
+  zeile "Ein Stimmen-Schlüssel ist hinterlegt (…${ALT_STIMME: -6})."
+  if ja "Behalten?"; then STIMME="$ALT_STIMME"; else STIMME="$(frage 'Neuer ElevenLabs-Schlüssel (leer = ohne)')"; fi
+else
+  zeile "Damit Jarvis mit einer echten Stimme spricht, braucht er einen"
+  zeile "Schlüssel von elevenlabs.io (Settings, dann API Keys). Ohne ihn"
+  zeile "liest er mit der eingebauten Stimme des Browsers vor — das geht auch."
+  STIMME="$(frage 'ElevenLabs-Schlüssel (leer lassen = ohne Stimme)')"
+fi
+
 ALT_CODE=""
 [ -f "$ENV_DATEI" ] && ALT_CODE="$(grep -o 'JARVIS_PASSCODE=.*' "$ENV_DATEI" | cut -d= -f2- | tr -d '"')"
 CODE="$(frage 'Zugangscode (leer lassen = ohne)' "$ALT_CODE")"
@@ -128,6 +141,7 @@ umask 077
 cat > "$ENV_DATEI" <<ENV
 # Zugangsdaten für Jarvis. Diese Datei gehört nur dir — nicht weitergeben.
 export ANTHROPIC_API_KEY="$KEY"
+export ELEVENLABS_API_KEY="$STIMME"
 export JARVIS_PASSCODE="$CODE"
 export JARVIS_ORDNER="$ORDNER"
 ENV
