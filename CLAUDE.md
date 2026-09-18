@@ -4,6 +4,17 @@ Kurznotizen zu diesem Repo. Wie hier gebaut wird — Sprache, Farben,
 Abhängigkeiten, Backend-Muster, Veröffentlichung — steht ausführlich im Skill
 `.claude/skills/hausstil/`; der wird bei Arbeit in diesem Repo herangezogen.
 
+## Gedächtnis
+
+`.claude/gedaechtnis.md` ist das Gedächtnis dieses Projekts: was offen ist, was
+schon einmal Zeit gekostet hat, wie der Stand ist. **Zu Beginn jeder Sitzung
+lesen.** Am Ende einer Sitzung, in der etwas entschieden wurde oder etwas nicht
+funktioniert hat, dort eine Zeile ergänzen — und Erledigtes löschen, damit die
+Datei kurz bleibt.
+
+Was dauerhaft gilt, gehört nicht ins Gedächtnis, sondern hierher oder in den
+Hausstil-Skill.
+
 ## Zweige
 
 Entwickelt wird auf dem zugewiesenen Arbeitszweig.

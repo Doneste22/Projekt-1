@@ -46,6 +46,8 @@ scripts/mark-einrichten.py    Holt Mark LIV, den fremden Jarvis aus dem Video, a
 scripts/pruefe-aufbau.mjs     Prüft Weiche und Gedächtnis — ohne Browser, ohne Kosten
 .claude/settings.json         Schaltet die vier Plugins für dieses Projekt ein
 .claude/skills/task-observer/ Fremder Skill aus dem Video — sieht bei der Arbeit zu
+.claude/gedaechtnis.md        Gedächtnis: Stand, offene Punkte, gelernte Fallen
+.claude/hooks/gedaechtnis.sh  Legt es beim Sitzungsstart in den Kontext (nicht eingetragen)
 MONETARISIERUNG.md            Wie aus der Seite Einnahmen werden — Wege, Zahlen, Reihenfolge
 ```
 
@@ -968,6 +970,49 @@ Bewusst **nicht** eingeschaltet:
 claude plugin list
 claude plugin uninstall <name>@claude-plugins-official --scope project
 ```
+
+## Das Gedächtnis
+
+(Nicht zu verwechseln mit Jarvis' Gedächtnis — das ist die Gesprächshistorie
+der App. Hier geht es um das Gedächtnis der Arbeit an diesem Repo.)
+
+Jede Sitzung fängt bei null an. Der Behälter, in dem sie läuft, wird danach
+gelöscht — was dort installiert oder notiert wurde, ist weg. Das Einzige, was
+eine Sitzung überlebt, ist das Repo. Also liegt das Gedächtnis im Repo:
+
+```
+.claude/gedaechtnis.md        Stand, offene Punkte, was schon Zeit gekostet hat
+.claude/hooks/gedaechtnis.sh  Legt es beim Sitzungsstart in den Kontext
+```
+
+In `.claude/gedaechtnis.md` steht nur, was eine neue Sitzung nicht von selbst
+sieht: dass der Browser dieser Sandbox nicht an die Live-Adresse kommt, dass
+Netlifys Umgebungsvariablen erst nach einem neuen Deploy wirken, dass
+`--screenshot` von Chrome unten weiße Bilder liefert. Alles Dinge, die hier
+schon einmal eine Stunde gekostet haben. Was dauerhaft gilt, steht dagegen in
+`CLAUDE.md` oder im Hausstil-Skill — das Gedächtnis ist kein zweites Regelbuch.
+
+Gelesen wird es über die Anweisung in `CLAUDE.md`. Das ist zuverlässig, aber
+nicht erzwungen.
+
+**Erzwungen ginge es mit dem Hook**, `.claude/hooks/gedaechtnis.sh`. Der liegt
+fertig und geprüft da, ist aber *nicht eingetragen*: ein Hook ist Code, der bei
+jedem Sitzungsstart von allein losläuft, und das ist nichts, was ohne
+ausdrückliche Zustimmung in ein Repo gehört. Zum Einschalten kommt in
+`.claude/settings.json`:
+
+```json
+"hooks": {
+  "SessionStart": [
+    { "hooks": [ { "type": "command",
+                   "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/gedaechtnis.sh" } ] }
+  ]
+}
+```
+
+Das Skript liest die Datei und reicht sie als Kontext weiter, sonst nichts.
+Fehlt die Datei oder fehlt `node`, endet es still und die Sitzung startet
+normal — geprüft. Kosten: rund 2 500 Zeichen in jeder Sitzung.
 
 ## Prompt-Werkstatt
 
