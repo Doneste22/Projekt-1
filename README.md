@@ -936,11 +936,13 @@ von Anthropic, beide auf Projektebene — wer das Repo hat, hat sie.
 **Warum die Spalte ganz rechts die wichtigste ist.** Ein Plugin bringt seine
 Beschreibungen mit, und die stehen in *jeder* Sitzung im Kontext, bevor
 überhaupt etwas gebaut wird. Sie kosten also auch dann, wenn das Plugin nie
-benutzt wird. Nachmessen lässt sich das so:
+benutzt wird. Nachmessen geht fertig eingebaut — für ein Plugin, das man noch nicht will,
+auf Benutzerebene installieren (das Repo bleibt unberührt), messen, wieder weg:
 
 ```bash
-find ~/.claude/plugins/cache -name SKILL.md | xargs -I{} sh -c \
-  'sed -n "/^description:/,/^[a-z-]*:/p" {} | wc -c'
+claude plugin install <name>@claude-plugins-official --scope user
+claude plugin details <name>@claude-plugins-official     # Always-on-Token
+claude plugin uninstall <name>@claude-plugins-official --scope user
 ```
 
 Hier waren zwischenzeitlich auch `netlify-skills` und `modern-web-guidance`

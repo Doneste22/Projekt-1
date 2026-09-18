@@ -33,6 +33,10 @@ Was dauerhaft gilt, gehört in `CLAUDE.md` oder den Hausstil-Skill.
 - **Fremden Code ins Projekt kopieren und Hooks eintragen** lehnt die
   Schutzschaltung ab, bis Damaso ausdrücklich zustimmt. Nicht über Umwege
   versuchen — fragen.
+- **Pluginkosten gibt es fertig**, kein eigenes Messskript nötig:
+  `claude plugin details <name>@<markt>` nennt die Always-on-Token. Es geht nur
+  für installierte Plugins — also auf `--scope user` installieren (ändert das
+  Repo nicht), messen, wieder deinstallieren.
 - **Plugins vor dem Einschalten messen.** Beschreibungen stehen in *jeder*
   Sitzung im Kontext, auch ungenutzt. `netlify-skills` kostete so 25 302
   Zeichen und flog raus. Faustregel: Skills kosten immer, Hooks nur im
