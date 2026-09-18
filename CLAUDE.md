@@ -15,6 +15,23 @@ Datei kurz bleibt.
 Was dauerhaft gilt, gehört nicht ins Gedächtnis, sondern hierher oder in den
 Hausstil-Skill.
 
+## Sparsam arbeiten
+
+Die feste Last pro Sitzung ist klein — rund 7 000 Zeichen. Teuer wird, was
+*während* der Arbeit hereingeholt wird; das ist leicht das Zehnfache. Vier
+Regeln, alle nachgemessen:
+
+- **Erst das Werkzeug fragen, dann die Doku.** `claude plugin install --help`
+  sind 2 214 Zeichen, die passende Doku-Seite rund 22 000 — zehnfach teurer
+  für dieselbe Antwort.
+- **Große Dateien gezielt lesen.** `README.md` hat 56 000 Zeichen. Erst
+  `grep -n`, dann `sed -n 'a,bp'`. Nie ganz.
+- **Bilder einzeln.** Ein Kontaktbogen kostet rund 1 500 Token. Aufhören,
+  sobald die Frage beantwortet ist.
+- **Listen filtern, bevor sie im Kontext landen.** Den Plugin-Katalog lokal
+  mit `node` aus `marketplace.json` filtern (rund 2 000 Zeichen) statt die
+  Katalogsuche aufzurufen (rund 18 000).
+
 ## Zweige
 
 Entwickelt wird auf dem zugewiesenen Arbeitszweig.
