@@ -1,5 +1,8 @@
 {
   "enabledPlugins": {
-    "claude-code-setup@claude-plugins-official": true
+    "claude-code-setup@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "netlify-skills@claude-plugins-official": true,
+    "modern-web-guidance@claude-plugins-official": true
   }
 }
