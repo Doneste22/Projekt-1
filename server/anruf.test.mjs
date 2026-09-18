@@ -50,7 +50,7 @@ test("mit Weiterleitung klingelt erst das Handy", () => {
   assert.ok(xml.includes("<Number>+41791234567</Number>"));
 });
 
-test("Text in der Ansage kann das TwiML nicht zerreißen", () => {
+test("Text in der Ansage kann das TwiML nicht zerreissen", () => {
   const xml = ansageTwiml({
     ansage: 'Böses </Say><Hangup/> & "Anführung"',
     rueckruf: "https://wandfuerwand.ch/x"

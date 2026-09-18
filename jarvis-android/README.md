@@ -112,7 +112,7 @@ Browser, und am Telefon liegt kein Schlüssel mehr, sondern nur der
 Zugangscode. Geht der verloren, kostet das nichts.
 
 **Gestreamt.** Eine Antwort, die wortweise erscheint, fühlt sich an wie ein
-Gespräch; eine, die nach dreißig Sekunden am Stück kommt, wie ein Formular.
+Gespräch; eine, die nach dreissig Sekunden am Stück kommt, wie ein Formular.
 Kommt der Abschluss des Stroms nicht an, ist die Antwort unvollständig — dann
 steht das unter der Blase, statt eine halbe Antwort wie eine ganze aussehen zu
 lassen.

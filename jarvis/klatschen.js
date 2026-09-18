@@ -10,7 +10,7 @@
 
    Ehrliche Grenze: das läuft nur, solange die App offen und im Vordergrund
    ist. Ein Browser darf nicht im Hintergrund mithören — das kann nur ein
-   Programm außerhalb des Browsers. */
+   Programm ausserhalb des Browsers. */
 
 (function () {
   'use strict';
@@ -58,7 +58,7 @@
         return false;
       },
 
-      /* Nach einer Pause weiß niemand mehr, was vorher war. */
+      /* Nach einer Pause weiss niemand mehr, was vorher war. */
       zuruecksetzen: function () {
         leiseGesehen = true;
         ersterKnall = null;

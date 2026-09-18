@@ -87,7 +87,7 @@ client.beta.messages.stream({
 ## Verlauf
 
 Die Messages-API nimmt nur abwechselnde Rollen, beginnend und endend beim
-Nutzer. Eine Begrüßung, die die Oberfläche selbst erzeugt hat, darf also nicht
+Nutzer. Eine Begrüssung, die die Oberfläche selbst erzeugt hat, darf also nicht
 mitgeschickt werden — sonst beginnt der Verlauf mit `assistant` und die Anfrage
 wird abgelehnt. Zwei Sicherungen, weil eine davon irgendwann vergessen wird:
 die Oberfläche markiert solche Nachrichten als lokal, und der Server wirft
@@ -113,7 +113,7 @@ ein gewöhnliches JSON mit passendem Statuscode — die Oberfläche kann dann no
 sinnvoll reagieren, etwa die Code-Abfrage öffnen.
 
 Streamen ist hier kein Schmuck: eine Antwort, die wortweise erscheint, fühlt
-sich an wie ein Gespräch, eine, die nach dreißig Sekunden am Stück erscheint,
+sich an wie ein Gespräch, eine, die nach dreissig Sekunden am Stück erscheint,
 wie ein Formular. Abbrechen im Browser muss den Strom auch serverseitig
 abbrechen (`req.signal` weiterreichen bzw. `res.on("close")`), sonst schreibt
 das Modell auf Damasos Rechnung weiter.
@@ -124,7 +124,7 @@ Soll das Modell etwas *tun* statt nur zu reden, braucht der Server eine
 Schleife: fragen → Modell will ein Werkzeug → ausführen → `tool_result`
 zurückgeben → Modell schreibt weiter. Das geht nur dort, wo der Server den
 Strom auswerten darf — also **nicht** in der Edge-Function (50 ms Rechenzeit),
-sondern im lokalen Server. `server/gespraech.mjs` macht das; nach außen sieht
+sondern im lokalen Server. `server/gespraech.mjs` macht das; nach aussen sieht
 es aus wie eine einzige Antwort, weil `message_stop` genau einmal gesendet wird,
 wenn wirklich alles gesagt ist.
 
@@ -179,7 +179,7 @@ Kern bei den Parametern, nicht beim Aufrufer.
 
 **Haiku nimmt weder `thinking: {type: "adaptive"}` noch `output_config.effort`
 noch `fallbacks` entgegen** — jedes davon ist ein 400. Wer die Parameter
-pauschal setzt, weil sie beim großen Modell richtig sind, bekommt eine
+pauschal setzt, weil sie beim grossen Modell richtig sind, bekommt eine
 Fehlermeldung, die nach einem kaputten Schlüssel aussieht. Also: die Parameter
 am Modellnamen entscheiden, und den Aufruf einmal ohne Modell prüfen
 (`upstreamRequest` bauen, `JSON.parse(init.body)` ausgeben) — das kostet nichts

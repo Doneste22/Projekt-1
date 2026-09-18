@@ -39,7 +39,7 @@
   --sans:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;
   --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
 
-  --rand:18px;              /* Eckenradius der großen Flächen */
+  --rand:18px;              /* Eckenradius der grossen Flächen */
 }
 
 *{box-sizing:border-box;}
@@ -168,7 +168,7 @@ body{
 .icon-btn{
   background:transparent;
   border:1px solid transparent;
-  color:var(--text-leise);          /* hell genug für draußen bei Tageslicht */
+  color:var(--text-leise);          /* hell genug für draussen bei Tageslicht */
   width:38px;height:38px;
   border-radius:12px;
   display:flex;align-items:center;justify-content:center;

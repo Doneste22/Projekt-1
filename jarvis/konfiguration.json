@@ -10,7 +10,7 @@
   "morgen": {
     "beim_start_gruessen": true,
     "lied": "",
-    "_lied": "Spotify-Link für den Morgensong, z. B. https://open.spotify.com/track/… . Leer lassen heißt: kein Lied."
+    "_lied": "Spotify-Link für den Morgensong, z. B. https://open.spotify.com/track/… . Leer lassen heisst: kein Lied."
   },
 
   "stimme": {
@@ -30,7 +30,7 @@
     "an": true,
     "automatisch": true,
     "_an": "Ob Jarvis sich Dinge über Gespräche hinweg merkt. Die Notizen liegen im Browser dieses Geräts (localStorage), nicht auf einem Server — wer die App-Daten löscht, löscht sie mit.",
-    "_automatisch": "Ob nach jeder Antwort das billige Modell kurz nachsieht, was behaltenswert war. Aus heißt: Jarvis merkt sich nur, was du ihm ausdrücklich sagst („merk dir …“). Ein Nachsehen kostet rund ein Zehntausendstel Franken.",
+    "_automatisch": "Ob nach jeder Antwort das billige Modell kurz nachsieht, was behaltenswert war. Aus heisst: Jarvis merkt sich nur, was du ihm ausdrücklich sagst („merk dir …“). Ein Nachsehen kostet rund ein Zehntausendstel Franken.",
     "_wo": "Nachsehen und Löschen: in der App unter Einstellungen → Gedächtnis."
   },
 
@@ -59,6 +59,6 @@
   "modelle": {
     "chat": "claude-opus-5",
     "schnell": "claude-haiku-4-5",
-    "_hinweis": "chat denkt nach und kostet, schnell antwortet sofort und kostet fast nichts. Der Morgengruß nimmt immer „schnell“."
+    "_hinweis": "chat denkt nach und kostet, schnell antwortet sofort und kostet fast nichts. Der Morgengruss nimmt immer „schnell“."
   }
 }

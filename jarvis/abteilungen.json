@@ -2,7 +2,7 @@
   "_hinweis": "Die Abteilungen von Jarvis. Hier stehen KEINE Schlüssel — diese Datei wird an den Browser ausgeliefert. Jede Abteilung ist ein eigener Arbeitsplatz: eigener Kontext, eigene Werkzeuge. Jarvis sucht beim Senden selbst die passende aus; im Kopf der App lässt sie sich festhalten.",
 
   "_weckworte": "Wörter, an denen die Weiche eine Abteilung erkennt — klein geschrieben, Wortanfang genügt („gips“ trifft auch „Gipskarton“). Trifft nichts, fragt die Weiche kurz das billige Modell.",
-  "_werkzeuge": "Welche Werkzeuge die Abteilung anfassen darf. Leer heißt: keine. Die Namen stehen in server/werkzeuge.mjs. Werkzeuge gibt es ohnehin nur im lokalen Server, nicht im Netz.",
+  "_werkzeuge": "Welche Werkzeuge die Abteilung anfassen darf. Leer heisst: keine. Die Namen stehen in server/werkzeuge.mjs. Werkzeuge gibt es ohnehin nur im lokalen Server, nicht im Netz.",
 
   "standard": "alltag",
 
@@ -19,7 +19,7 @@
         "glätten", "glaetten", "q2", "q3", "q4", "brandschutz", "feuchtraum", "estrich",
         "fuge", "bewehrung", "grundierung", "wand", "wände", "waende"
       ],
-      "kontext": "Es geht um Damasos Handwerk: Trockenbau, Verputz, Akustik. Er weiß, wie man baut — erklär ihm keine Grundlagen. Antworte in Zahlen, die er auf der Baustelle brauchen kann: Mengen, Abstände, Schichtdicken, Trockenzeiten. Nenn immer dazu, worauf sich eine Zahl bezieht (pro Quadratmeter, pro Lage). Wo eine Norm oder Herstellerangabe entscheidet, sag, dass er sie am Sack oder im Datenblatt nachsehen muss, statt eine Zahl zu erfinden. Schweizer Verhältnisse, metrisch.",
+      "kontext": "Es geht um Damasos Handwerk: Trockenbau, Verputz, Akustik. Er weiss, wie man baut — erklär ihm keine Grundlagen. Antworte in Zahlen, die er auf der Baustelle brauchen kann: Mengen, Abstände, Schichtdicken, Trockenzeiten. Nenn immer dazu, worauf sich eine Zahl bezieht (pro Quadratmeter, pro Lage). Wo eine Norm oder Herstellerangabe entscheidet, sag, dass er sie am Sack oder im Datenblatt nachsehen muss, statt eine Zahl zu erfinden. Schweizer Verhältnisse, metrisch.",
       "werkzeuge": []
     },
 
@@ -28,7 +28,7 @@
       "kurz": "Offerten, Preise, Kunden",
       "weckworte": [
         "offerte", "angebot", "preis", "kosten", "kalkul", "stundensatz", "stundenansatz", "regie",
-        "ausmass", "ausmaß", "rabatt", "marge", "kunde", "auftrag", "nachtrag",
+        "ausmass", "ausmass", "rabatt", "marge", "kunde", "auftrag", "nachtrag",
         "mwst", "rechnung stellen", "position", "leistungsverzeichnis", "submission"
       ],
       "kontext": "Es geht ums Geschäftliche: Offerten, Preise, Kundentexte. Rechne nachvollziehbar — Posten, Menge, Ansatz, Summe —, damit Damaso jede Zahl nachprüfen kann. Preise und Stundensätze erfindest du nie; du fragst nach seinen oder rechnest mit denen, die er nennt. Texte für Kunden schreibst du fertig zum Abschicken, nicht als Entwurf mit Lücken.",

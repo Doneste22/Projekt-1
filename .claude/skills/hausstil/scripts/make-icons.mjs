@@ -13,8 +13,8 @@
  * Braucht playwright-core (im Scratchpad installieren, nicht ins Projekt —
  * dann PW_MODULES auf diesen Ordner zeigen lassen) und das vorinstallierte
  * Chromium. Warum nicht Chrome direkt mit --screenshot:
- * dessen Sichtbereich ist kleiner als die angegebene Fenstergröße, das Bild
- * bekommt unten einen weißen Streifen. Mit gesetztem viewport und clip stimmt es.
+ * dessen Sichtbereich ist kleiner als die angegebene Fenstergrösse, das Bild
+ * bekommt unten einen weissen Streifen. Mit gesetztem viewport und clip stimmt es.
  */
 
 import fs from "node:fs";

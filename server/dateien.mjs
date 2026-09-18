@@ -11,8 +11,8 @@
  *   Gelöscht wird nie. Es wird verschoben — in einen Papierkorb-Ordner mit
  *   Datum, aus dem sich alles zurückholen lässt.
  *
- *   Doppelt heißt Byte für Byte gleich. Erst wird nach Größe gruppiert, dann
- *   von den gleich großen die Prüfsumme gebildet. Gleicher Name genügt nicht.
+ *   Doppelt heisst Byte für Byte gleich. Erst wird nach Grösse gruppiert, dann
+ *   von den gleich grossen die Prüfsumme gebildet. Gleicher Name genügt nicht.
  */
 
 import fs from "node:fs";
@@ -76,20 +76,20 @@ export function hash(datei) {
 /**
  * Prüft, ob ein Pfad innerhalb der erlaubten Wurzeln liegt. Ohne diese Prüfung
  * könnte ein Ordnername aus einer Antwort heraus irgendwohin zeigen — deshalb
- * wird jeder Pfad, der von außen kommt, hier hindurchgeschickt.
+ * wird jeder Pfad, der von aussen kommt, hier hindurchgeschickt.
  */
 export function sichererPfad(eingabe, wurzeln) {
   const voll = path.resolve(String(eingabe || "").replace(/^~(?=$|\/)/, os.homedir()));
   if (TABU.includes(voll)) return { fehler: `${voll} ist zu allgemein — nenn einen einzelnen Ordner.` };
   const erlaubt = wurzeln.some((w) => voll === w || voll.startsWith(w + path.sep));
-  if (!erlaubt) return { fehler: `${voll} liegt außerhalb der freigegebenen Ordner (${wurzeln.join(", ")}).` };
+  if (!erlaubt) return { fehler: `${voll} liegt ausserhalb der freigegebenen Ordner (${wurzeln.join(", ")}).` };
   if (!fs.existsSync(voll)) return { fehler: `${voll} gibt es nicht.` };
   return { pfad: voll };
 }
 
 /* ---------- Einlesen ---------- */
 
-/** Größe eines ganzen Ordners — für Caches, die als Block verschoben werden. */
+/** Grösse eines ganzen Ordners — für Caches, die als Block verschoben werden. */
 export async function ordnerGroesse(wurzel) {
   let summe = 0;
   let eintraege;
@@ -220,7 +220,7 @@ export async function inPapierkorb(pfad, papierkorb) {
 /**
  * Räumt auf: verschiebt überzählige Kopien und Müll in einen Papierkorb.
  * Nimmt bewusst keine Dateiliste entgegen, sondern sucht selbst — so kann von
- * außen niemand bestimmen, welche Datei verschwindet.
+ * aussen niemand bestimmen, welche Datei verschwindet.
  */
 export async function aufraeumen(ordner, vorbefund) {
   // Wer schon gesucht hat, reicht das Ergebnis herein — sonst wird neu gesucht.

@@ -84,8 +84,8 @@ Dann im Browser. Chromium liegt unter
 (im Scratchpad installieren, nicht ins Projekt) lässt sich die Seite öffnen,
 bedienen und fotografieren. Zwei Dinge, die sonst Zeit kosten:
 
-- `--screenshot` von Chrome direkt liefert ein Bild in Fenstergröße, aber einen
-  kleineren Sichtbereich — das Bild ist unten weiß. Über `playwright-core` mit
+- `--screenshot` von Chrome direkt liefert ein Bild in Fenstergrösse, aber einen
+  kleineren Sichtbereich — das Bild ist unten weiss. Über `playwright-core` mit
   gesetztem `viewport` und `clip` stimmt es.
 - Auf `pageerror` und `console` hören und am Ende ausgeben. Ein stiller
   JS-Fehler sieht auf dem Bild aus wie eine funktionierende Seite.
@@ -115,7 +115,7 @@ Umgebungsvariablen setzen, `deploy-site`). Drei Dinge, die dabei zählen:
 
 - **Nichts überschreiben.** Vor einem Deploy prüfen, ob das Zielprojekt
   überhaupt zu diesem Repo gehört (`deploy_source: "drop"` und `branch: null`
-  heißen: das ist eine von Hand hochgeladene Seite, ein Deploy löscht sie).
+  heissen: das ist eine von Hand hochgeladene Seite, ein Deploy löscht sie).
   Im Zweifel ein neues Projekt anlegen und fragen.
 - **Umgebungsvariablen wirken erst nach einem neuen Deploy.** Variable setzen,
   dann erneut veröffentlichen, dann prüfen — sonst hält man einen offenen

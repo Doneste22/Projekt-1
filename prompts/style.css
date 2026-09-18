@@ -11,7 +11,7 @@
 :root{
   color-scheme: light;
 
-  --papier:#F3EEE1;        /* Grundfläche — Papier, nicht Weiß */
+  --papier:#F3EEE1;        /* Grundfläche — Papier, nicht Weiss */
   --karte:#FFFDF8;
   --tinte:#16283D;
   --tinte-leise:#4A5C70;
@@ -299,7 +299,7 @@ main{padding:28px 20px 10px;}
 
 .karte--alles{border-style:dashed;}
 
-/* ---------- Fußnote und Fuß ---------- */
+/* ---------- Fussnote und Fuss ---------- */
 
 .fussnote{
   margin:34px 0 10px;

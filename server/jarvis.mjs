@@ -8,7 +8,7 @@
  * Startbildschirm hinzufügen" funktionieren also auch ohne Netzadresse.
  *
  * Braucht keine Pakete — nur Node. Es wird nichts protokolliert und nichts
- * gespeichert; der Verlauf liegt ausschließlich im Browser.
+ * gespeichert; der Verlauf liegt ausschliesslich im Browser.
  */
 
 import http from "node:http";
@@ -52,7 +52,7 @@ async function readBody(req) {
   let size = 0;
   for await (const chunk of req) {
     size += chunk.length;
-    if (size > 1_000_000) throw new Error("zu groß");
+    if (size > 1_000_000) throw new Error("zu gross");
     chunks.push(chunk);
   }
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
@@ -80,7 +80,7 @@ async function handleChat(req, res) {
   const checked = check(payload);
   if (checked.error) return sendJson(res, checked.status, { error: checked.error });
 
-  // Das Gespräch nimmt das starke Modell, der gesprochene Morgengruß das billige.
+  // Das Gespräch nimmt das starke Modell, der gesprochene Morgengruss das billige.
   const model = MODEL || MODI[checked.modus].model;
 
   // Browser weggeklickt oder abgebrochen: dann muss das Modell nicht weiterschreiben.
@@ -230,7 +230,7 @@ http.createServer((req, res) => {
   console.log("Jarvis läuft.");
   console.log(`  http://localhost:${PORT}/jarvis/   (auf diesem Gerät)`);
   addresses.forEach((line) => console.log(line));
-  console.log(`Modell: ${MODEL || `${MODI.chat.model} (Gespräch), ${MODI.gruss.model} (Morgengruß, Weiche, Gedächtnis)`}`);
+  console.log(`Modell: ${MODEL || `${MODI.chat.model} (Gespräch), ${MODI.gruss.model} (Morgengruss, Weiche, Gedächtnis)`}`);
   const abteilungen = abteilungenListe();
   console.log(`Abteilungen: ${abteilungen.map((a) => a.name).join(", ")} — Jarvis leitet jede Frage selbst dorthin.`);
   const ordner = wurzeln();

@@ -4,7 +4,7 @@
  * den Aufträgen eben die eckigen Klammern statt der eigenen Angaben, und man
  * markiert den Text von Hand. Das Skript nimmt nur Arbeit ab.
  *
- * Gespeichert wird ausschließlich im Browser (localStorage). Nichts geht
+ * Gespeichert wird ausschliesslich im Browser (localStorage). Nichts geht
  * hinaus — kein Server, kein Zählpixel, keine externe Datei.
  */
 

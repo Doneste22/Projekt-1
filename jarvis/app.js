@@ -305,7 +305,7 @@
   }
 
   /* Eine Antwort, die unterwegs abgerissen ist, noch einmal von vorn zu
-     verlangen, hilft nicht: sie reißt an derselben Stelle wieder ab. Was
+     verlangen, hilft nicht: sie reisst an derselben Stelle wieder ab. Was
      hilft, ist weiterschreiben zu lassen — das Stück steht ja schon da. */
   function weiterschreiben() {
     var text = 'Schreib bitte genau da weiter, wo du aufgehört hast. Ohne Einleitung, ohne Wiederholung.';
@@ -1089,7 +1089,7 @@
   }, 700);
 
   /* ---------- Auf Klatschen hören ---------- */
-  /* Zweimal klatschen startet den Morgengruß. Das geht nur, solange die App
+  /* Zweimal klatschen startet den Morgengruss. Das geht nur, solange die App
      offen und sichtbar ist — im Hintergrund darf kein Browser mithören. */
 
   async function klatschenSetzen(an) {
@@ -1137,7 +1137,7 @@
     store(KEY_PASSCODE, value);
     gateInput.value = '';
     gate.hidden = true;
-    // Steht schon eine Frage an, kommt die dran. Sonst war es der Morgengruß,
+    // Steht schon eine Frage an, kommt die dran. Sonst war es der Morgengruss,
     // der am Code hängengeblieben ist.
     if (apiMessages().length) ask();
     else morgengruss(false);
@@ -1247,7 +1247,7 @@
     }
   }
 
-  /* ---------- Begrüßung und Morgengruß ---------- */
+  /* ---------- Begrüssung und Morgengruss ---------- */
 
   var TAGE = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
   var MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli',
@@ -1257,7 +1257,7 @@
     return stunde < 11 ? 'Guten Morgen' : stunde < 18 ? 'Guten Tag' : 'Guten Abend';
   }
 
-  // Die schlichte Begrüßung ohne Modell und ohne Netz. Sie steht sofort da.
+  // Die schlichte Begrüssung ohne Modell und ohne Netz. Sie steht sofort da.
   function greet() {
     var text = tageszeit(new Date().getHours()) + ', Damaso. Ich bin Jarvis – womit kann ich helfen?';
     messages.push({ role: 'assistant', content: text, local: true });
@@ -1265,7 +1265,7 @@
     saveMessages();
   }
 
-  /* Der gesprochene Morgengruß: Tageszeit plus Wetter, zwei Sätze, vorgelesen.
+  /* Der gesprochene Morgengruss: Tageszeit plus Wetter, zwei Sätze, vorgelesen.
      Er läuft auf dem billigen Modell (siehe MODI in server/core.mjs) — er
      kommt bei jedem Start und darf deshalb nichts kosten. Einmal am Tag von
      selbst, danach nur noch auf Knopfdruck. */
@@ -1324,15 +1324,15 @@
         var detail = '';
         try { detail = (await response.json()).error || ''; } catch (e) { /* kein JSON */ }
         if (response.status === 401) {
-          // Der Gruß ist beim Start die erste Anfrage überhaupt. Fehlt der
+          // Der Gruss ist beim Start die erste Anfrage überhaupt. Fehlt der
           // Zugangscode, muss die Abfrage jetzt kommen — sonst steht Jarvis
-          // stumm da und niemand weiß, warum.
+          // stumm da und niemand weiss, warum.
           drop(KEY_PASSCODE);
           drop(KEY_GRUSS);
           openGate(read(KEY_PASSCODE) ? 'Der Code stimmt nicht. Versuch es nochmal.' : null);
           return;
         }
-        // Sonst gilt: von selbst ist der Gruß Zugabe und schweigt. Auf
+        // Sonst gilt: von selbst ist der Gruss Zugabe und schweigt. Auf
         // Knopfdruck muss dranstehen, warum nichts passiert ist.
         if (vonHand) renderError(errorText(response.status, detail), false);
         return;
@@ -1355,21 +1355,21 @@
       if (blase) blase.classList.remove('streaming');
 
       if (text.trim()) {
-        // local: true — der Gruß gehört nicht in den Verlauf, den der Server
+        // local: true — der Gruss gehört nicht in den Verlauf, den der Server
         // sieht. Sonst begänne die Unterhaltung mit einer Assistenz-Nachricht
         // und die Messages-API lehnte sie ab.
         messages.push({ role: 'assistant', content: text, local: true });
         saveMessages();
         var vorherAn = voiceOutput;
-        voiceOutput = true;             // der Gruß wird immer gesprochen
+        voiceOutput = true;             // der Gruss wird immer gesprochen
         feedSpeech(text, true);
         voiceOutput = vorherAn;
       }
       if (KONFIG.morgen.lied) spieleLied();
     } catch (err) {
       if (err.name === 'AbortError') return;
-      console.warn('Morgengruß:', err);
-      if (vonHand) renderError('Der Morgengruß ist nicht durchgegangen.', false);
+      console.warn('Morgengruss:', err);
+      if (vonHand) renderError('Der Morgengruss ist nicht durchgegangen.', false);
     } finally {
       controller = null;
       setBusy(false);
@@ -1616,7 +1616,7 @@
       window.speechSynthesis.addEventListener('voiceschanged', function () { pickVoice(); });
     }
 
-    // Der gesprochene Morgengruß, einmal am Tag. Kurz warten, damit die Seite
+    // Der gesprochene Morgengruss, einmal am Tag. Kurz warten, damit die Seite
     // erst fertig steht — und damit der erste Fingertipp den Ton freigibt.
     if (navigator.onLine) setTimeout(function () { morgengruss(false); }, 600);
   })();

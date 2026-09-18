@@ -2,7 +2,7 @@
  * Die Abteilungen von Jarvis — Serverseite.
  *
  * Gedanke dahinter: ein Assistent, der alles gleich behandelt, antwortet auf
- * alles gleich mittelmäßig. Also bekommt jede Art von Frage einen eigenen
+ * alles gleich mittelmässig. Also bekommt jede Art von Frage einen eigenen
  * Arbeitsplatz — eigener Kontext im Systemprompt, eigene Werkzeuge. Welche
  * Abteilung dran ist, entscheidet die Weiche im Browser (jarvis/abteilungen.js);
  * hierher kommt nur noch ihr Name.
@@ -23,7 +23,7 @@ export function abteilungWaehlen(name) {
   return Object.prototype.hasOwnProperty.call(ABTEILUNGEN, name) ? name : STANDARD;
 }
 
-/** Der Kontext, der in den Systemprompt wandert. Leer heißt: kein Zusatz. */
+/** Der Kontext, der in den Systemprompt wandert. Leer heisst: kein Zusatz. */
 export function abteilungKontext(name) {
   const a = ABTEILUNGEN[abteilungWaehlen(name)];
   if (!a || !a.kontext) return "";

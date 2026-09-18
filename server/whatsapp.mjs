@@ -19,7 +19,7 @@ import { nummer, nummernListe } from "./twilio.mjs";
 
 /** So viele Nachrichten Gedächtnis. Jede kostet bei jeder Frage wieder. */
 export const MAX_VERLAUF = 12;
-/** Kurzer Kanal, kurze Antworten — und ein Deckel gegen Ausreißer. */
+/** Kurzer Kanal, kurze Antworten — und ein Deckel gegen Ausreisser. */
 export const MAX_TOKENS = 1000;
 
 const FALLBACK_BETA = "server-side-fallback-2026-07-01";
@@ -37,7 +37,7 @@ export const KANAL_ZUSATZ = [
 ].join("\n");
 
 /**
- * Wer fragen darf. **Eine leere Liste heißt: niemand.**
+ * Wer fragen darf. **Eine leere Liste heisst: niemand.**
  *
  * Das ist Absicht. Ein offener Endpunkt bedeutet hier nicht nur fremden
  * Zugriff, sondern eine fremde Rechnung: jede Frage kostet Damaso Geld bei

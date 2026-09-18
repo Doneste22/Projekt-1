@@ -28,7 +28,7 @@
   function glatt(text) {
     return String(text || '')
       .toLowerCase()
-      .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+      .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ss/g, 'ss')
       .normalize('NFD').replace(/[̀-ͯ]/g, '');
   }
 
@@ -55,7 +55,7 @@
   }
 
   /* Stufe 1: Weckworte zählen. Gibt { abteilung, sicher } zurück — „sicher"
-     heißt: es muss niemand mehr gefragt werden. */
+     heisst: es muss niemand mehr gefragt werden. */
   function weiche(text) {
     var geglaettet = glatt(text);
     var woerter = geglaettet.split(/[^a-z0-9]+/).filter(Boolean);

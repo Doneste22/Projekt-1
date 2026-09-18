@@ -69,7 +69,7 @@ Danach http://localhost:8000 aufrufen.
 | Anker | Inhalt |
 | --- | --- |
 | Hero | Positionierung, Horizontalschnitt durch die Wand mit Rufnummern |
-| Kennzahlen | Achsmaß, Schraubenabstand, Q-Stufen, Absorptionsgrad |
+| Kennzahlen | Achsmass, Schraubenabstand, Q-Stufen, Absorptionsgrad |
 | `#aufbau` | Explosionszeichnung der fünf Schichten, mit Liste verknüpft |
 | `#qualitaet` | Q1–Q4 im Streiflicht, je eine Abbildung pro Stufe |
 | `#ratgeber` | Teaser der drei Anleitungen |
@@ -173,7 +173,7 @@ keine — nur Systemschriften, damit sie offline vollständig läuft).
 jarvis/index.html             Gerüst
 jarvis/style.css              Gestaltung und die Animationen des Gesichts
 jarvis/app.js                 Verlauf, Streaming, Sprache, Installation
-jarvis/klatschen.js           Erkennt zweimaliges Klatschen (Morgengruß)
+jarvis/klatschen.js           Erkennt zweimaliges Klatschen (Morgengruss)
 jarvis/abteilungen.js         Die Weiche: welche Abteilung bearbeitet die Frage?
 jarvis/gedaechtnis.js         Was Jarvis über Gespräche hinweg behält
 jarvis/konfiguration.json     Ort, Stimme, Ton, Gedächtnis, Morgenlied — ohne Schlüssel
@@ -213,7 +213,7 @@ die nichts Eindeutiges ergeben, entscheidet ein Satz an das billige Modell.
 bleibt, hält die Abteilung im Kopf der App fest; dann ruht die Weiche.
 
 Die Weckworte und die Kontexte stehen in `jarvis/abteilungen.json`. Neue
-Abteilung heißt: einen Eintrag anlegen, Weckworte dazu, Kontext in normalem
+Abteilung heisst: einen Eintrag anlegen, Weckworte dazu, Kontext in normalem
 Deutsch. Kein Code.
 
 **Merken.** Nach jeder Antwort sieht das billige Modell kurz nach, ob etwas
@@ -246,7 +246,7 @@ Zwei Dinge sind bewusst so gebaut:
 **Was hier absichtlich nicht drinsteckt.** Die Vorlage für diesen Aufbau
 (Videobilder aus dem Netz) nennt für dieselben Schichten eine Vektordatenbank
 (Supabase), einen Wissensgraphen (Obsidian), eine Werkzeugvermittlung
-(Composio) und eine Auswertung (PostHog). Jedes davon heißt: ein Konto, ein
+(Composio) und eine Auswertung (PostHog). Jedes davon heisst: ein Konto, ein
 weiterer Schlüssel, eine monatliche Rechnung und ein Dienst, der ausfallen
 kann. Bei ein paar hundert Notizen gewinnt eine Vektorsuche gegenüber der
 Suche über Wörter und Marken nichts — sie kostet nur. Kommt das Gedächtnis
@@ -269,7 +269,7 @@ Element `.app` steuert alles, die Animationen stehen in `style.css`:
 | Zustand | Was das Gesicht macht |
 | --- | --- |
 | `idle` | blinzelt, die Blase driftet minimal, der Ring steht still |
-| `listening` | Augen etwas größer, der Ring dreht sich und pulsiert |
+| `listening` | Augen etwas grösser, der Ring dreht sich und pulsiert |
 | `thinking` | Kopf legt sich schief, die Blase wandert, der Ring dreht schnell |
 | `speaking` | der Mund bewegt sich, solange Text ankommt oder vorgelesen wird |
 | `offline` | alles steht still, die Blase hängt am Anschlag |
@@ -326,7 +326,7 @@ serverseitig ab.
 Eingestellt sind `effort: "medium"` und maximal 4000 Tokens pro Antwort — ein
 Kompromiss aus Tempo, Kosten und Ausführlichkeit; beides steht oben in
 `server/core.mjs`. Der Systemprompt (wer Jarvis ist, wie er antwortet) steht
-ebenfalls dort und nicht im Browser, damit er von außen nicht zu ändern ist.
+ebenfalls dort und nicht im Browser, damit er von aussen nicht zu ändern ist.
 Nur der *Ton* kommt aus `jarvis/konfiguration.json`, und auch der wird
 serverseitig geprüft: Was nicht in der Konfiguration steht, wird nicht genommen.
 
@@ -337,7 +337,7 @@ Haiku. Welche Betriebsart was nimmt, steht in `MODI` in `server/core.mjs`:
 | Betriebsart | Modell | Wofür |
 | --- | --- | --- |
 | `chat` | Opus | das Gespräch, mit Abteilungskontext, Gedächtnis und Werkzeugen |
-| `gruss` | Haiku | der gesprochene Morgengruß, zwei Sätze |
+| `gruss` | Haiku | der gesprochene Morgengruss, zwei Sätze |
 | `leiten` | Haiku | die Weiche: ein Wort Antwort, nur wenn die Weckworte nichts hergeben |
 | `merken` | Haiku | das Gedächtnis: was bleibt aus dem letzten Austausch? |
 
@@ -390,21 +390,21 @@ MOCK_STATUS=429 node .claude/skills/hausstil/scripts/mock-elevenlabs.mjs
 ELEVENLABS_API_KEY=egal JARVIS_STIMME_URL=http://localhost:8790 node server/jarvis.mjs
 ```
 
-### Der Morgengruß
+### Der Morgengruss
 
 Beim ersten Start am Tag holt Jarvis das Wetter, lässt sich vom billigen Modell
-zwei Sätze dazu schreiben und liest sie vor — „Guten Abend, Sir. Draußen in
+zwei Sätze dazu schreiben und liest sie vor — „Guten Abend, Sir. Draussen in
 Zürich herrscht eine etwas launische Stimmung." Danach nur noch auf Knopfdruck
-(*Einstellungen → Morgengruß jetzt*).
+(*Einstellungen → Morgengruss jetzt*).
 
 Das Wetter kommt von [open-meteo.com](https://open-meteo.com) und braucht keinen
 Schlüssel und keine Anmeldung — deshalb darf das ausnahmsweise direkt aus dem
 Browser gehen, da ist nichts zu verraten. Ort und Koordinaten stehen in
-`jarvis/konfiguration.json`. Die Abfrage hat vier Sekunden Zeit; danach grüßt
+`jarvis/konfiguration.json`. Die Abfrage hat vier Sekunden Zeit; danach grüsst
 Jarvis ohne Wetter, statt hängenzubleiben.
 
 Steht in der Konfiguration unter `morgen.lied` ein Spotify-Link, öffnet Jarvis
-ihn beim Morgengruß mit. Mehr geht aus einem Browser nicht: er darf Spotify
+ihn beim Morgengruss mit. Mehr geht aus einem Browser nicht: er darf Spotify
 nicht fernsteuern, nur den Link aufmachen — auf dem Handy übernimmt dann die
 Spotify-App.
 
@@ -414,7 +414,7 @@ Spotify-App.
 | --- | --- | --- |
 | Mikrofonknopf | einmal zuhören, dann senden | — |
 | Freihändig | dauerhaft zuhören, reagiert auf „Jarvis …" | nur Chrome/Android, iPhone kann das nicht |
-| Klatschen | zweimal klatschen startet den Morgengruß | nur solange die App offen und sichtbar ist |
+| Klatschen | zweimal klatschen startet den Morgengruss | nur solange die App offen und sichtbar ist |
 
 **Freihändig** hört dauerhaft zu und nimmt nur, was nach dem Wort „Jarvis"
 kommt. Sagt man nur den Namen, antwortet er kurz („Sir?") — ohne das Modell zu
@@ -422,11 +422,11 @@ fragen, das kostet also nichts — und nimmt die nächsten acht Sekunden auch oh
 Weckwort an. Zugehört wird nur, wenn Jarvis weder denkt noch spricht: sonst
 hört das Mikrofon den Lautsprecher und Jarvis redet mit sich selbst.
 
-**Klatschen** ist die Abkürzung zum Morgengruß aus dem Video. Was dort gezeigt
+**Klatschen** ist die Abkürzung zum Morgengruss aus dem Video. Was dort gezeigt
 wird — Rechner hochfahren, klatschen, und im Hintergrund startet alles — geht
 im Browser nicht: eine Webseite darf nicht mithören, während sie geschlossen
-ist. Das kann nur ein Programm außerhalb des Browsers. Was hier geht: die App
-ist offen, zweimal klatschen, Jarvis grüßt.
+ist. Das kann nur ein Programm ausserhalb des Browsers. Was hier geht: die App
+ist offen, zweimal klatschen, Jarvis grüsst.
 
 Die Erkennung selbst (`jarvis/klatschen.js`) bekommt nur Lautstärkewerte zu
 sehen und entscheidet danach — deshalb lässt sie sich prüfen, ohne dass jemand
@@ -445,14 +445,14 @@ Besucher kann sie lesen. Schlüssel stehen in den Umgebungsvariablen.
 | Eintrag | Wofür |
 | --- | --- |
 | `ort` | Name und Koordinaten fürs Wetter |
-| `morgen.beim_start_gruessen` | ob der Morgengruß von selbst kommt |
-| `morgen.lied` | Spotify-Link, der beim Morgengruß aufgeht |
+| `morgen.beim_start_gruessen` | ob der Morgengruss von selbst kommt |
+| `morgen.lied` | Spotify-Link, der beim Morgengruss aufgeht |
 | `stimme` | Stimmen-ID, Sprachmodell, Stabilität, Tempo |
 | `gedaechtnis.an` | ob Jarvis sich über Gespräche hinweg etwas merkt |
 | `gedaechtnis.automatisch` | ob er nach jeder Antwort selbst nachsieht, was bleibt |
 | `ton` | welche Tonlage voreingestellt ist |
 | `toene` | die Tonlagen selbst: Name, Weckantwort, Anweisung ans Modell |
-| `modelle` | welches Modell fürs Gespräch, welches für den Gruß |
+| `modelle` | welches Modell fürs Gespräch, welches für den Gruss |
 
 Mitgeliefert sind drei Tonlagen: *Sachlich* (duzt, nüchtern), *Sir* (siezt,
 britischer Butler mit trockenem Sarkasmus) und *Coach* (duzt, treibt an).
@@ -477,14 +477,14 @@ Läuft Jarvis lokal, bekommt er Werkzeuge und kann den Speicher des Geräts
 ansehen und aufräumen. Dann geht das im Gespräch:
 
 > „Wie voll ist mein Speicher?“
-> „Zeig mir die zehn größten Videos.“
+> „Zeig mir die zehn grössten Videos.“
 > „Ist was doppelt in DCIM?“
 > „Dann räum das weg.“
 
 | Werkzeug | Was es tut |
 | --- | --- |
 | `speicher_uebersicht` | Wie voll das Gerät ist, was in den Ordnern liegt, nach Art aufgeteilt |
-| `ordner_lesen` | Dateien mit Größe und Datum, nach Größe, Datum oder Name |
+| `ordner_lesen` | Dateien mit Grösse und Datum, nach Grösse, Datum oder Name |
 | `dateien_suchen` | Dateien, deren Name einen Text enthält |
 | `aufraeumen_pruefen` | Was doppelt und was Müll ist — verschiebt nichts |
 | `aufraeumen_ausfuehren` | Verschiebt die überzähligen Kopien und den Müll in den Papierkorb |
@@ -504,7 +504,7 @@ steht über jeder Antwort, welches Werkzeug gelaufen ist und was es gefunden hat
 
 - **Gelöscht wird nie.** Auch Jarvis verschiebt nur in einen Papierkorb mit
   Datum. Erst wenn du den wegwirfst, ist etwas weg.
-- **Kein Pfad außerhalb der Freigabe.** Jede Ordnerangabe wird geprüft, auch
+- **Kein Pfad ausserhalb der Freigabe.** Jede Ordnerangabe wird geprüft, auch
   Umwege über `..`. Das Heimatverzeichnis und Systemordner sind gesperrt.
 - **Das Aufräum-Werkzeug nimmt keine Dateiliste entgegen.** Es sucht selbst
   nach Byte-gleichen Doppelten und eindeutigem Müll. Niemand kann ihm also eine
@@ -512,7 +512,7 @@ steht über jeder Antwort, welches Werkzeug gelaufen ist und was es gefunden hat
   aussieht.
 
 **Die Netz-Fassung bekommt diese Werkzeuge nicht.** Sie läuft in einem fremden
-Rechenzentrum und hat dort nichts anzufassen; außerdem darf eine Edge-Function
+Rechenzentrum und hat dort nichts anzufassen; ausserdem darf eine Edge-Function
 pro Anfrage nur 50 Millisekunden rechnen — für eine Werkzeug-Schleife reicht das
 ohnehin nicht.
 
@@ -642,7 +642,7 @@ Sperren, alle in `server/anfrage.mjs`:
   füllen alles aus. Steht etwas drin, wird still verworfen — und der Seite
   Erfolg gemeldet, damit das Skript nicht merkt, dass es aufgeflogen ist.
 - Wer das Formular in unter zwei Sekunden ausfüllt, ist keiner.
-- Höchstens drei Anfragen pro Absender und Stunde, höchstens dreißig von allen
+- Höchstens drei Anfragen pro Absender und Stunde, höchstens dreissig von allen
   zusammen pro Tag.
 
 ### Anrufbeantworter, der mitschreibt
@@ -773,7 +773,7 @@ ANTHROPIC_API_KEY=sk-test ELEVENLABS_API_KEY=el-test \
   node server/jarvis.mjs
 ```
 
-Damit läuft alles durch — Gespräch, Morgengruß, Stimme — und in den beiden
+Damit läuft alles durch — Gespräch, Morgengruss, Stimme — und in den beiden
 Nachbauten steht im Protokoll, welches Modell, welche Parameter und welcher
 Text tatsächlich gesendet wurden. Für die Fehlerwege: `MOCK_STATUS=429` beim
 Stimmen-Nachbau spielt „Kontingent leer" nach, `MOCK_STATUS=401` einen falschen
@@ -824,7 +824,7 @@ längst, und zwar auch auf dem Handy.
 
 Ein spanisches Video von @sergioprompts nennt „die fünf Plugins, die man für
 Claude Code braucht". Drei davon sind gar keine Plugins, sondern eigene
-Programme, die sich zwischen Claude Code und das Modell setzen. Was das heißt,
+Programme, die sich zwischen Claude Code und das Modell setzen. Was das heisst,
 steht unten bei jedem einzeln.
 
 | # | Name | Was es wirklich ist | Stand hier |
@@ -989,7 +989,7 @@ eine Sitzung überlebt, ist das Repo. Also liegt das Gedächtnis im Repo:
 In `.claude/gedaechtnis.md` steht nur, was eine neue Sitzung nicht von selbst
 sieht: dass der Browser dieser Sandbox nicht an die Live-Adresse kommt, dass
 Netlifys Umgebungsvariablen erst nach einem neuen Deploy wirken, dass
-`--screenshot` von Chrome unten weiße Bilder liefert. Alles Dinge, die hier
+`--screenshot` von Chrome unten weisse Bilder liefert. Alles Dinge, die hier
 schon einmal eine Stunde gekostet haben. Was dauerhaft gilt, steht dagegen in
 `CLAUDE.md` oder im Hausstil-Skill — das Gedächtnis ist kein zweites Regelbuch.
 
@@ -1058,7 +1058,7 @@ node scripts/aufraeumen.mjs ~/storage/shared/DCIM ~/storage/shared/Download
 ```
 
 Der erste Lauf zeigt nur: wie viel wo liegt, welche Dateien doppelt sind, was
-Müll ist und welche Brocken am größten sind. **Angefasst wird nichts.** Stimmt
+Müll ist und welche Brocken am grössten sind. **Angefasst wird nichts.** Stimmt
 der Befund, denselben Befehl nochmal mit `--papierkorb`:
 
 ```
@@ -1072,7 +1072,7 @@ Datei zurückschieben.
 
 Was das Werkzeug macht und was bewusst nicht:
 
-- **Doppelt heißt Byte für Byte gleich.** Erst werden gleich große Dateien
+- **Doppelt heisst Byte für Byte gleich.** Erst werden gleich grosse Dateien
   gesucht, dann von denen die Prüfsumme gebildet. Gleicher Name genügt nicht —
   zwei verschiedene Fotos mit demselben Namen bleiben beide liegen. Ein Foto,
   das durch WhatsApp gelaufen ist, ist neu komprimiert und damit eine andere
@@ -1083,9 +1083,9 @@ Was das Werkzeug macht und was bewusst nicht:
 - **Müll** sind nur eindeutige Fälle: leere Dateien, abgebrochene Downloads
   (`.crdownload`, `.part`, `.tmp`), Reste gelöschter Bilder (`.trashed-…`),
   `Thumbs.db` und Vorschaubild-Caches (`.thumbnails`).
-- **Was „nicht gebraucht wird", entscheidet niemand außer dir.** Alte Fotos,
-  große Videos, alte Downloads werden aufgelistet, aber nie automatisch
-  angefasst. Die Liste der größten Dateien steht nur zur Ansicht da.
+- **Was „nicht gebraucht wird", entscheidet niemand ausser dir.** Alte Fotos,
+  grosse Videos, alte Downloads werden aufgelistet, aber nie automatisch
+  angefasst. Die Liste der grössten Dateien steht nur zur Ansicht da.
 - `--liste bericht.txt` schreibt den vollständigen Befund in eine Textdatei,
   wenn die Ausgabe im Terminal zu lang wird.
 
@@ -1113,11 +1113,11 @@ Vor dem Livegang zu klären — die vollständige Reihenfolge steht in
   Ich-Form — jede Karte gehört daher einmal daraufhin geprüft, ob sie die
   eigene Erfahrung korrekt wiedergibt.
 - **Partnerlinks eintragen** — siehe oben, eine Zeile je Produkt.
-- **Technische Angaben.** Achsmaße, Schraubenabstände und Profilraster sind
-  branchenübliche Regelwerte; maßgeblich bleiben die Systemdatenblätter der
-  Hersteller. Die Absorptionskurven sind typische Größenordnungen, keine
+- **Technische Angaben.** Achsmasse, Schraubenabstände und Profilraster sind
+  branchenübliche Regelwerte; massgeblich bleiben die Systemdatenblätter der
+  Hersteller. Die Absorptionskurven sind typische Grössenordnungen, keine
   Messwerte eines konkreten Produkts.
-- **Newsletter.** Das Formular im Fußbereich ist bewusst ohne Backend und meldet
+- **Newsletter.** Das Formular im Fussbereich ist bewusst ohne Backend und meldet
   das dem Nutzer. Beim Anschluss an einen Anbieter den Hinweistext ersetzen und
   die Einwilligung ergänzen — nach Art. 3 Abs. 1 lit. o UWG ist Massenwerbung per
   E-Mail ohne vorherige Einwilligung unlauter.
@@ -1125,18 +1125,17 @@ Vor dem Livegang zu klären — die vollständige Reihenfolge steht in
 - **Porträtfoto.** Der Abschnitt „Über mich" zeigt bislang ein Signet. Für eine
   Seite, die Beratung verkauft, ist ein Gesicht mehr wert als ein Logo.
 
-### Eine offene Frage zur Rechtschreibung
+### Schweizer Rechtschreibung
 
-Die Seite schreibt durchgehend deutsch mit ß („Achsmaß", „Stöße"), die neuen
-Rechtstexte tun das aus Konsistenzgründen auch. Für einen Schweizer Auftritt wäre
-ss richtig. Die Umstellung ist mechanisch — in der Schweizer Rechtschreibung wird
-ß ausnahmslos zu ss:
+Die Seite schreibt durchgehend ss. Damaso hat sich am 18.09.2026 für den
+Schweizer Auftritt entschieden, und in der Schweizer Rechtschreibung gibt es
+das scharfe s nicht: es wird ausnahmslos durch ss ersetzt, ohne Ausnahme und
+ohne Bedeutungsunterschied. Masse und Masse schreiben sich also gleich; welche
+gemeint ist, sagt der Satz.
 
-```
-find . -name '*.html' -o -name '*.md' | xargs sed -i 's/ß/ss/g'
-```
+Die Umstellung ist erledigt: 239 Stellen in 42 Dateien — Seiten, Rechtstexte,
+Jarvis, Skripte und die internen Notizen. Wer neuen Text schreibt, schreibt
+gleich ss.
 
-Das ist eine Entscheidung über die Ansprache, nicht über den Code: Mit ss klingt
-die Seite schweizerisch, mit ß erreicht sie den grösseren deutschen Lesermarkt
-ohne Stolperstelle. Die Beratung wird in Franken verkauft, die Ratgeber richten
-sich an beide Märkte — deshalb ist die Frage hier notiert und nicht entschieden.
+Damit steht auch die Rechtsgrundlage fest: Impressum nach Schweizer Recht,
+Datenschutzerklärung nach DSG. Beides war bereits so entworfen und bleibt.

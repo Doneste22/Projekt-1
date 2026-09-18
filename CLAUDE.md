@@ -24,11 +24,11 @@ Regeln, alle nachgemessen:
 - **Erst das Werkzeug fragen, dann die Doku.** `claude plugin install --help`
   sind 2 214 Zeichen, die passende Doku-Seite rund 22 000 — zehnfach teurer
   für dieselbe Antwort.
-- **Große Dateien gezielt lesen.** `README.md` hat 56 000 Zeichen. Erst
+- **Grosse Dateien gezielt lesen.** `README.md` hat 56 000 Zeichen. Erst
   `grep -n`, dann `sed -n 'a,bp'`. Nie ganz.
 - **Bilder einzeln.** Ein Kontaktbogen kostet rund 1 500 Token. Aufhören,
   sobald die Frage beantwortet ist.
-- **Neue Aufgabe → neue Sitzung.** Der größte Hebel von allen. Bei jedem
+- **Neue Aufgabe → neue Sitzung.** Der grösste Hebel von allen. Bei jedem
   Handgriff wird die ganze bisherige Unterhaltung nochmal gelesen. Gemessen am
   18.09.2026: erster Aufruf 63 000 Token, nach 17 Nachrichten 270 000 — neunmal
   so teuer für dieselbe Arbeit. Das Gedächtnis sorgt dafür, dass eine frische
@@ -53,7 +53,7 @@ Was dabei weiterhin gilt:
   ansehen, was kollidiert, und im Zweifel fragen.
 - Ein Pull Request nur, wenn er ihn verlangt.
 - Zweige, die *nicht* in der Hauptlinie enthalten sind, werden nicht gelöscht.
-  Aktuell draußen: `claude/setup-pm-4a2y52` (Paketmanager-Skript) und
+  Aktuell draussen: `claude/setup-pm-4a2y52` (Paketmanager-Skript) und
   `claude/video-anschauen-ejtvd9` (Trading-Assistent, eigenes Programm).
 
 ## Wie er arbeitet

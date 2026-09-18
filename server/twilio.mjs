@@ -4,7 +4,7 @@
  *
  * Steht getrennt, weil es inzwischen drei Anwender hat — Jarvis auf WhatsApp,
  * die Anfragen vom Angebotsformular und der Anrufbeantworter. Dreimal
- * dasselbe zu schreiben hieße, es zweimal falsch zu korrigieren.
+ * dasselbe zu schreiben hiesse, es zweimal falsch zu korrigieren.
  */
 
 export const TWILIO_API = "https://api.twilio.com";

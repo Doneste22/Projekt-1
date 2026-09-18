@@ -46,7 +46,7 @@ awk '
 # Archivo und Inter sind Variable Fonts: Google liefert für alle angefragten
 # Schnitte einer Familie dieselbe Datei und pinnt den Schnitt nur über die
 # font-weight-Angabe im CSS. Wir laden je Familie und Subset einmal und
-# deklarieren stattdessen den Bereich vom kleinsten bis größten Schnitt.
+# deklarieren stattdessen den Bereich vom kleinsten bis grössten Schnitt.
 while IFS=$'\t' read -r subset fam gew url bereich; do
   case " $SUBSETS " in *" $subset "*) ;; *) continue ;; esac
   echo "$gew" >> "$ARBEIT/gew-$fam-$subset"

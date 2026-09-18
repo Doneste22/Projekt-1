@@ -14,7 +14,6 @@ Was dauerhaft gilt, gehört in `CLAUDE.md` oder den Hausstil-Skill.
   Edge-Function für Jarvis.
 - Offen vor dem Livegang: Domain, E-Mail, Partnerlinks, Porträtfoto — Liste im
   README unter „Redaktionelle Hinweise", Reihenfolge in `MONETARISIERUNG.md`.
-  Nicht entschieden: ß oder ss (Begründung beider Seiten im README).
 
 ## Wartet auf Damaso (aus älteren Sitzungen, Stand 18.09.2026)
 
@@ -31,9 +30,9 @@ eine davon zur Sprache, hier nachsehen statt neu herleiten:
   Muss mit `sk_` anfangen, nicht mit `*`.
 - **Kraken-Ausweisprüfung** für den Trading-Assistenten (Zweig
   `claude/video-anschauen-ejtvd9`). Bis dahin nur Papierhandel.
-- **Partnerlink-Ziele** für 29 Produkte, und die Frage, ob der Auftritt
-  schweizerisch oder deutsch geführt wird — davon hängen Impressum und
-  Datenschutz ab.
+- **Partnerlink-Ziele** für 29 Produkte. (Die Frage schweizerisch oder deutsch
+  ist am 18.09.2026 entschieden: Schweiz. Rechtstexte bleiben nach Schweizer
+  Recht und DSG, die Schreibweise ist auf ss umgestellt.)
 
 ## Was hier schon Zeit gekostet hat
 
@@ -44,7 +43,7 @@ eine davon zur Sprache, hier nachsehen statt neu herleiten:
   hält man einen offenen Endpunkt für geschützt.
 - **Als geheim markierte Variablen sind beim Anlegen schon stillschweigend
   verschwunden.** Danach die Liste abfragen und hinsehen.
-- **Chromes `--screenshot` liefert unten weiße Bilder.** `playwright-core` mit
+- **Chromes `--screenshot` liefert unten weisse Bilder.** `playwright-core` mit
   gesetztem `viewport` und `clip` nehmen.
 - **TikTok ist gesperrt** (403 beim Verbindungsaufbau, nicht umgehbar). Video
   als Datei hochladen, mit `npm i ffmpeg-static` zerlegen: `fps=1` und
@@ -56,6 +55,10 @@ eine davon zur Sprache, hier nachsehen statt neu herleiten:
   `claude plugin details <name>@<markt>` nennt die Always-on-Token. Es geht nur
   für installierte Plugins — also auf `--scope user` installieren (ändert das
   Repo nicht), messen, wieder deinstallieren.
+- **Globales Suchen-und-Ersetzen frisst den eigenen Abschnitt.** Beim Umstellen
+  auf ss wurde auch der README-Abschnitt umgeschrieben, der die Regel erklärt —
+  aus „ss statt scharfem s" wurde „ss statt ss". Solche Stellen vorher
+  umformulieren, damit sie das Zeichen gar nicht brauchen.
 - **Plugins vor dem Einschalten messen.** Beschreibungen stehen in *jeder*
   Sitzung im Kontext, auch ungenutzt. `netlify-skills` kostete so 25 302
   Zeichen und flog raus. Faustregel: Skills kosten immer, Hooks nur im

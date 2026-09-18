@@ -6,7 +6,7 @@
  *
  *   node scripts/aufraeumen.mjs ~/storage/shared/DCIM ~/storage/shared/Download
  *
- * Standardmäßig wird nur gezeigt, nie gelöscht. Erst mit --papierkorb werden
+ * Standardmässig wird nur gezeigt, nie gelöscht. Erst mit --papierkorb werden
  * die überzähligen Kopien verschoben — und zwar in einen Papierkorb-Ordner mit
  * Datum, nicht ins Nichts. Solange der Ordner existiert, ist jeder Schritt
  * zurückzuholen. Wirklich gelöscht wird nur, was du selbst löschst.
@@ -117,10 +117,10 @@ if (!muell.length) {
   });
 }
 
-/* Die größten Brocken — nur als Hinweis, nichts wird daran gemacht */
+/* Die grössten Brocken — nur als Hinweis, nichts wird daran gemacht */
 const groesste = [...dateien].sort((a, b) => b.groesse - a.groesse).slice(0, 8);
 if (groesste.length) {
-  console.log(`\nDie größten Einzeldateien (nur zur Ansicht)`);
+  console.log(`\nDie grössten Einzeldateien (nur zur Ansicht)`);
   console.log("──────────────────────────────────────────");
   groesste.forEach((d) => console.log(`  ${groesse(d.groesse).padStart(9)}   ${d.pfad}`));
 }

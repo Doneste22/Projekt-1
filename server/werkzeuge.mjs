@@ -9,7 +9,7 @@
  *
  *   1. Gelöscht wird nie, nur in einen Papierkorb mit Datum verschoben.
  *   2. Jeder Pfad wird gegen die freigegebenen Ordner geprüft (JARVIS_ORDNER).
- *      Was außerhalb liegt, wird abgelehnt — auch wenn es im Gespräch steht.
+ *      Was ausserhalb liegt, wird abgelehnt — auch wenn es im Gespräch steht.
  *   3. Das Werkzeug zum Aufräumen nimmt *keine* Dateiliste entgegen. Es sucht
  *      selbst nach Byte-gleichen Doppelten und eindeutigem Müll. Niemand kann
  *      ihm also eine bestimmte Datei unterschieben — auch kein Dateiname, der
@@ -52,7 +52,7 @@ function kurz(pfad) {
   return relativ || path.basename(w);
 }
 
-/** Prüft die Ordnerangabe eines Werkzeugs: keine Angabe heißt „alle freigegebenen". */
+/** Prüft die Ordnerangabe eines Werkzeugs: keine Angabe heisst „alle freigegebenen". */
 function ordnerAuswaehlen(eingabe) {
   const erlaubt = wurzeln();
   if (!erlaubt.length) {
@@ -70,14 +70,14 @@ export const WERKZEUGE = [
     name: "speicher_uebersicht",
     description:
       "Zeigt, wie voll der Speicher des Geräts ist und was in den freigegebenen Ordnern liegt — " +
-      "Anzahl und Größe nach Art (Bilder, Videos, Ton, Dokumente). Benutze das bei Fragen wie " +
+      "Anzahl und Grösse nach Art (Bilder, Videos, Ton, Dokumente). Benutze das bei Fragen wie " +
       "„wie voll ist mein Speicher“ oder „was liegt bei mir herum“.",
     input_schema: { type: "object", properties: {}, required: [] }
   },
   {
     name: "ordner_lesen",
     description:
-      "Listet Dateien eines Ordners mit Größe und Datum. Gut für „zeig mir die größten Videos“ " +
+      "Listet Dateien eines Ordners mit Grösse und Datum. Gut für „zeig mir die grössten Videos“ " +
       "oder „was liegt in Download“.",
     input_schema: {
       type: "object",
@@ -142,7 +142,7 @@ async function speicherUebersicht() {
     const frei = s.bavail * s.bsize;
     zeilen.push(`Speicher gesamt ${groesse(gesamt)}, davon frei ${groesse(frei)} (${Math.round((frei / gesamt) * 100)} %).`);
   } catch {
-    zeilen.push("Die Gesamtgröße des Speichers konnte das System nicht melden.");
+    zeilen.push("Die Gesamtgrösse des Speichers konnte das System nicht melden.");
   }
 
   const { dateien, uebersprungen } = await durchsehen(erlaubt);
@@ -222,7 +222,7 @@ async function aufraeumenPruefen(eingabe) {
   const zeilen = [`${doppeltAnzahl} überzählige Kopien (${groesse(doppeltBytes)}) und ${muell.length} Müll-Dateien (${groesse(muellBytes)}).`];
   zeilen.push(`Zusammen ${groesse(doppeltBytes + muellBytes)}.`);
   if (gruppen.length) {
-    zeilen.push("Die größten Gruppen:");
+    zeilen.push("Die grössten Gruppen:");
     gruppen.slice(0, 8).forEach((g) => {
       zeilen.push(`  ${groesse(g.groesse)} × ${g.ueberzaehlig.length} — bleibt: ${kurz(g.behalten.pfad)}`);
       g.ueberzaehlig.slice(0, 3).forEach((u) => zeilen.push(`      ginge: ${kurz(u.pfad)}`));
@@ -250,7 +250,7 @@ async function aufraeumenAusfuehren(eingabe) {
     `Sie liegen im Papierkorb: ${ergebnis.papierkorb}`,
     "Gelöscht ist nichts — Damaso kann alles zurückschieben oder den Ordner wegwerfen."
   ];
-  if (ergebnis.fehler.length) zeilen.push(`${ergebnis.fehler.length} Dateien ließen sich nicht verschieben.`);
+  if (ergebnis.fehler.length) zeilen.push(`${ergebnis.fehler.length} Dateien liessen sich nicht verschieben.`);
   return { text: zeilen.join("\n"), ui: `${ergebnis.verschoben} Dateien in den Papierkorb, ${groesse(ergebnis.gespart)} frei` };
 }
 

@@ -9,7 +9,7 @@
  *   fragen → Modell antwortet und will ein Werkzeug → ausführen →
  *   Ergebnis zurückgeben → Modell schreibt weiter → fertig
  *
- * Nach außen sieht das aus wie eine einzige Antwort: Text fließt durchgehend,
+ * Nach aussen sieht das aus wie eine einzige Antwort: Text fliesst durchgehend,
  * und `message_stop` kommt genau einmal, wenn wirklich alles gesagt ist.
  * Zusätzlich meldet der Server jedes Werkzeug als eigenes Ereignis, damit in
  * der Oberfläche sichtbar ist, was gerade angefasst wird.
@@ -77,7 +77,7 @@ async function eineRunde({ apiKey, model, messages, werkzeuge, signal, url, send
         const d = daten.delta || {};
         if (d.type === "text_delta") {
           block.text += d.text;
-          sende("content_block_delta", daten);            // Text fließt sofort weiter
+          sende("content_block_delta", daten);            // Text fliesst sofort weiter
         } else if (d.type === "input_json_delta") {
           block.partial += d.partial_json || "";          // Werkzeug-Eingabe kommt stückweise
         } else if (d.type === "thinking_delta") {
@@ -128,7 +128,7 @@ async function eineRunde({ apiKey, model, messages, werkzeuge, signal, url, send
  */
 export async function fuehren({ apiKey, model, messages, signal, url, sende, modus, ton, abteilung, erinnerungen }) {
   // Werkzeuge gibt es nur im Gespräch, und dort nur die der Abteilung. Der
-  // Morgengruß, die Weiche und das Gedächtnis laufen alle auf dem billigen
+  // Morgengruss, die Weiche und das Gedächtnis laufen alle auf dem billigen
   // Modell, sind zwei Zeilen lang und haben am Dateisystem nichts zu suchen.
   const werkzeuge = modus === "chat" && wurzeln().length ? werkzeugeFuer(abteilung, WERKZEUGE) : undefined;
   const verlauf = [...messages];
@@ -162,7 +162,7 @@ export async function fuehren({ apiKey, model, messages, signal, url, sende, mod
     verlauf.push({ role: "user", content: ergebnisse });
   }
 
-  // Mehr Runden als erlaubt: lieber sauber abschließen als endlos weiterlaufen.
+  // Mehr Runden als erlaubt: lieber sauber abschliessen als endlos weiterlaufen.
   sende("werkzeug", { status: "fertig", name: "grenze", text: `nach ${MAX_RUNDEN} Runden abgebrochen`, fehler: true });
   sende("message_delta", { type: "message_delta", delta: { stop_reason: "max_runden" } });
   sende("message_stop", { type: "message_stop" });

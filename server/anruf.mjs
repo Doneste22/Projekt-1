@@ -89,12 +89,12 @@ export async function mitschrift({
     });
     if (!geholt.ok) {
       console.error("anruf: Aufnahme nicht abholbar —", geholt.status);
-      return { fehler: "Die Aufnahme ließ sich nicht abholen." };
+      return { fehler: "Die Aufnahme liess sich nicht abholen." };
     }
     toene = await geholt.blob();
   } catch (e) {
     console.error("anruf: Aufnahme nicht abholbar —", e?.message || e);
-    return { fehler: "Die Aufnahme ließ sich nicht abholen." };
+    return { fehler: "Die Aufnahme liess sich nicht abholen." };
   }
 
   const formular = new FormData();

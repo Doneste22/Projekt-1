@@ -24,7 +24,7 @@ Lauf selbst herunter.
 
 ## Der Signaturschlüssel
 
-**Liegt bewusst nicht im Repo.** Er heißt `android.keystore`, Alias `jarvis`,
+**Liegt bewusst nicht im Repo.** Er heisst `android.keystore`, Alias `jarvis`,
 und gehört zu Damaso — Fingerabdruck:
 
 ```

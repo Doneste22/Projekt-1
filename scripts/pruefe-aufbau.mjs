@@ -7,7 +7,7 @@
  *   Die Weiche      (jarvis/abteilungen.js) sieht nur Text und entscheidet,
  *                   welche Abteilung zuständig ist. Also füttern wir sie mit
  *                   Sätzen, wie Damaso sie tippt, und sehen nach, wo sie
- *                   landen — und wo sie ehrlich „weiß nicht“ sagt, damit das
+ *                   landen — und wo sie ehrlich „weiss nicht“ sagt, damit das
  *                   billige Modell übernimmt.
  *   Das Gedächtnis  (jarvis/gedaechtnis.js) sieht nur Notizen und eine Frage.
  *                   Geprüft wird, dass die passenden mitgehen, dass ein Faden
@@ -93,7 +93,7 @@ console.log("\nDas Gedächtnis");
 
 Gedaechtnis.leeren();
 Gedaechtnis.merken("Damaso rechnet mit 85 Franken Stundenansatz.", { marken: ["preis"], abteilung: "angebot" });
-Gedaechtnis.merken("Kunde Meier in Horgen zahlt regelmäßig zu spät.", { marken: ["preis", "kunde"], abteilung: "angebot" });
+Gedaechtnis.merken("Kunde Meier in Horgen zahlt regelmässig zu spät.", { marken: ["preis", "kunde"], abteilung: "angebot" });
 Gedaechtnis.merken("Damaso arbeitet am liebsten mit Knauf-Platten.", { marken: ["material"], abteilung: "baustelle" });
 Gedaechtnis.merken("Der Transporter hat im März Service.", { marken: ["fahrzeug"], abteilung: "alltag" });
 
@@ -114,7 +114,7 @@ pruefe("über die Marke kommt der Kunde mit",
 const zumMaterial = Gedaechtnis.passende("Welche Platten nimmst du?", "baustelle");
 pruefe("zur Materialfrage kommt Knauf mit",
   zumMaterial.some((n) => n.text.includes("Knauf")), zumMaterial.map((n) => n.text).join(" | "));
-pruefe("und der Transporter bleibt draußen",
+pruefe("und der Transporter bleibt draussen",
   !zumMaterial.some((n) => n.text.includes("Transporter")), zumMaterial.map((n) => n.text).join(" | "));
 
 pruefe("nie mehr als die vereinbarte Zahl auf einmal",

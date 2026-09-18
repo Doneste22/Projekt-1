@@ -91,7 +91,7 @@ if [ -d "$HOME/Projekt-1/.git" ]; then
   git -C "$HOME/Projekt-1" pull --quiet || zeile "Abrufen fehlgeschlagen — die vorhandene Fassung bleibt."
 else
   git clone --quiet "$REPO_URL" "$HOME/Projekt-1" || {
-    fehler "Das Projekt ließ sich nicht holen. Netz prüfen und nochmal versuchen."
+    fehler "Das Projekt liess sich nicht holen. Netz prüfen und nochmal versuchen."
     exit 1
   }
   zeile "geholt nach ~/Projekt-1"
@@ -176,7 +176,7 @@ cd "$HOME/Projekt-1" || exit 1
 exec node server/jarvis.mjs
 START
 chmod +x "$PREFIX/bin/jarvis"
-zeile "angelegt: der Befehl heißt jetzt „jarvis“"
+zeile "angelegt: der Befehl heisst jetzt „jarvis“"
 
 # ---------- 7. Automatisch starten ----------
 

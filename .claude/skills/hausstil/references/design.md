@@ -9,7 +9,7 @@ Beide Oberflächen benutzen dieselbe Palette. Sie steht in `:root` — in
 | --- | --- | --- |
 | `--ink` | `#16283D` | Schrift, dunkle Flächen, Kopfzeile |
 | `--ink-soft` | `#4A5C70` | Nebentext, feine Linien |
-| `--paper` | `#F3EEE1` | Grundfläche — Papier, nicht Weiß |
+| `--paper` | `#F3EEE1` | Grundfläche — Papier, nicht Weiss |
 | `--card` | `#FFFDF8` | Karten und Blasen auf dem Papier |
 | `--line` | `#DCD4BE` | Ränder |
 | `--accent` | `#D9631F` | Die orange Libellenblase. Sparsam. |
@@ -41,8 +41,8 @@ es so.
   fotografiert. Das hält das Repo klein, funktioniert offline und lässt sich mit
   CSS einfärben und animieren.
 - **Mobil zuerst.** Alles wird am Telefon benutzt. Feste Breite höchstens
-  480 px, `100dvh` statt `100vh`, `env(safe-area-inset-*)` in Kopf- und Fußzeile.
-- **Eingabefelder nie unter 16 px Schriftgröße.** iOS zoomt sonst beim Fokus
+  480 px, `100dvh` statt `100vh`, `env(safe-area-inset-*)` in Kopf- und Fusszeile.
+- **Eingabefelder nie unter 16 px Schriftgrösse.** iOS zoomt sonst beim Fokus
   hinein und die Seite steht schief.
 - **`prefers-reduced-motion` abfangen.** Animationen sind Beiwerk; wer sie
   abgestellt hat, bekommt sie nicht.

@@ -42,7 +42,7 @@ export function pruefe(daten) {
   if (!daten || typeof daten !== "object") return { fehler: "Da kam nichts an." };
 
   // Das Feld ist im Formular versteckt. Menschen füllen es nie aus, Skripte
-  // füllen alles aus, was sie finden. Es heißt „betreff" und nicht „firma",
+  // füllen alles aus, was sie finden. Es heisst „betreff" und nicht „firma",
   // damit die Ausfüllhilfe des Browsers nicht hineinschreibt — sonst fiele
   // ein echter Kunde in die Falle.
   if (kurz(daten.betreff, 50)) return { still: true };

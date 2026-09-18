@@ -1,7 +1,7 @@
 /* Das Gedächtnis — was Jarvis über Gespräche hinweg behält.
 
    Ein Assistent, der bei jeder Frage wieder bei null anfängt, ist ein
-   Suchschlitz. Damit er weiß, dass Damaso mit 85 Franken die Stunde rechnet
+   Suchschlitz. Damit er weiss, dass Damaso mit 85 Franken die Stunde rechnet
    oder dass die Werkstatt in Wädenswil ist, braucht er ein Gedächtnis.
 
    Wo es liegt: im Browser, in localStorage. Kein Konto, kein Dienst, keine
@@ -45,7 +45,7 @@
   function glatt(text) {
     return String(text || '')
       .toLowerCase()
-      .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+      .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ss/g, 'ss')
       .normalize('NFD').replace(/[̀-ͯ]/g, '');
   }
 
