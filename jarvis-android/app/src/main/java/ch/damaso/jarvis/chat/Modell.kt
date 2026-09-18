@@ -284,13 +284,14 @@ object Modell {
     /**
      * Die Klartextmeldung aus `{"error": "…"}`, falls eine drinsteht.
      *
-     * Anthropic verpackt seine Fehler als Objekt (`{"error": {"message": …}}`),
-     * der eigene Server als Zeichenkette. `optString` auf einem Objekt liefert
-     * leer — damit fällt der fremde Fall von selbst durch, statt Klammern in
-     * die Oberfläche zu schreiben.
+     * Nur eine echte Zeichenkette zählt. `optString` täte es hier nicht: es
+     * ruft `toString()` auf, was immer drinsteht — bei Anthropics Fehlerform
+     * (`{"error": {"message": …}}`) stünde dann `{"message":"overloaded"}` in
+     * der Oberfläche. `opt` plus `as? String` lässt alles durchfallen, was
+     * keine Zeichenkette ist.
      */
     private fun klartext(rumpf: String): String? =
-        runCatching { JSONObject(rumpf).optString("error") }
+        runCatching { JSONObject(rumpf).opt("error") as? String }
             .getOrNull()
             ?.takeIf { it.isNotBlank() }
 }
