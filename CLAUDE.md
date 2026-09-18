@@ -28,6 +28,11 @@ Regeln, alle nachgemessen:
   `grep -n`, dann `sed -n 'a,bp'`. Nie ganz.
 - **Bilder einzeln.** Ein Kontaktbogen kostet rund 1 500 Token. Aufhören,
   sobald die Frage beantwortet ist.
+- **Neue Aufgabe → neue Sitzung.** Der größte Hebel von allen. Bei jedem
+  Handgriff wird die ganze bisherige Unterhaltung nochmal gelesen. Gemessen am
+  18.09.2026: erster Aufruf 63 000 Token, nach 17 Nachrichten 270 000 — neunmal
+  so teuer für dieselbe Arbeit. Das Gedächtnis sorgt dafür, dass eine frische
+  Sitzung nicht bei null anfängt.
 - **Listen filtern, bevor sie im Kontext landen.** Den Plugin-Katalog lokal
   mit `node` aus `marketplace.json` filtern (rund 2 000 Zeichen) statt die
   Katalogsuche aufzurufen (rund 18 000).

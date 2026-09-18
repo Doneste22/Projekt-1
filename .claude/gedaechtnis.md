@@ -16,6 +16,25 @@ Was dauerhaft gilt, gehört in `CLAUDE.md` oder den Hausstil-Skill.
   README unter „Redaktionelle Hinweise", Reihenfolge in `MONETARISIERUNG.md`.
   Nicht entschieden: ß oder ss (Begründung beider Seiten im README).
 
+## Wartet auf Damaso (aus älteren Sitzungen, Stand 18.09.2026)
+
+Vier Sitzungen stecken fest, weil etwas im Browser erledigt werden muss. Kommt
+eine davon zur Sprache, hier nachsehen statt neu herleiten:
+
+- **Netlify-Anbindung.** `jarvis-damaso` → Project configuration → Build &
+  deploy → Link repository → GitHub → `Doneste22/Projekt-1`, dann
+  Branch `claude/wand-fuer-wand-site-p6psyv`, Publish `.`, Build und Functions
+  leer lassen.
+- **ElevenLabs-Schlüssel.** Der hinterlegte ist maskiert (`*8H…`). Neuen unter
+  elevenlabs.io → Settings → API Keys anlegen, mit dem Kopiersymbol kopieren
+  (nicht den angezeigten Text), bei Netlify als `ELEVENLABS_API_KEY` setzen.
+  Muss mit `sk_` anfangen, nicht mit `*`.
+- **Kraken-Ausweisprüfung** für den Trading-Assistenten (Zweig
+  `claude/video-anschauen-ejtvd9`). Bis dahin nur Papierhandel.
+- **Partnerlink-Ziele** für 29 Produkte, und die Frage, ob der Auftritt
+  schweizerisch oder deutsch geführt wird — davon hängen Impressum und
+  Datenschutz ab.
+
 ## Was hier schon Zeit gekostet hat
 
 - **Der Browser dieser Sandbox kommt nicht an die Live-Adresse** (Proxy).
