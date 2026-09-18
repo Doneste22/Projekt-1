@@ -12,8 +12,13 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 /**
- * Der API-Schlüssel. Er steht nirgends im Code und nirgends im Repo — Damaso
+ * Der Zugangscode. Er steht nirgends im Code und nirgends im Repo — Damaso
  * tippt ihn einmal in den Einstellungen ein, danach liegt er hier.
+ *
+ * Früher lag hier ein Anthropic-Schlüssel; seit die App den eigenen Endpunkt
+ * anruft (siehe `Modell`), ist es der Zugangscode der Website. Der Aufwand
+ * unten bleibt trotzdem berechtigt: wer den Code hat, fragt auf Damasos
+ * Rechnung.
  *
  * „Hier" heißt: verschlüsselt in den App-Einstellungen. Der Schlüssel zum
  * Entschlüsseln wird im Schlüsselspeicher des Geräts erzeugt (auf den meisten
@@ -32,6 +37,8 @@ import javax.crypto.spec.GCMParameterSpec
 object Tresor {
 
     private const val DATEI = "jarvis.tresor"
+    // Der Name bleibt, obwohl jetzt der Zugangscode darin liegt: ein neuer
+    // Name hieße, dass jeder den Wert noch einmal eintippen muss.
     private const val FELD = "api-schluessel"
     private const val SPEICHER = "AndroidKeyStore"
     private const val ALIAS = "jarvis.tresor.v1"

@@ -20,9 +20,9 @@ import kotlin.concurrent.thread
  * Messages-API nachspielt — ohne Netz und ohne einen Rappen Kosten.
  *
  * Geprüft wird, was sonst erst auf dem Telefon auffiele: was tatsächlich
- * gesendet wird, ob der Text stückweise ankommt, ob eine abgerissene Antwort
- * als abgerissen erkannt wird, und ob die zweite Form der Zugangsdaten
- * probiert wird, wenn die erste ein 401 bekommt.
+ * gesendet wird, ob der Zugangscode im richtigen Kopf steht, ob der Text
+ * stückweise ankommt, ob eine abgerissene Antwort als abgerissen erkannt wird
+ * und ob die Klartextmeldung des Servers durchkommt.
  */
 class ModellTest {
 
@@ -31,7 +31,7 @@ class ModellTest {
     @Before
     fun aufbauen() {
         nachbau = Nachbau()
-        Modell.ziel = "http://127.0.0.1:${nachbau.port}/v1/messages"
+        Modell.ziel = "http://127.0.0.1:${nachbau.port}/api/jarvis"
     }
 
     @After
@@ -40,20 +40,29 @@ class ModellTest {
     }
 
     @Test
-    fun `schickt den Aufruf so ab wie im Code beschrieben`() = runBlocking {
+    fun `schickt Verlauf und Betriebsart, sonst nichts`() = runBlocking {
         nachbau.antwortet { _, aus -> strom(aus, listOf("Hallo "), abschluss = true) }
 
-        Modell.frage("sk-ant-test", listOf(Nachricht("user", "Servus"))) {}
+        Modell.frage("pladur-test", listOf(Nachricht("user", "Servus"))) {}
 
         val rumpf = nachbau.letzterRumpf()
-        assertEquals("claude-opus-5", rumpf.getString("model"))
-        assertTrue(rumpf.getBoolean("stream"))
-        assertEquals("adaptive", rumpf.getJSONObject("thinking").getString("type"))
-        assertEquals("medium", rumpf.getJSONObject("output_config").getString("effort"))
-        assertEquals("default", rumpf.getString("fallbacks"))
-        assertTrue(rumpf.getString("system").contains("Jarvis"))
+        assertEquals("chat", rumpf.getString("modus"))
         assertEquals(1, rumpf.getJSONArray("messages").length())
         assertEquals("Servus", rumpf.getJSONArray("messages").getJSONObject(0).getString("content"))
+        // Modell, Prompt und Deckel gehören dem Server. Stünden sie hier,
+        // könnte jeder mit der Adresse sich einen eigenen Prompt bauen.
+        assertFalse(rumpf.has("model"))
+        assertFalse(rumpf.has("system"))
+        assertFalse(rumpf.has("max_tokens"))
+    }
+
+    @Test
+    fun `legt den Zugangscode in den Kopf, den der Server liest`() = runBlocking {
+        nachbau.antwortet { _, aus -> strom(aus, listOf("ja"), abschluss = true) }
+
+        Modell.frage("  pladur-test  ", listOf(Nachricht("user", "Frag"))) {}
+
+        assertEquals(listOf("pladur-test"), nachbau.gesehenerCode)
     }
 
     @Test
@@ -61,7 +70,7 @@ class ModellTest {
         nachbau.antwortet { _, aus -> strom(aus, listOf("Das ", "sind ", "drei."), abschluss = true) }
 
         val stuecke = mutableListOf<String>()
-        val ergebnis = Modell.frage("sk-ant-test", listOf(Nachricht("user", "Frag"))) {
+        val ergebnis = Modell.frage("pladur-test", listOf(Nachricht("user", "Frag"))) {
             stuecke.add(it)
         }
 
@@ -74,7 +83,7 @@ class ModellTest {
     fun `erkennt eine abgerissene Antwort am fehlenden Abschluss`() = runBlocking {
         nachbau.antwortet { _, aus -> strom(aus, listOf("Angefangen und dann "), abschluss = false) }
 
-        val ergebnis = Modell.frage("sk-ant-test", listOf(Nachricht("user", "Frag"))) {}
+        val ergebnis = Modell.frage("pladur-test", listOf(Nachricht("user", "Frag"))) {}
 
         assertFalse(ergebnis.vollstaendig)
     }
@@ -85,36 +94,51 @@ class ModellTest {
             strom(aus, emptyList(), abschluss = true, abbruchgrund = "refusal")
         }
 
-        val ergebnis = Modell.frage("sk-ant-test", listOf(Nachricht("user", "Frag"))) {}
+        val ergebnis = Modell.frage("pladur-test", listOf(Nachricht("user", "Frag"))) {}
 
         assertTrue(ergebnis.fehler!!.contains("abgelehnt"))
     }
 
     @Test
-    fun `probiert bei 401 die andere Form der Zugangsdaten`() = runBlocking {
-        var ersterDurchgang = true
+    fun `fragt bei einem 401 nur einmal und sagt was zu tun ist`() = runBlocking {
+        var durchgaenge = 0
         nachbau.antwortet { _, aus ->
-            if (ersterDurchgang) {
-                ersterDurchgang = false
-                knapp(aus, 401, "Unauthorized", """{"error":{"message":"invalid x-api-key"}}""")
-            } else {
-                strom(aus, listOf("Doch noch."), abschluss = true)
-            }
+            durchgaenge++
+            knapp(aus, 401, "Unauthorized", "{}")
         }
 
-        val ergebnis = Modell.frage("sk-ant-test", listOf(Nachricht("user", "Frag"))) {}
+        val ergebnis = Modell.frage("falsch", listOf(Nachricht("user", "Frag"))) {}
 
-        assertEquals(listOf("x-api-key", "authorization"), nachbau.gesehenerKopf)
-        assertTrue(ergebnis.vollstaendig)
+        // Früher kam hier ein zweiter Versuch mit der anderen Form der
+        // Zugangsdaten. Der eigene Endpunkt kennt nur eine — also einmal.
+        assertEquals(1, durchgaenge)
+        assertTrue(ergebnis.fehler!!.contains("Einstellungen"))
     }
 
     @Test
-    fun `sagt bei einem abgelehnten Schluessel was zu tun ist`() = runBlocking {
-        nachbau.antwortet { _, aus -> knapp(aus, 401, "Unauthorized", "{}") }
+    fun `reicht die Klartextmeldung des Servers durch`() = runBlocking {
+        nachbau.antwortet { _, aus ->
+            knapp(aus, 401, "Unauthorized", """{"error":"Zugangscode fehlt oder stimmt nicht."}""")
+        }
 
-        val ergebnis = Modell.frage("sk-ant-test", listOf(Nachricht("user", "Frag"))) {}
+        val ergebnis = Modell.frage("falsch", listOf(Nachricht("user", "Frag"))) {}
 
-        assertTrue(ergebnis.fehler!!.contains("Einstellungen"))
+        // Das ist der Punkt: „Zugangscode fehlt oder stimmt nicht" sagt mehr
+        // als „irgendetwas mit 401" — und der Server weiß es genauer.
+        assertEquals("Zugangscode fehlt oder stimmt nicht.", ergebnis.fehler)
+    }
+
+    @Test
+    fun `laesst sich von Anthropics Fehlerform nicht verwirren`() = runBlocking {
+        nachbau.antwortet { _, aus ->
+            knapp(aus, 500, "Server Error", """{"error":{"message":"overloaded"}}""")
+        }
+
+        val ergebnis = Modell.frage("pladur-test", listOf(Nachricht("user", "Frag"))) {}
+
+        // Ein verschachtelter Fehler ist kein Klartext — dann gilt der eigene
+        // Satz, statt geschweifte Klammern in die Oberfläche zu schreiben.
+        assertTrue(ergebnis.fehler!!.contains("antwortet gerade nicht"))
     }
 
     @Test
@@ -122,7 +146,7 @@ class ModellTest {
         nachbau.antwortet { _, aus -> strom(aus, listOf("ja"), abschluss = true) }
 
         Modell.frage(
-            "sk-ant-test",
+            "pladur-test",
             listOf(
                 // Eine Begrüßung, die die Oberfläche selbst erzeugt hätte, darf
                 // nicht mitgeschickt werden — sonst lehnt die API ab.
@@ -140,7 +164,7 @@ class ModellTest {
     fun `sagt bei einem ueberlangen Verlauf was zu tun ist`() = runBlocking {
         val lang = listOf(Nachricht("user", "x".repeat(70_000)))
 
-        val ergebnis = Modell.frage("sk-ant-test", lang) {}
+        val ergebnis = Modell.frage("pladur-test", lang) {}
 
         assertTrue(ergebnis.fehler!!.contains("zu lang"))
     }
@@ -199,8 +223,8 @@ class ModellTest {
         private val ruempfe = mutableListOf<String>()
         private var handlung: (String, OutputStream) -> Unit = { _, _ -> }
 
-        /** Welche Form der Zugangsdaten jeweils ankam. */
-        val gesehenerKopf = mutableListOf<String>()
+        /** Welcher Zugangscode jeweils ankam. */
+        val gesehenerCode = mutableListOf<String>()
 
         val port: Int get() = horcher.localPort
 
@@ -234,8 +258,8 @@ class ModellTest {
                     val name = kopf.substringBefore(':').trim().lowercase()
                     val wert = kopf.substringAfter(':').trim()
                     if (name == "content-length") laenge = wert.toIntOrNull() ?: 0
-                    if (name == "x-api-key" || name == "authorization") {
-                        synchronized(gesehenerKopf) { gesehenerKopf.add(name) }
+                    if (name == "x-jarvis-passcode") {
+                        synchronized(gesehenerCode) { gesehenerCode.add(wert) }
                     }
                 }
                 // Byteweise, nicht zeichenweise: `content-length` zählt Bytes,
