@@ -45,6 +45,7 @@ scripts/termux-einrichten.sh  Richtet Jarvis auf dem Handy ein (ein Befehl)
 scripts/mark-einrichten.py    Holt Mark LIV, den fremden Jarvis aus dem Video, auf den PC
 scripts/pruefe-aufbau.mjs     Prüft Weiche und Gedächtnis — ohne Browser, ohne Kosten
 .claude/settings.json         Schaltet das Plugin „Claude Code Setup" für dieses Projekt ein
+.claude/skills/task-observer/ Fremder Skill aus dem Video — sieht bei der Arbeit zu
 MONETARISIERUNG.md            Wie aus der Seite Einnahmen werden — Wege, Zahlen, Reihenfolge
 ```
 
@@ -831,7 +832,7 @@ steht unten bei jedem einzeln.
 | 2 | claude-mem | Eigenes Programm, Gedächtnis über Sitzungen | **nicht eingebaut** |
 | 3 | Headroom | Eigener Proxy, kürzt was ans Modell geht | **nicht eingebaut** |
 | 4 | Claude Code Setup | Echtes Plugin, von Anthropic | **eingebaut** |
-| 5 | task-observer | Skill (Textdateien), von einem Dritten | **nicht eingebaut** |
+| 5 | task-observer | Skill (Textdateien), von einem Dritten | **eingebaut** |
 
 Der wichtigste Unterschied: Nummer 4 und 5 sind Dateien, die im Projekt liegen
 können und damit auch in einer Sitzung im Netz wirken. Nummer 1 bis 3 sind
@@ -864,22 +865,30 @@ Das ist der Weg, der auch in Sitzungen im Netz funktioniert, wo es den Befehl
 /plugin install claude-code-setup@claude-plugins-official
 ```
 
-### 5 — task-observer (nicht eingebaut)
+### 5 — task-observer (eingebaut, Dauerbetrieb aus)
 
 `github.com/rebelytics/one-skill-to-rule-them-all`, von Eoghan Henn, Lizenz
-CC BY 4.0. Ein Skill, der bei der Arbeit zusieht und daraus Vorschläge für
-neue oder bessere Skills ableitet. Technisch nur Textdateien, die nach
-`.claude/skills/task-observer/` gehören — dorthin, wo auch `hausstil` liegt.
+CC BY 4.0. Ein Skill, der bei der Arbeit zusieht, sich Muster und
+Korrekturen merkt und daraus Vorschläge für neue oder bessere Skills
+ableitet. Technisch nur Textdateien; sie liegen in
+`.claude/skills/task-observer/`, dort, wo auch `hausstil` liegt. Rund 4 900
+Zeilen in zwölf Dateien, 340 KB. Die zwei mitgelieferten Python-Skripte
+greifen nicht aufs Netz zu — nachgesehen.
 
-Zwei Gründe, warum er hier noch nicht liegt:
+Er wird geladen, wenn die Aufgabe dazu passt. Was er **nicht** tut: in jeder
+Sitzung von sich aus anspringen. Dafür verlangt seine Anleitung einen
+Aktivierungsblock in `CLAUDE.md` — rund dreißig Zeilen englischer
+Anweisungen, die vor dem allerersten Handgriff jeder Sitzung ein eigenes
+Startprotokoll erzwingen. Das ist bewusst nicht eingetragen: es kostet in
+jeder Sitzung Platz und Zeit, auch bei „mach die Überschrift größer".
 
-- Die Schutzschaltung dieser Sitzung hat das Kopieren fremden Codes ins
-  Projekt abgelehnt. Das ist gewollt und lässt sich nur mit Damasos
-  ausdrücklicher Erlaubnis aufheben.
-- Er ist groß: rund 4 900 Zeilen in acht Dateien. Und er will laut eigener
-  Anleitung eine Zeile in `CLAUDE.md`, damit er in *jeder* Sitzung geladen
-  wird. Das kostet in jeder Sitzung Platz im Gedächtnis, bevor überhaupt
-  etwas gebaut wird.
+Wer es doch will, findet den Block in
+`.claude/skills/task-observer/references/environments.md` unter
+„The activation block". Wer den Skill wieder loswerden will:
+
+```
+rm -rf .claude/skills/task-observer
+```
 
 ### 1 — OmniRoute (nicht eingebaut, und dazu ein Wort)
 
