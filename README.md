@@ -44,7 +44,7 @@ scripts/aufraeumen.mjs        Findet doppelte Dateien und Müll im Handyspeicher
 scripts/termux-einrichten.sh  Richtet Jarvis auf dem Handy ein (ein Befehl)
 scripts/mark-einrichten.py    Holt Mark LIV, den fremden Jarvis aus dem Video, auf den PC
 scripts/pruefe-aufbau.mjs     Prüft Weiche und Gedächtnis — ohne Browser, ohne Kosten
-.claude/settings.json         Schaltet die vier Plugins für dieses Projekt ein
+.claude/settings.json         Schaltet die zwei Plugins für dieses Projekt ein
 .claude/skills/task-observer/ Fremder Skill aus dem Video — sieht bei der Arbeit zu
 .claude/gedaechtnis.md        Gedächtnis: Stand, offene Punkte, gelernte Fallen
 .claude/hooks/gedaechtnis.sh  Legt es beim Sitzungsstart in den Kontext (nicht eingetragen)
@@ -929,47 +929,49 @@ oder `DO_NOT_TRACK=1`.
 
 ## Plugins, die hier eingeschaltet sind
 
-In `.claude/settings.json` stehen vier Plugins aus dem offiziellen Verzeichnis
-von Anthropic. Sie sind auf Projektebene eingeschaltet: wer das Repo hat, hat
-sie — auf dem PC wie in einer Sitzung im Netz.
+In `.claude/settings.json` stehen zwei Plugins aus dem offiziellen Verzeichnis
+von Anthropic, beide auf Projektebene — wer das Repo hat, hat sie.
 
-| Plugin | Von | Wofür hier |
+| Plugin | Wofür hier | Kostet pro Sitzung |
 | --- | --- | --- |
-| `claude-code-setup` | Anthropic | Sieht sich das Projekt an und schlägt passende Automatisierungen vor |
-| `security-guidance` | Anthropic | Prüft jede Änderung auf Sicherheitslücken, automatisch |
-| `netlify-skills` | Netlify | Functions, Edge Functions, `netlify.toml`, Veröffentlichung |
-| `modern-web-guidance` | Google Chrome | Aktuelle Regeln für HTML, CSS und JavaScript ohne Framework |
+| `security-guidance` | Prüft jede Änderung automatisch auf Sicherheitslücken | 0 Zeichen |
+| `claude-code-setup` | Schlägt passende Automatisierungen fürs Projekt vor | 354 Zeichen |
 
-Warum genau diese vier und nicht dreißig: Jedes eingeschaltete Plugin kostet in
-jeder Sitzung Platz im Gedächtnis, bevor überhaupt etwas gebaut wird. Viele
-Plugins machen die Arbeit also nicht schneller, sondern langsamer. Diese vier
-passen zu dem, was hier tatsächlich steht — eine handgeschriebene Website ohne
-Build-Schritt, ein Backend mit Schlüsseln, veröffentlicht bei Netlify.
+**Warum die Spalte ganz rechts die wichtigste ist.** Ein Plugin bringt seine
+Beschreibungen mit, und die stehen in *jeder* Sitzung im Kontext, bevor
+überhaupt etwas gebaut wird. Sie kosten also auch dann, wenn das Plugin nie
+benutzt wird. Nachmessen lässt sich das so:
 
-`security-guidance` ist der wichtigste davon. In diesem Repo liegen ein
-API-Schlüssel hinter einer Netlify-Function, eine Twilio-Unterschriftprüfung
-und ein Endpunkt, der bei jedem Aufruf Geld kostet. Das Plugin sieht sich jede
-Änderung an, noch bevor sie veröffentlicht wird, und meldet Dinge wie
-versehentlich hartkodierte Geheimnisse oder eine fehlende Prüfung.
+```bash
+find ~/.claude/plugins/cache -name SKILL.md | xargs -I{} sh -c \
+  'sed -n "/^description:/,/^[a-z-]*:/p" {} | wc -c'
+```
 
-Bewusst **nicht** eingeschaltet:
-
-- `code-review`, `code-simplifier`, `claude-security` — dieselbe Arbeit können
-  die eingebauten Befehle `/code-review`, `/simplify` und `/security-review`
-  schon. Doppelt eingeschaltet kostet nur.
-- Die Sprachserver (`typescript-lsp` und die anderen) — in einer Sitzung im
-  Netz startet Claude Code sie gar nicht. Am PC bräuchten sie zusätzlich ein
-  installiertes Programm.
-- `frontend-design` — bringt eigene Gestaltungsregeln mit und würde gegen den
-  Hausstil hier arbeiten (Tokens in `:root`, kein Framework, keine fremden
-  Schriften).
-
-Ändern lässt sich das in `.claude/settings.json`, oder am PC mit:
+Hier waren zwischenzeitlich auch `netlify-skills` und `modern-web-guidance`
+eingeschaltet. Gemessen: `netlify-skills` bringt 45 Skills mit und kostet rund
+**25 000 Zeichen in jeder Sitzung** — für Netlify-Arbeit, die vielleicht einmal
+im Monat anfällt. Beide sind wieder raus. Für Netlify gibt es ohnehin die
+MCP-Anbindung, und ein Plugin ist in einer Minute wieder eingeschaltet, wenn
+eine Aufgabe es wirklich braucht:
 
 ```
-claude plugin list
-claude plugin uninstall <name>@claude-plugins-official --scope project
+claude plugin install netlify-skills@claude-plugins-official --scope project
 ```
+
+`security-guidance` ist der beste Tausch im ganzen Verzeichnis: Es arbeitet über
+Hooks statt über Skills, kostet im Kontext also **nichts**, und springt nur an,
+wenn tatsächlich etwas geändert wird. In diesem Repo zählt das — hier liegen ein
+API-Schlüssel hinter einer Function, eine Twilio-Unterschriftprüfung und ein
+Endpunkt, der bei jedem Aufruf Geld kostet.
+
+Bewusst nicht eingeschaltet: `code-review`, `code-simplifier` und
+`claude-security` (dieselbe Arbeit können die eingebauten Befehle
+`/code-review`, `/simplify` und `/security-review` schon), die Sprachserver (in
+einer Sitzung im Netz startet Claude Code sie gar nicht) und `frontend-design`
+(bringt eigene Gestaltungsregeln mit und würde gegen den Hausstil arbeiten).
+
+Rauswerfen geht mit `claude plugin uninstall <name>@claude-plugins-official
+--scope project`.
 
 ## Das Gedächtnis
 

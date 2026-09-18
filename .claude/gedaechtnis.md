@@ -10,8 +10,9 @@ Hausstil-Skill, nicht hierher.
   zugewiesenen Zweig, danach vorspulen — ohne zu fragen, so abgemacht.
 - Nicht enthalten und nicht zu löschen: `claude/setup-pm-4a2y52`,
   `claude/video-anschauen-ejtvd9`.
-- Vier Plugins sind in `.claude/settings.json` eingeschaltet. Der fremde Skill
-  `task-observer` liegt bei, läuft aber nicht in jeder Sitzung mit.
+- Zwei Plugins sind eingeschaltet: `security-guidance` und `claude-code-setup`.
+  Der fremde Skill `task-observer` liegt bei, läuft nicht in jeder Sitzung mit
+  (kostet aber 1 046 Zeichen Beschreibung pro Sitzung).
 - Die Website hat keinen Build-Schritt, `publish = "."`. Gebaut wird nur die
   Edge-Function für Jarvis.
 
@@ -43,6 +44,15 @@ Reihenfolge in `MONETARISIERUNG.md`.
 - **Fremden Code ins Projekt kopieren lehnt die Schutzschaltung ab**, bis
   Damaso ausdrücklich zustimmt. Kein Grund, es über Umwege zu versuchen —
   fragen.
+
+- **Plugins vor dem Einschalten messen.** Ihre Beschreibungen stehen in *jeder*
+  Sitzung im Kontext, auch wenn das Plugin nie benutzt wird. `netlify-skills`
+  kostete so gemessen 25 000 Zeichen pro Sitzung und flog wieder raus; der
+  Messbefehl steht im README. Faustregel: Skills kosten immer, Hooks kosten nur
+  im Einsatz — deshalb ist `security-guidance` der beste Tausch.
+- **Dokumentation gezielt holen.** Eine ganze Doku-Seite zu ziehen kostet leicht
+  10 000 Zeichen für drei Zeilen Antwort. Erst die Frage scharf stellen, dann
+  holen.
 
 ## Regel
 
