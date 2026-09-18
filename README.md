@@ -44,6 +44,7 @@ scripts/aufraeumen.mjs        Findet doppelte Dateien und Müll im Handyspeicher
 scripts/termux-einrichten.sh  Richtet Jarvis auf dem Handy ein (ein Befehl)
 scripts/mark-einrichten.py    Holt Mark LIV, den fremden Jarvis aus dem Video, auf den PC
 scripts/pruefe-aufbau.mjs     Prüft Weiche und Gedächtnis — ohne Browser, ohne Kosten
+.claude/settings.json         Schaltet das Plugin „Claude Code Setup" für dieses Projekt ein
 MONETARISIERUNG.md            Wie aus der Seite Einnahmen werden — Wege, Zahlen, Reihenfolge
 ```
 
@@ -816,6 +817,117 @@ Mark LIV kann eines, was Jarvis hier nicht kann: den PC wirklich bedienen —
 Programme starten, Lautstärke und Helligkeit stellen, Dateien verschieben.
 Alles Übrige aus der Werbeliste — Weckwort, Gedächtnis, Sprache — hat Jarvis
 längst, und zwar auch auf dem Handy.
+
+## Die fünf Plugins aus dem TikTok-Video
+
+Ein spanisches Video von @sergioprompts nennt „die fünf Plugins, die man für
+Claude Code braucht". Drei davon sind gar keine Plugins, sondern eigene
+Programme, die sich zwischen Claude Code und das Modell setzen. Was das heißt,
+steht unten bei jedem einzeln.
+
+| # | Name | Was es wirklich ist | Stand hier |
+| --- | --- | --- | --- |
+| 1 | OmniRoute | Eigener Server, leitet an 290 fremde Anbieter weiter | **nicht eingebaut** |
+| 2 | claude-mem | Eigenes Programm, Gedächtnis über Sitzungen | **nicht eingebaut** |
+| 3 | Headroom | Eigener Proxy, kürzt was ans Modell geht | **nicht eingebaut** |
+| 4 | Claude Code Setup | Echtes Plugin, von Anthropic | **eingebaut** |
+| 5 | task-observer | Skill (Textdateien), von einem Dritten | **nicht eingebaut** |
+
+Der wichtigste Unterschied: Nummer 4 und 5 sind Dateien, die im Projekt liegen
+können und damit auch in einer Sitzung im Netz wirken. Nummer 1 bis 3 sind
+Programme, die auf dem Rechner laufen müssen, auf dem Claude Code startet —
+also auf dem PC, nicht hier. In einer Sitzung im Netz läuft der Rechner in
+einem Behälter, der am Ende der Sitzung gelöscht wird; was man dort
+installiert, ist danach weg.
+
+### 4 — Claude Code Setup (eingebaut)
+
+Von Anthropic selbst, aus dem offiziellen Verzeichnis
+(`anthropics/claude-plugins-official`). Es sieht sich eine Codebasis an und
+schlägt passende Automatisierungen vor — Hooks, Skills, MCP-Server,
+Unteragenten.
+
+Eingebaut ist es über `.claude/settings.json`:
+
+```json
+{
+  "enabledPlugins": {
+    "claude-code-setup@claude-plugins-official": true
+  }
+}
+```
+
+Das ist der Weg, der auch in Sitzungen im Netz funktioniert, wo es den Befehl
+`/plugin` nicht gibt. Am PC geht stattdessen auch:
+
+```
+/plugin install claude-code-setup@claude-plugins-official
+```
+
+### 5 — task-observer (nicht eingebaut)
+
+`github.com/rebelytics/one-skill-to-rule-them-all`, von Eoghan Henn, Lizenz
+CC BY 4.0. Ein Skill, der bei der Arbeit zusieht und daraus Vorschläge für
+neue oder bessere Skills ableitet. Technisch nur Textdateien, die nach
+`.claude/skills/task-observer/` gehören — dorthin, wo auch `hausstil` liegt.
+
+Zwei Gründe, warum er hier noch nicht liegt:
+
+- Die Schutzschaltung dieser Sitzung hat das Kopieren fremden Codes ins
+  Projekt abgelehnt. Das ist gewollt und lässt sich nur mit Damasos
+  ausdrücklicher Erlaubnis aufheben.
+- Er ist groß: rund 4 900 Zeilen in acht Dateien. Und er will laut eigener
+  Anleitung eine Zeile in `CLAUDE.md`, damit er in *jeder* Sitzung geladen
+  wird. Das kostet in jeder Sitzung Platz im Gedächtnis, bevor überhaupt
+  etwas gebaut wird.
+
+### 1 — OmniRoute (nicht eingebaut, und dazu ein Wort)
+
+`github.com/diegosouzapw/OmniRoute`. Startet einen eigenen Server auf dem PC
+und gibt sich als Modell-Endpunkt aus. Claude Code redet dann nicht mehr mit
+Anthropic, sondern mit diesem Server, und der verteilt die Anfragen auf
+gut 290 fremde Anbieter, viele davon mit Gratiskontingent.
+
+```
+npm install -g omniroute
+```
+
+Was das Video nicht sagt: Damit gehen die Fragen und der Code, an dem
+gearbeitet wird, an fremde Firmen, deren Namen man vorher nicht kennt — die
+Weiterleitung sucht sich den Anbieter selbst. Und es ist danach nicht mehr
+Claude, der antwortet, sondern irgendein Gratismodell. Das ist kein Zubehör
+zu Claude Code, das ist ein Ersatz dafür. Wer das will, soll es wissen; wer
+Claude will, lässt die Finger davon.
+
+### 2 — claude-mem (nicht eingebaut)
+
+`github.com/thedotmack/claude-mem`, Lizenz Apache 2.0. Schreibt mit, was in
+einer Sitzung passiert, fasst es zusammen und legt es der nächsten Sitzung
+wieder vor.
+
+```
+npx claude-mem install
+```
+
+Zu wissen: Ab Werk ist der Speicher in deren Cloud eingeschaltet, mit
+Anmeldung per E-Mail. Wer das nicht will, installiert mit `--provider host`
+oder setzt `CLAUDE_MEM_ONLINE_OPTIN=false`; dann bleibt alles auf dem eigenen
+Gerät.
+
+### 3 — Headroom (nicht eingebaut)
+
+`github.com/headroomlabs-ai/headroom`. Ein Proxy, der alles kürzt, was ans
+Modell geht — Werkzeugausgaben, Protokolle, Dateien. Das Kürzen passiert auf
+dem eigenen Rechner, Prompts und Dateiinhalte gehen dafür nirgendwo hin.
+
+```
+uv tool install --python 3.13 "headroom-ai[all]"
+headroom proxy --port 8787
+```
+
+Zu wissen: Ein anonymer Zähler meldet ab Werk Nutzungszahlen nach Hause
+(keine Prompts, kein Code, keine Pfade). Abschalten mit `HEADROOM_BEACON=off`
+oder `DO_NOT_TRACK=1`.
 
 ## Prompt-Werkstatt
 
