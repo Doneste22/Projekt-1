@@ -925,13 +925,14 @@ oder `DO_NOT_TRACK=1`.
 
 ## Plugins, die hier eingeschaltet sind
 
-In `.claude/settings.json` stehen zwei Plugins aus dem offiziellen Verzeichnis
-von Anthropic, beide auf Projektebene — wer das Repo hat, hat sie.
+In `.claude/settings.json` stehen drei Plugins aus dem offiziellen Verzeichnis
+von Anthropic, alle auf Projektebene — wer das Repo hat, hat sie.
 
-| Plugin | Wofür hier | Kostet pro Sitzung |
+| Plugin | Wofür hier | Kostet jede Sitzung |
 | --- | --- | --- |
-| `security-guidance` | Prüft jede Änderung automatisch auf Sicherheitslücken | 0 Zeichen |
-| `claude-code-setup` | Schlägt passende Automatisierungen fürs Projekt vor | 354 Zeichen |
+| `security-guidance` | Prüft jede Änderung automatisch auf Sicherheitslücken | ~0 Token |
+| `session-report` | Zeigt, wohin die Token einer Sitzung tatsächlich gingen | ~70 Token |
+| `claude-code-setup` | Schlägt passende Automatisierungen fürs Projekt vor | ~139 Token |
 
 **Warum die Spalte ganz rechts die wichtigste ist.** Ein Plugin bringt seine
 Beschreibungen mit, und die stehen in *jeder* Sitzung im Kontext, bevor

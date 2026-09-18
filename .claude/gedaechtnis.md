@@ -7,8 +7,8 @@ Was dauerhaft gilt, gehört in `CLAUDE.md` oder den Hausstil-Skill.
 
 - Hauptlinie `claude/wand-fuer-wand-site-p6psyv`. Nicht löschen, nicht
   enthalten: `claude/setup-pm-4a2y52`, `claude/video-anschauen-ejtvd9`.
-- Eingeschaltet: `security-guidance` (0 Zeichen Kontext), `claude-code-setup`
-  (354). `task-observer` wurde am 18.09.2026 wieder entfernt — 1 046 Zeichen
+- Eingeschaltet: `security-guidance` (~0 Token), `session-report` (~70),
+  `claude-code-setup` (~139). `task-observer` wurde am 18.09.2026 wieder entfernt — 1 046 Zeichen
   pro Sitzung ohne mitzulaufen. In der Historie unter `669067d`.
 - Website ohne Build-Schritt, `publish = "."`. Gebaut wird nur die
   Edge-Function für Jarvis.

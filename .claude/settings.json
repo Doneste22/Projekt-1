@@ -1,6 +1,7 @@
 {
   "enabledPlugins": {
     "claude-code-setup@claude-plugins-official": true,
-    "security-guidance@claude-plugins-official": true
+    "security-guidance@claude-plugins-official": true,
+    "session-report@claude-plugins-official": true
   }
 }
