@@ -157,7 +157,7 @@ private fun Bildschirm(merkeSprecher: (Sprecher?) -> Unit) {
         Gespraech(
             nachrichten = modell.nachrichten,
             imFluss = modell.imFluss,
-            schluesselFehlt = modell.schluessel.isEmpty(),
+            codeFehlt = modell.zugangscode.isEmpty(),
             modifier = Modifier.weight(1f)
         )
 
@@ -197,9 +197,9 @@ private fun Bildschirm(merkeSprecher: (Sprecher?) -> Unit) {
 
     if (einstellungenOffen) {
         Einstellungen(
-            vorhanden = modell.schluessel,
+            vorhanden = modell.zugangscode,
             aufSichern = {
-                modell.schluesselSetzen(it)
+                modell.zugangscodeSetzen(it)
                 einstellungenOffen = false
             },
             aufSchliessen = { einstellungenOffen = false }
@@ -300,7 +300,7 @@ private fun Kopfzeile(
 private fun Gespraech(
     nachrichten: List<Nachricht>,
     imFluss: String?,
-    schluesselFehlt: Boolean,
+    codeFehlt: Boolean,
     modifier: Modifier = Modifier
 ) {
     val stand = rememberLazyListState()
@@ -326,8 +326,8 @@ private fun Gespraech(
         if (nachrichten.isEmpty() && imFluss == null) {
             item {
                 Text(
-                    text = if (schluesselFehlt) {
-                        "Trag zuerst deinen API-Schlüssel ein — das Zahnrad oben rechts. " +
+                    text = if (codeFehlt) {
+                        "Trag zuerst deinen Zugangscode ein — das Zahnrad oben rechts. " +
                             "Danach kannst du tippen oder aufs Mikrofon drücken."
                     } else {
                         "Tipp etwas, oder drück aufs Mikrofon."
@@ -514,11 +514,11 @@ private fun Einstellungen(
         containerColor = Farben.flaeche,
         titleContentColor = Farben.text,
         textContentColor = Farben.textLeise,
-        title = { Text("API-Schlüssel") },
+        title = { Text("Zugangscode") },
         text = {
             Column {
                 Text(
-                    "Der Schlüssel von console.anthropic.com. Er liegt verschlüsselt auf " +
+                    "Derselbe Code, den auch die Website abfragt. Er liegt verschlüsselt auf " +
                         "diesem Telefon, geht in keine Sicherung mit und steht nirgends im Code.",
                     color = Farben.textLeise,
                     fontSize = 14.sp,
@@ -535,7 +535,7 @@ private fun Einstellungen(
                 ) {
                     Box(modifier = Modifier.weight(1f).padding(vertical = 14.dp)) {
                         if (wert.isEmpty()) {
-                            Text("sk-ant-…", color = Farben.textStill, fontSize = 16.sp)
+                            Text("Zugangscode", color = Farben.textStill, fontSize = 16.sp)
                         }
                         BasicTextField(
                             value = wert,
@@ -553,7 +553,7 @@ private fun Einstellungen(
                     }
                     Knopf(
                         symbol = Symbole.Auge,
-                        beschreibung = if (sichtbar) "Schlüssel verbergen" else "Schlüssel anzeigen",
+                        beschreibung = if (sichtbar) "Code verbergen" else "Code anzeigen",
                         farbe = if (sichtbar) Farben.akzent else Farben.textStill,
                         aufKlick = { sichtbar = !sichtbar },
                         groesse = 20
@@ -561,9 +561,11 @@ private fun Einstellungen(
                 }
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    "Jede Frage kostet Geld — es ist dein Konto bei Anthropic.",
+                    "Steht in den Netlify-Variablen unter JARVIS_PASSCODE. " +
+                        "Vergessen kostet nichts — dort lässt er sich ändern.",
                     color = Farben.textStill,
-                    fontSize = 13.sp
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp
                 )
             }
         },

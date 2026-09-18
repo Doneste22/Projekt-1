@@ -529,9 +529,10 @@ Handyspeicher; die gibt es nur im lokalen Server unter Termux.
 ### Als eigenständige Kotlin-App
 
 Daneben gibt es Jarvis als richtige Android-App in Kotlin: `jarvis-android/`.
-Sie spricht direkt mit der Claude-API, braucht **keinen Server und keinen
-Zugangscode**, und der API-Schlüssel liegt verschlüsselt auf dem Telefon statt
-auf Netlify. Der Verlauf liegt ebenfalls dort und übersteht einen Neustart.
+Sie ruft denselben Endpunkt an wie die Web-Fassung und braucht dafür **Netz und
+den Zugangscode**; einen eigenen API-Schlüssel braucht sie nicht, weil das
+Gateway das Modell nur für seinen eigenen Endpunkt bezahlt. Der Verlauf liegt
+auf dem Telefon und übersteht einen Neustart.
 
 Die APK wird bei jedem Push gebaut (`.github/workflows/apk.yml`) und liegt
 unter Actions → der Lauf → Artifacts → `jarvis-apk`. Anleitung, auch zum

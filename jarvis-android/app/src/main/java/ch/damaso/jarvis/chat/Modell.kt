@@ -15,13 +15,24 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * Der Aufruf an die Messages-API von Anthropic.
+ * Der Aufruf an Jarvis' eigenen Endpunkt.
  *
- * Die App spricht direkt mit api.anthropic.com — anders als die Web-Fassung,
- * die dafür einen eigenen Server braucht. Der Unterschied ist wichtig und
- * kein Widerspruch: im Browser wäre der Schlüssel für jeden Besucher lesbar,
- * hier liegt er verschlüsselt auf Damasos eigenem Telefon (siehe `Tresor`).
- * Ein Zwischenserver würde daran nichts verbessern, aber Netz und Geld kosten.
+ * Die App ruft nicht api.anthropic.com an, sondern denselben Server wie die
+ * Web-Fassung: `/api/jarvis` auf der veröffentlichten Seite. Das war einmal
+ * anders begründet — ein Zwischenserver koste Netz und Geld und verbessere
+ * nichts, weil der Schlüssel auf Damasos eigenem Telefon ohnehin sicher liegt.
+ * Diese Rechnung ging von einem eigenen Anthropic-Schlüssel aus. Den gibt es
+ * hier nicht: Netlifys AI-Gateway stellt ihn, und es stellt ihn nur seinem
+ * eigenen Endpunkt. Ein Schlüssel am Telefon wäre also ein zweiter, den
+ * jemand zusätzlich bezahlen müsste.
+ *
+ * Damit liegt am Telefon überhaupt kein Schlüssel mehr, sondern nur der
+ * Zugangscode — derselbe, den die Website abfragt (siehe `Tresor`). Geht er
+ * verloren, kostet das nichts: er steht in den Netlify-Variablen und lässt
+ * sich dort ändern.
+ *
+ * Der Server reicht den Antwortstrom unverändert durch, deshalb liest diese
+ * Datei weiterhin das Format der Messages-API.
  *
  * Kein SDK, sondern ein roher Aufruf mit `HttpURLConnection`: das Antwortformat
  * ist eine Handvoll JSON-Zeilen, und die App bleibt damit ohne eine einzige
@@ -33,44 +44,29 @@ import java.net.URL
  */
 object Modell {
 
-    const val STANDARD = "claude-opus-5"
-
-    private const val API = "https://api.anthropic.com/v1/messages"
+    private const val SERVER = "https://jarvis-damaso.netlify.app/api/jarvis"
 
     /**
-     * Wohin der Aufruf geht. Im Betrieb immer `API`; die Prüfung in
+     * Wohin der Aufruf geht. Im Betrieb immer `SERVER`; die Prüfung in
      * `app/src/test` zeigt ihn auf einen Nachbau, der das Antwortformat
      * nachspielt. Damit lässt sich die ganze Kette prüfen — Anfrage,
      * Strom, Abschluss — ohne einen Rappen auszugeben.
      */
-    internal var ziel: String = API
-    private const val VERSION = "2023-06-01"
-    private const val FALLBACK_BETA = "server-side-fallback-2026-07-01"
-    private const val MAX_TOKENS = 4000
-    private const val MAX_NACHRICHTEN = 24     // so viel Verlauf geht mit
-    private const val MAX_ZEICHEN = 60_000     // Deckel gegen unbeabsichtigte Kosten
+    internal var ziel: String = SERVER
 
     /**
-     * Steht genau einmal hier. Die Web-Fassung hat ihren eigenen in
-     * `server/core.mjs` — zwei Sprachen lassen sich nicht teilen; wer den
-     * einen ändert, sieht bitte beim anderen nach.
+     * Modell, Systemprompt, Denktiefe und Token-Deckel bestimmt der Server in
+     * `server/core.mjs`. Früher stand das hier ein zweites Mal — zwei Prompts,
+     * die garantiert auseinanderdriften. Jetzt gibt es nur noch einen.
      */
-    private val SYSTEMPROMPT = listOf(
-        "Du bist Jarvis, der persönliche KI-Assistent von Damaso.",
-        "Damaso ist seit über zwei Jahrzehnten im Baugewerbe tätig, spezialisiert auf Verputzarbeiten, Trockenbau (Pladur) und Akustiklösungen. Er lebt in der Schweiz und plant den Umzug nach Galicien, Spanien.",
-        "Antworte klar, knapp und hilfsbereit, standardmäßig auf Deutsch, außer Damaso schreibt in einer anderen Sprache.",
-        "Du hast keinen Zugriff auf das Internet, Kalender, E-Mails oder Smart-Home-Geräte – sag das offen, wenn danach gefragt wird, statt zu raten.",
-        "Diese Unterhaltung läuft auf dem Handy und ist auf kurze Wartezeit ausgelegt; beginne deine sichtbare Antwort sofort.",
-        "Die Oberfläche zeigt reinen Text und kann deine Antwort vorlesen. Schreib deshalb ohne Markdown: keine Sternchen, keine Rauten, keine Tabellen. Aufzählungen mit einem Strich am Zeilenanfang sind in Ordnung.",
-        "Wenn du dich korrigierst, sag es in einem Satz und mach weiter — kein langes Zurückrudern."
-    ).joinToString("\n\n")
+    private const val MAX_NACHRICHTEN = 24     // so viel Verlauf geht mit
+    private const val MAX_ZEICHEN = 60_000     // Deckel gegen unbeabsichtigte Kosten
 
     /** Was am Ende eines Aufrufs herauskommt. */
     data class Ergebnis(
         val fehler: String? = null,
         /** Ohne `message_stop` ist die Antwort abgebrochen — das muss dranstehen. */
         val vollstaendig: Boolean = false,
-        val abgelehnt: Boolean = false,
         val modell: String? = null
     )
 
@@ -80,7 +76,7 @@ object Modell {
      * mit — sonst schriebe das Modell auf Damasos Rechnung weiter.
      */
     suspend fun frage(
-        apiSchluessel: String,
+        zugangscode: String,
         verlauf: List<Nachricht>,
         aufText: suspend (String) -> Unit
     ): Ergebnis = withContext(Dispatchers.IO) {
@@ -93,24 +89,15 @@ object Modell {
             return@withContext Ergebnis(fehler = "Der Verlauf ist zu lang. Lösch ihn und fang neu an.")
         }
 
-        // Zugangsdaten gibt es in zwei Formen, die sich zum Verwechseln ähnlich
-        // sehen: ein API-Schlüssel gehört in `x-api-key`, ein OAuth-Token in
-        // `Authorization: Bearer`. Die falsche Wahl ergibt ein 401, das wie ein
-        // ungültiger Schlüssel aussieht. Also raten und im Zweifel umschalten —
-        // ein 401 kostet nichts, der zweite Versuch ist gratis.
-        val vermutungOauth = apiSchluessel.trim().startsWith("sk-ant-oat", ignoreCase = true)
-        val erster = versuch(apiSchluessel, nachrichten, vermutungOauth, aufText)
-        if (erster.abgelehnt) {
-            Log.i("Jarvis", "401, versuche die andere Form der Zugangsdaten")
-            return@withContext versuch(apiSchluessel, nachrichten, !vermutungOauth, aufText)
-        }
-        erster
+        // Früher stand hier ein zweiter Versuch mit der anderen Form der
+        // Zugangsdaten (`x-api-key` gegen `Authorization: Bearer`). Der eigene
+        // Endpunkt kennt nur eine Form, also gibt es nichts mehr zu raten.
+        versuch(zugangscode, nachrichten, aufText)
     }
 
     private suspend fun versuch(
-        apiSchluessel: String,
+        zugangscode: String,
         nachrichten: List<Nachricht>,
-        oauth: Boolean,
         aufText: suspend (String) -> Unit
     ): Ergebnis {
         var verbindung: HttpURLConnection? = null
@@ -129,15 +116,9 @@ object Modell {
                 // sammelt ihn — die Antwort käme dann in einem Schwall statt
                 // wortweise.
                 setRequestProperty("accept-encoding", "identity")
-                setRequestProperty("anthropic-version", VERSION)
-                val schluessel = apiSchluessel.trim()
-                if (oauth) {
-                    setRequestProperty("authorization", "Bearer $schluessel")
-                    setRequestProperty("anthropic-beta", "oauth-2025-04-20,$FALLBACK_BETA")
-                } else {
-                    setRequestProperty("x-api-key", schluessel)
-                    setRequestProperty("anthropic-beta", FALLBACK_BETA)
-                }
+                // Derselbe Kopf, den die Web-Fassung schickt. Ist auf dem
+                // Server kein Zugangscode gesetzt, wird er ignoriert.
+                setRequestProperty("x-jarvis-passcode", zugangscode.trim())
             }
 
             // Beim Abbrechen die Verbindung wirklich zumachen: ein blockierendes
@@ -154,14 +135,14 @@ object Modell {
             if (status == 401 || status == 403) {
                 val meldung = verbindung.errorStream?.bufferedReader()?.use { it.readText() }.orEmpty()
                 Log.w("Jarvis", "Zugangsdaten abgelehnt ($status): ${meldung.take(300)}")
-                return Ergebnis(abgelehnt = true, fehler = erklaeren(status, meldung))
+                return Ergebnis(fehler = erklaeren(status, meldung))
             }
             if (status !in 200..299) {
                 val meldung = verbindung.errorStream?.bufferedReader()?.use { it.readText() }.orEmpty()
                 return Ergebnis(fehler = erklaeren(status, meldung))
             }
 
-            val modell = verbindung.getHeaderField("anthropic-model")
+            val modell = verbindung.getHeaderField("x-jarvis-model")
             return lesen(verbindung, modell, aufText)
 
         } catch (e: kotlinx.coroutines.CancellationException) {
@@ -244,24 +225,22 @@ object Modell {
         return Ergebnis(fehler = fehler, vollstaendig = vollstaendig, modell = modell)
     }
 
-    /** Der Aufruf selbst. Alle Stellschrauben für Kosten und Tempo stehen hier. */
+    /**
+     * Der Aufruf selbst — nur noch der Verlauf und die Betriebsart.
+     *
+     * Modell, Systemprompt, Denktiefe und Token-Deckel stehen auf dem Server.
+     * Das ist kein Verlust an Einfluss, sondern der Sinn der Sache: was die
+     * App mitschickt, könnte jeder mitschicken, der die Adresse kennt. Der
+     * Server glaubt deshalb nur die Betriebsart, und auch die nur, wenn er
+     * sie kennt.
+     */
     private fun anfrage(nachrichten: List<Nachricht>): JSONObject {
         val liste = JSONArray()
         nachrichten.forEach {
             liste.put(JSONObject().put("role", it.rolle).put("content", it.text))
         }
         return JSONObject()
-            .put("model", STANDARD)
-            .put("max_tokens", MAX_TOKENS)
-            .put("stream", true)
-            .put("system", SYSTEMPROMPT)
-            .put("thinking", JSONObject().put("type", "adaptive"))
-            // Gespräch am Handy: Tempo vor Tiefe.
-            .put("output_config", JSONObject().put("effort", "medium"))
-            // Wird die Anfrage aus Sicherheitsgründen abgelehnt, läuft sie
-            // serverseitig auf einem anderen Modell weiter, statt leer
-            // zurückzukommen.
-            .put("fallbacks", "default")
+            .put("modus", "chat")
             .put("messages", liste)
     }
 
@@ -278,15 +257,41 @@ object Modell {
         return sauber.takeLast(MAX_NACHRICHTEN)
     }
 
-    /** Übersetzt eine Fehlerantwort in etwas, das in der Oberfläche stehen darf. */
-    private fun erklaeren(status: Int, rumpf: String): String = when {
-        status == 401 || status == 403 -> "Der API-Schlüssel wird abgelehnt. Prüf ihn in den Einstellungen."
-        status == 429 -> "Das Modell ist gerade ausgelastet. Gleich nochmal versuchen."
-        status == 400 -> "Die Anfrage wurde abgelehnt. Lösch den Verlauf und versuch es neu."
-        status >= 500 -> "Das Modell antwortet gerade nicht. Gleich nochmal versuchen."
-        else -> {
-            Log.w("Jarvis", "Unerwartete Antwort $status: ${rumpf.take(500)}")
-            "Die Anfrage ist nicht durchgegangen."
+    /**
+     * Übersetzt eine Fehlerantwort in etwas, das in der Oberfläche stehen darf.
+     *
+     * Der eigene Server antwortet im Fehlerfall mit `{"error": "…"}` auf
+     * Deutsch und sagt dabei genauer, was los ist, als die App raten könnte:
+     * „Zugangscode fehlt oder stimmt nicht" statt „irgendetwas mit 401". Diese
+     * Meldung hat deshalb Vorrang. Die Sätze darunter bleiben für den Fall,
+     * dass gar keine ankommt — etwa wenn Netlify selbst antwortet.
+     */
+    private fun erklaeren(status: Int, rumpf: String): String {
+        klartext(rumpf)?.let { return it }
+        return when {
+            status == 401 || status == 403 -> "Der Zugangscode wird abgelehnt. Prüf ihn in den Einstellungen."
+            status == 429 -> "Das Modell ist gerade ausgelastet. Gleich nochmal versuchen."
+            status == 400 -> "Die Anfrage wurde abgelehnt. Lösch den Verlauf und versuch es neu."
+            status == 413 -> "Der Verlauf ist zu lang. Lösch ihn und fang neu an."
+            status >= 500 -> "Der Server antwortet gerade nicht. Gleich nochmal versuchen."
+            else -> {
+                Log.w("Jarvis", "Unerwartete Antwort $status: ${rumpf.take(500)}")
+                "Die Anfrage ist nicht durchgegangen."
+            }
         }
     }
+
+    /**
+     * Die Klartextmeldung aus `{"error": "…"}`, falls eine drinsteht.
+     *
+     * Nur eine echte Zeichenkette zählt. `optString` täte es hier nicht: es
+     * ruft `toString()` auf, was immer drinsteht — bei Anthropics Fehlerform
+     * (`{"error": {"message": …}}`) stünde dann `{"message":"overloaded"}` in
+     * der Oberfläche. `opt` plus `as? String` lässt alles durchfallen, was
+     * keine Zeichenkette ist.
+     */
+    private fun klartext(rumpf: String): String? =
+        runCatching { JSONObject(rumpf).opt("error") as? String }
+            .getOrNull()
+            ?.takeIf { it.isNotBlank() }
 }

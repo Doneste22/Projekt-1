@@ -35,7 +35,7 @@ class JarvisModel(anwendung: Application) : AndroidViewModel(anwendung) {
     /** Ein Satz, der über der Eingabe steht, wenn etwas nicht geklappt hat. */
     var hinweis by mutableStateOf<String?>(null)
 
-    var schluessel by mutableStateOf("")
+    var zugangscode by mutableStateOf("")
         private set
 
     var vorlesen by mutableStateOf(false)
@@ -57,7 +57,7 @@ class JarvisModel(anwendung: Application) : AndroidViewModel(anwendung) {
     init {
         val kontext = getApplication<Application>()
         nachrichten.addAll(Verlauf.laden(kontext))
-        schluessel = Tresor.lesen(kontext)
+        zugangscode = Tresor.lesen(kontext)
         vorlesen = Merker.vorlesen(kontext)
     }
 
@@ -67,11 +67,11 @@ class JarvisModel(anwendung: Application) : AndroidViewModel(anwendung) {
         zustand = neu
     }
 
-    fun schluesselSetzen(wert: String) {
+    fun zugangscodeSetzen(wert: String) {
         val kontext = getApplication<Application>()
         Tresor.schreiben(kontext, wert)
-        schluessel = Tresor.lesen(kontext)
-        if (schluessel.isNotEmpty()) hinweis = null
+        zugangscode = Tresor.lesen(kontext)
+        if (zugangscode.isNotEmpty()) hinweis = null
     }
 
     fun vorlesenUmschalten() {
@@ -96,8 +96,8 @@ class JarvisModel(anwendung: Application) : AndroidViewModel(anwendung) {
         val text = eingabe.trim()
         if (text.isEmpty() || laeuft) return
 
-        if (schluessel.isEmpty()) {
-            hinweis = "Trag zuerst deinen API-Schlüssel in den Einstellungen ein."
+        if (zugangscode.isEmpty()) {
+            hinweis = "Trag zuerst deinen Zugangscode in den Einstellungen ein."
             return
         }
 
@@ -114,7 +114,7 @@ class JarvisModel(anwendung: Application) : AndroidViewModel(anwendung) {
             var ergebnis = Modell.Ergebnis()
             var abgebrochen = false
             try {
-                ergebnis = Modell.frage(schluessel, nachrichten.toList()) { stueck ->
+                ergebnis = Modell.frage(zugangscode, nachrichten.toList()) { stueck ->
                     gesammelt.append(stueck)
                     imFluss = gesammelt.toString()
                 }
