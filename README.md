@@ -934,13 +934,59 @@ hier bei 5 970 Zeichen.
 | Plugin | Kostet jede Sitzung | Warum nicht |
 | --- | --- | --- |
 | `agent-skills` (Addy Osmani) | **8 603** (25 Skills) | Mehr als die gesamte feste Last. Ein Ablauf aus Spec, PRD, Planung, QA-Tor und Freigabe — für eine Einmannbaustelle mit einer HTML-Seite. |
-| `ponytail` | **3 392** (12 Skills) | Gute Idee: weniger Code schreiben statt mehr. Steht hier aber längst im Hausstil, und `/simplify` kann dasselbe. |
+| `ponytail` | **7 885** (6 Skills + Hook) | **Trotzdem eingeschaltet** — auf Damasos Ansage. Siehe unten. |
 | `graphify` | 0 (kein Plugin, ein Programm) | Baut eine Wissenskarte der Codebasis, damit der Agent nicht jede Datei neu liest. Lohnt ab ein paar tausend Dateien; dieses Repo hat 39. `grep` beantwortet dasselbe für 800 Zeichen. |
 | `OmniRoute` | — | Schon im ersten Video abgelehnt: schickt den Code an 356 fremde Anbieter und ersetzt Claude durch Gratismodelle. |
 
-`ponytail` und `graphify` sind ordentliche Projekte, beide mit freier Lizenz,
-und `graphify` arbeitet für Code sogar rein lokal. Sie lösen nur Probleme, die
-dieses Repo nicht hat. Gute Werkzeuge an der falschen Baustelle.
+`graphify` ist ein ordentliches Projekt und arbeitet für Code rein lokal — es
+löst hier nur ein Problem, das dieses Repo nicht hat.
+
+### ponytail ist eingeschaltet
+
+Damaso wollte es trotz meiner Empfehlung, und das ist sein gutes Recht. MIT,
+von Dietrich Gebert. Geprüft, bevor es reinkam: kein Netzzugriff, kein
+Ausführen fremder Befehle, die drei Hooks schreiben nur eine Merkdatei im
+eigenen Konfigurationsordner.
+
+Was es tut: Es setzt einen faulen alten Hasen in den Agenten. Du fragst nach
+einem Datumsfeld, und statt drei Bibliotheken und einer Wrapper-Komponente
+bekommst du drei Zeilen.
+
+Was es kostet — hier muss ich meine eigene Zahl korrigieren. Ich hatte 3 392
+Zeichen geschätzt, und das war in beide Richtungen falsch: Die zwölf Skills
+waren in Wahrheit sechs, die anderen sechs sind Dubletten für einen anderen
+Agenten. Dafür hatte ich den Hook gar nicht gezählt, und der speist bei jedem
+Sitzungsstart die ganzen Regeln ein.
+
+| | Zeichen |
+| --- | --- |
+| 6 Skill-Beschreibungen | 2 633 |
+| Hook, Stufe `full` | 5 252 |
+| **zusammen** | **7 885** |
+
+Damit ist ponytail teurer als alles andere hier zusammen: die feste Last steigt
+von 5 970 auf 13 855 Zeichen. Es gibt vier Stufen — `off`, `lite`, `full`,
+`ultra` —, voreingestellt ist `full`. Wer sparen will, schickt in einer Sitzung
+`/ponytail lite`.
+
+**Noch offen:** Der Marktplatz ist bisher nur im Behälter dieser Sitzung
+bekannt, nicht im Repo. Damit ponytail auch anderswo gefunden wird, müsste in
+`.claude/settings.json` zusätzlich stehen:
+
+```json
+"extraKnownMarketplaces": {
+  "ponytail": { "source": { "source": "github", "repo": "DietrichGebert/ponytail" } }
+}
+```
+
+Das ist ein fremder Code-Marktplatz fest im Projekt verdrahtet — die
+Schutzschaltung lehnt das ohne Damasos ausdrückliche Zustimmung ab. Ohne diesen
+Eintrag hilft auf einem neuen Rechner:
+
+```
+claude plugin marketplace add DietrichGebert/ponytail
+claude plugin install ponytail@ponytail --scope project
+```
 
 ## Plugins, die hier eingeschaltet sind
 

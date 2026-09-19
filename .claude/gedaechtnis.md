@@ -8,7 +8,10 @@ Was dauerhaft gilt, gehört in `CLAUDE.md` oder den Hausstil-Skill.
 - Hauptlinie `claude/wand-fuer-wand-site-p6psyv`. Nicht löschen, nicht
   enthalten: `claude/setup-pm-4a2y52`, `claude/video-anschauen-ejtvd9`.
 - Eingeschaltet: `security-guidance` (~0 Token), `session-report` (~70),
-  `claude-code-setup` (~139). `task-observer` wurde am 18.09.2026 wieder entfernt — 1 046 Zeichen
+  `claude-code-setup` (~139) und `ponytail` (7 885 Zeichen — Skills plus Hook,
+  Stufe `full`). Feste Last dadurch 13 855 statt 5 970. `/ponytail lite`
+  drosselt, `/ponytail off` schaltet ab. Marktplatz noch nicht im Repo
+  verdrahtet, siehe README. `task-observer` wurde am 18.09.2026 wieder entfernt — 1 046 Zeichen
   pro Sitzung ohne mitzulaufen. In der Historie unter `669067d`.
 - Website ohne Build-Schritt, `publish = "."`. Gebaut wird nur die
   Edge-Function für Jarvis.
@@ -65,8 +68,8 @@ eine davon zur Sprache, hier nachsehen statt neu herleiten:
   Einsatz.
 
 - **Zweites Video vom selben Kanal (19.09.2026) ist abgearbeitet:** ponytail,
-  OmniRoute, Graphify, Agent Skills — alle vier gemessen und abgelehnt, Zahlen
-  und Begründung im README. Nicht noch einmal bewerten.
+  OmniRoute, Graphify, Agent Skills — gemessen; drei abgelehnt, ponytail auf
+  Damasos Ansage doch eingeschaltet. Zahlen im README. Nicht neu bewerten.
 
 ## Regel
 
