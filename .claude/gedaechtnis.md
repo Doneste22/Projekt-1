@@ -10,8 +10,8 @@ Was dauerhaft gilt, gehört in `CLAUDE.md` oder den Hausstil-Skill.
 - Eingeschaltet: `security-guidance` (~0 Token), `session-report` (~70),
   `claude-code-setup` (~139) und `ponytail` (7 885 Zeichen — Skills plus Hook,
   Stufe `full`). Feste Last dadurch 13 855 statt 5 970. `/ponytail lite`
-  drosselt, `/ponytail off` schaltet ab. Marktplatz noch nicht im Repo
-  verdrahtet, siehe README. `task-observer` wurde am 18.09.2026 wieder entfernt — 1 046 Zeichen
+  drosselt, `/ponytail off` schaltet ab. Sein Marktplatz steht seit dem
+  19.09.2026 mit Damasos Zustimmung in `extraKnownMarketplaces`. `task-observer` wurde am 18.09.2026 wieder entfernt — 1 046 Zeichen
   pro Sitzung ohne mitzulaufen. In der Historie unter `669067d`.
 - Website ohne Build-Schritt, `publish = "."`. Gebaut wird nur die
   Edge-Function für Jarvis.

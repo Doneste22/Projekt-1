@@ -969,9 +969,9 @@ von 5 970 auf 13 855 Zeichen. Es gibt vier Stufen — `off`, `lite`, `full`,
 `ultra` —, voreingestellt ist `full`. Wer sparen will, schickt in einer Sitzung
 `/ponytail lite`.
 
-**Noch offen:** Der Marktplatz ist bisher nur im Behälter dieser Sitzung
-bekannt, nicht im Repo. Damit ponytail auch anderswo gefunden wird, müsste in
-`.claude/settings.json` zusätzlich stehen:
+Der Marktplatz steht in `.claude/settings.json` unter `extraKnownMarketplaces`,
+auf Damasos ausdrückliche Zustimmung vom 19.09.2026 — ein fremder
+Code-Marktplatz fest im Projekt ist nichts, was ungefragt hineingehört:
 
 ```json
 "extraKnownMarketplaces": {
@@ -979,12 +979,10 @@ bekannt, nicht im Repo. Damit ponytail auch anderswo gefunden wird, müsste in
 }
 ```
 
-Das ist ein fremder Code-Marktplatz fest im Projekt verdrahtet — die
-Schutzschaltung lehnt das ohne Damasos ausdrückliche Zustimmung ab. Ohne diesen
-Eintrag hilft auf einem neuen Rechner:
+Damit findet jeder Rechner mit diesem Repo das Plugin. Sollte es auf einem
+neuen Rechner trotzdem als nicht installiert gemeldet werden, hilft:
 
 ```
-claude plugin marketplace add DietrichGebert/ponytail
 claude plugin install ponytail@ponytail --scope project
 ```
 
