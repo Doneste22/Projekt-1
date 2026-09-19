@@ -969,18 +969,43 @@ von 5 970 auf 13 855 Zeichen. Es gibt vier Stufen — `off`, `lite`, `full`,
 `ultra` —, voreingestellt ist `full`. Wer sparen will, schickt in einer Sitzung
 `/ponytail lite`.
 
-Der Marktplatz steht in `.claude/settings.json` unter `extraKnownMarketplaces`,
-auf Damasos ausdrückliche Zustimmung vom 19.09.2026 — ein fremder
-Code-Marktplatz fest im Projekt ist nichts, was ungefragt hineingehört:
+#### Auf eine Version festgenagelt — und warum
+
+Der Marktplatz steht in `.claude/settings.json`, auf Damasos ausdrückliche
+Zustimmung vom 19.09.2026. Dabei ist etwas Lehrreiches passiert:
+`security-guidance` — das Plugin, das hier seit einem Tag mitläuft — hat den
+Commit geprüft und **die eigene Einrichtung als Risiko gemeldet**. Zu Recht.
+
+Der erste Eintrag zeigte auf den Hauptzweig des fremden Projekts. Das heisst:
+Wer dort morgen etwas ändert, dessen Code läuft beim nächsten Sitzungsstart
+hier mit — und ponytail bringt drei Hooks mit, die von allein starten. Ein
+offenes Scheunentor.
+
+Jetzt zeigt der Eintrag auf ein festes Versions-Etikett:
 
 ```json
 "extraKnownMarketplaces": {
-  "ponytail": { "source": { "source": "github", "repo": "DietrichGebert/ponytail" } }
+  "ponytail": {
+    "source": {
+      "source": "git",
+      "url": "https://github.com/DietrichGebert/ponytail.git",
+      "ref": "v4.9.0"
+    }
+  }
 }
 ```
 
-Damit findet jeder Rechner mit diesem Repo das Plugin. Sollte es auf einem
-neuen Rechner trotzdem als nicht installiert gemeldet werden, hilft:
+Geprüft wurde genau dieser Stand: MIT, sechs Skills, drei Hooks, kein
+Netzzugriff, kein Ausführen fremder Befehle. Neue Versionen kommen erst
+herein, wenn jemand das Etikett hier von Hand hochsetzt — und sie vorher
+wieder ansieht.
+
+Auf ein einzelnes Commit lässt sich nicht festnageln: Claude Code klont über
+Zweig- oder Etikettnamen, eine reine Commit-Nummer wird abgewiesen. Ein
+Etikett ist das Nächstbeste.
+
+Sollte das Plugin auf einem neuen Rechner als nicht installiert gemeldet
+werden, hilft:
 
 ```
 claude plugin install ponytail@ponytail --scope project

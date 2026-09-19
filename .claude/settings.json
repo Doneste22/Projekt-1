@@ -1,16 +1,17 @@
 {
-  "extraKnownMarketplaces": {
-    "ponytail": {
-      "source": {
-        "source": "github",
-        "repo": "DietrichGebert/ponytail"
-      }
-    }
-  },
   "enabledPlugins": {
     "claude-code-setup@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
     "session-report@claude-plugins-official": true,
     "ponytail@ponytail": true
+  },
+  "extraKnownMarketplaces": {
+    "ponytail": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/DietrichGebert/ponytail.git",
+        "ref": "v4.9.0"
+      }
+    }
   }
 }
