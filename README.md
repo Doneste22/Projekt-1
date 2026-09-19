@@ -923,6 +923,25 @@ Zu wissen: Ein anonymer Zähler meldet ab Werk Nutzungszahlen nach Hause
 (keine Prompts, kein Code, keine Pfade). Abschalten mit `HEADROOM_BEACON=off`
 oder `DO_NOT_TRACK=1`.
 
+## Das zweite TikTok-Video: vier weitere, alle abgelehnt
+
+Derselbe Kanal, 19.09.2026, „die 4 Plugins, die du fürs Vibe-Coding brauchst".
+Geprüft mit der Regel aus dem Abschnitt oben — erst messen, dann entscheiden.
+Die Spalte „kostet" ist die Zahl, die zählt: Beschreibungen stehen in *jeder*
+Sitzung im Kontext, auch wenn das Plugin nie benutzt wird. Die feste Last liegt
+hier bei 5 970 Zeichen.
+
+| Plugin | Kostet jede Sitzung | Warum nicht |
+| --- | --- | --- |
+| `agent-skills` (Addy Osmani) | **8 603** (25 Skills) | Mehr als die gesamte feste Last. Ein Ablauf aus Spec, PRD, Planung, QA-Tor und Freigabe — für eine Einmannbaustelle mit einer HTML-Seite. |
+| `ponytail` | **3 392** (12 Skills) | Gute Idee: weniger Code schreiben statt mehr. Steht hier aber längst im Hausstil, und `/simplify` kann dasselbe. |
+| `graphify` | 0 (kein Plugin, ein Programm) | Baut eine Wissenskarte der Codebasis, damit der Agent nicht jede Datei neu liest. Lohnt ab ein paar tausend Dateien; dieses Repo hat 39. `grep` beantwortet dasselbe für 800 Zeichen. |
+| `OmniRoute` | — | Schon im ersten Video abgelehnt: schickt den Code an 356 fremde Anbieter und ersetzt Claude durch Gratismodelle. |
+
+`ponytail` und `graphify` sind ordentliche Projekte, beide mit freier Lizenz,
+und `graphify` arbeitet für Code sogar rein lokal. Sie lösen nur Probleme, die
+dieses Repo nicht hat. Gute Werkzeuge an der falschen Baustelle.
+
 ## Plugins, die hier eingeschaltet sind
 
 In `.claude/settings.json` stehen drei Plugins aus dem offiziellen Verzeichnis

@@ -64,6 +64,10 @@ eine davon zur Sprache, hier nachsehen statt neu herleiten:
   Zeichen und flog raus. Faustregel: Skills kosten immer, Hooks nur im
   Einsatz.
 
+- **Zweites Video vom selben Kanal (19.09.2026) ist abgearbeitet:** ponytail,
+  OmniRoute, Graphify, Agent Skills — alle vier gemessen und abgelehnt, Zahlen
+  und Begründung im README. Nicht noch einmal bewerten.
+
 ## Regel
 
 Am Ende einer Sitzung, in der etwas entschieden wurde oder etwas nicht ging:
